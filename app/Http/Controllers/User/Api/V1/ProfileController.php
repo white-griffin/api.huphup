@@ -55,10 +55,84 @@ class ProfileController extends Controller
             DB::commit();
 
             return ApiResponse::Success('عملیات موفق');
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             DB::rollBack();
 
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+        }
+    }
+
+    /** add Address for user
+     * auth token needed
+     * @return JsonResponse
+     * @throws \Throwable
+     * @params from request : [ province_id,city_id,postal_code,address,latitude,longitude ]
+     */
+    public function addAddress()
+    {
+        DB::beginTransaction();
+        try {
+            $user = auth()->user();
+            $user->addresses()->create([
+                'province_id' => request('province_id'),
+                'city_id' => request('city_id'),
+                'postal_code' => request('postal_code'),
+                'address' => request('address'),
+                'latitude' => request('latitude'),
+                'longitude' => request('longitude'),
+            ]);
+            DB::commit();
+            return ApiResponse::Success('عملیات موفق');
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+        }
+    }
+
+
+    /** Updating User's address
+     * @param $address
+     * @return JsonResponse
+     * @throws \Throwable
+     * @params from request : [ province_id,city_id,postal_code,address,latitude,longitude ]
+     */
+    public function updateAddress($address)
+    {
+        DB::beginTransaction();
+        try {
+            $address->update([
+                'province_id' => request('province_id'),
+                'city_id' => request('city_id'),
+                'postal_code' => request('postal_code'),
+                'address' => request('address'),
+                'latitude' => request('latitude'),
+                'longitude' => request('longitude'),
+            ]);
+            DB::commit();
+            return ApiResponse::Success('عملیات موفق');
+        }catch (\Exception $exception){
+            DB::rollBack();
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+        }
+    }
+
+
+    /** Delete User's Address
+     * @param $address
+     * @return JsonResponse
+     * @throws \Throwable
+     */
+    public function deleteAddress($address)
+    {
+        DB::beginTransaction();
+        try {
+            $address->delete();
+            DB::commit();
+            return ApiResponse::Success('عملیات موفق');
+        }catch (\Exception $exception){
+            DB::rollBack();
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+
         }
     }
 }
