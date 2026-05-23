@@ -22,7 +22,6 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
 
             $table->string('mobile'); // E.164
-            $table->timestamp('mobile_verified_at')->nullable();
 
             $table->string('otp_code')->nullable();
             $table->string('password')->nullable();
