@@ -91,6 +91,7 @@ class ProfileController extends Controller
 
 
     /** Updating User's address
+     * auth token needed
      * @param $address
      * @return JsonResponse
      * @throws \Throwable
@@ -110,7 +111,7 @@ class ProfileController extends Controller
             ]);
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             DB::rollBack();
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
@@ -118,6 +119,7 @@ class ProfileController extends Controller
 
 
     /** Delete User's Address
+     * auth token needed
      * @param $address
      * @return JsonResponse
      * @throws \Throwable
@@ -129,7 +131,7 @@ class ProfileController extends Controller
             $address->delete();
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             DB::rollBack();
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
 

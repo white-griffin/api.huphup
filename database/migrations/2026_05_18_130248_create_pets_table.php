@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('color', 50)->nullable();
             $table->string('avatar')->nullable();
             $table->json('medical_records')->nullable();
+            $table->json('settings')->nullable();
             $table->text('bio')->nullable();
             $table->timestamps();
         });
