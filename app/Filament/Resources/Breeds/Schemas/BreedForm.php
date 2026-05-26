@@ -49,6 +49,7 @@ class BreedForm
 
                         FileUpload::make('image')
                             ->label('تصویر')
+                            ->directory('breeds/images')
                             ->image(),
 
                         Radio::make('activity_status')

@@ -7,6 +7,7 @@ use App\Helpers\Api\ApiResponse;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Ipe\Sdk\Facades\SmsIr;
 
@@ -38,7 +39,7 @@ class AuthController extends BaseController
                 ]
             );
 
-            $otp_code = mt_rand(1000, 9999);
+            $otp_code = mt_rand(10000, 99999);
             $user->update(['otp_code' => $otp_code]);
             $user->tokens()->delete();
             $sendOtp = $this->sendOtp($user->mobile, $otp_code);
@@ -51,7 +52,7 @@ class AuthController extends BaseController
             return ApiResponse::Success('رمز ارسال شد');
 
         }catch (\Exception $exception){
-            return ApiResponse::Fail(500,'خطا در برقراری ارتباط');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در برقراری ارتباط');
         }
 
     }
@@ -90,12 +91,12 @@ class AuthController extends BaseController
 
             }else{
                 DB::rollBack();
-                return ApiResponse::Fail(403,'کد تایید صحیح نیست');
+                return ApiResponse::Fail(Response::HTTP_FORBIDDEN,'کد تایید صحیح نیست');
 
             }
         }catch (\Exception $exception){
             DB::rollBack();
-            return ApiResponse::Fail(500,$exception->getMessage());
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,$exception->getMessage());
         }
     }
 

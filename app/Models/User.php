@@ -23,7 +23,7 @@ class User extends Authenticatable
      */
     protected $guarded = ['id'];
 
-    protected $appends = ['avatar_url','icon_url'];
+    protected $appends = ['avatar_url'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -47,17 +47,24 @@ class User extends Authenticatable
         ];
     }
 
-    public function addresses(): HasMany
-    {
-        return $this->hasMany(UserAddress::class);
-    }
-
     public function getAvatarUrlAttribute()
     {
         return $this->avatar
             ? Storage::disk('public')->url($this->avatar)
             : null;
     }
+
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(UserAddress::class);
+    }
+
+    public function pets()
+    {
+        return $this->hasMany(Pet::class);
+    }
+
+
 
 
 }
