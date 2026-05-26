@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\User\Api\V1;
 
+use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Ipe\Sdk\Facades\SmsIr;
 
 class AuthController extends BaseController
@@ -13,7 +16,7 @@ class AuthController extends BaseController
     /**
      * Login Api User
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function login(Request $request)
     {
@@ -53,6 +56,48 @@ class AuthController extends BaseController
 
     }
 
+    /**
+     * Login user and create auth tokens
+     * @param Request $request
+     * @return JsonResponse
+     * @throws \Throwable
+     */
+    public function checkCode(Request $request)
+    {
+        $request->validate([
+            'mobile' => 'required',
+            'otp_code' => 'required',
+        ],[
+            'otp_code.required' => 'وارد کردن کد تایید الزامی است ',
+        ]);
+
+        DB::beginTransaction();
+        try {
+
+            $user = User::query()->where('mobile',request('mobile'))->first();
+
+            if ($user->otp_code == request('otp_code')){
+                $user->activity_status = ActivityStatus::ACTIVE->value;
+                $user->save();
+                $user->tokens()->delete();
+
+                DB::commit();
+                return ApiResponse::Success('با موفقیت وارد شدید',
+                    [
+                        'token' => $user->createToken("API TOKEN")->plainTextToken,
+                    ]);
+
+
+            }else{
+                DB::rollBack();
+                return ApiResponse::Fail(403,'کد تایید صحیح نیست');
+
+            }
+        }catch (\Exception $exception){
+            DB::rollBack();
+            return ApiResponse::Fail(500,$exception->getMessage());
+        }
+    }
 
     /**
      * Sending OTP code using SMS
@@ -85,5 +130,22 @@ class AuthController extends BaseController
             ];
         }
     }
+
+    /**
+     * Logout User and delete tokens
+     * @return JsonResponse
+     */
+    public function logOut()
+    {
+        try {
+            request()->user()->tokens()->delete();
+            return ApiResponse::Success('با موفقیت خارج شدید');
+
+        } catch (\Exception $e) {
+            return ApiResponse::Fail(500,$e->getMessage());
+        }
+    }
+
+
 
 }

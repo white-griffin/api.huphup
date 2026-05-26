@@ -12,4 +12,12 @@ class Admin extends Authenticatable
     use SoftDeletes,HasRoles;
     protected $guarded = ['id'];
 
+    public function getNameAttribute(): string
+    {
+        $full = trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+        return $full !== ''
+            ? $full
+            : ($this->mobile ?? $this->email ?? 'ادمین');
+    }
+
 }

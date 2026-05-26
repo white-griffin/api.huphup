@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\Api\V1;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\ProfileResource;
+use App\Models\UserAddress;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -57,7 +58,6 @@ class ProfileController extends Controller
             return ApiResponse::Success('عملیات موفق');
         } catch (\Exception $exception) {
             DB::rollBack();
-
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
@@ -92,12 +92,12 @@ class ProfileController extends Controller
 
     /** Updating User's address
      * auth token needed
-     * @param $address
+     * @param UserAddress $address
      * @return JsonResponse
      * @throws \Throwable
      * @params from request : [ province_id,city_id,postal_code,address,latitude,longitude ]
      */
-    public function updateAddress($address)
+    public function updateAddress(UserAddress $address)
     {
         DB::beginTransaction();
         try {

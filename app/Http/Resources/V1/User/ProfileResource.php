@@ -21,8 +21,7 @@ class ProfileResource extends JsonResource
             'last_name' => $this->last_name,
             'email' => $this->email,
             'mobile' => $this->mobile,
-            // TODO : Set the current Avatar Address
-            'avatar' => $this->avatar,
+            'avatar' => $this->avatar_url,
             'birth_date' => Verta::instance($this->birth_date)->format('Y/m/d'),
             'national_code' => $this->national_code,
             'gender_type' => GenderType::label($this->gender_type),
