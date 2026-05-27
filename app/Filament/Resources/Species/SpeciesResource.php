@@ -26,7 +26,7 @@ class SpeciesResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::BugAnt;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::QueueList;
 
     public static function form(Schema $schema): Schema
     {

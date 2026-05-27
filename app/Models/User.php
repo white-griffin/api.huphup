@@ -54,6 +54,11 @@ class User extends Authenticatable
             : null;
     }
 
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
     public function addresses(): HasMany
     {
         return $this->hasMany(UserAddress::class);

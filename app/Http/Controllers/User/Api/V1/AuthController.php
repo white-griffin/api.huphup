@@ -91,7 +91,7 @@ class AuthController extends BaseController
 
             }else{
                 DB::rollBack();
-                return ApiResponse::Fail(Response::HTTP_FORBIDDEN,'کد تایید صحیح نیست');
+                return ApiResponse::Fail(Response::HTTP_UNAUTHORIZED,'کد تایید صحیح نیست');
 
             }
         }catch (\Exception $exception){
