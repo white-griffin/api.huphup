@@ -16,8 +16,8 @@ return new class extends Migration
             $table->integer('province')->nullable();
             $table->string('name');
             $table->string('name_en')->nullable();
-            $table->decimal('latitude', 10, 8)->nullable();
-            $table->decimal('longitude', 11, 8)->nullable();
+            $table->string('latitude')->nullable();
+            $table->string('longitude')->nullable();
         });
     }
 
