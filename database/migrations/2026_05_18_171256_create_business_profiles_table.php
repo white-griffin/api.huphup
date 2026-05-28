@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\MemberActivityStatuses;
+use App\Enums\ProviderTypes;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,8 @@ return new class extends Migration
         Schema::create('business_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_type_id')->constrained(); // نوع کسب‌وکار
+            $table->tinyInteger('provider_type')
+                ->default(ProviderTypes::SHOPPING); // نوع کسب‌وکار
 
             //Main Business Data
             $table->string('business_name');

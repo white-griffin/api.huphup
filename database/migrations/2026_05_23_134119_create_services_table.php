@@ -14,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('services', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_type_id')->constrained()->cascadeOnDelete(); // مربوط به کدام نوع کسب‌وکار
             $table->string('name'); // نام فارسی
             $table->string('name_en')->nullable(); // نام انگلیسی
             $table->text('description')->nullable();
