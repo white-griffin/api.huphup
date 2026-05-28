@@ -6,11 +6,12 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\PetResource;
 use App\Models\Pet;
+use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
-class PetController extends Controller
+class PetController extends BaseController
 {
     /**
      * return User's Pets
@@ -75,7 +76,7 @@ class PetController extends Controller
 
         DB::beginTransaction();
         try {
-            $pet->update($this->petData());
+            $pet->update($this->petData($pet));
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
         }catch (\Exception $e) {
@@ -91,21 +92,32 @@ class PetController extends Controller
      * get data from request()
      * @return array
      */
-    private function petData()
+    private function petData($pet = null)
     {
-        return [
-            'species_id' => request('species_id'),
-            'breed_id' => request('breed_id'),
-            'name' => request('name'),
-            'gender_type' => request('gender_type'),
-            'birthday' => request('birthday'),
-            'weight' => request('weight'),
-            'color' => request('color'),
-            //TODO: Set the current avatar address
-            'avatar' => request('avatar'),
-            'medical_records' => request('medical_records'),
-            'setting' => request('setting'),
-            'bio' => request('bio'),
-        ];
+        $media = app(MediaService::class);
+        $data =  array_filter(
+            request()->only([
+                'species_id',
+                'breed_id',
+                'name',
+                'gender_type',
+                'weight',
+                'color',
+                'medical_records',
+                'setting',
+                'bio'
+            ]),
+            fn($value) => !is_null($value)
+        );
+
+        if (request()->hasFile('avatar') ) {
+            $data['avatar'] = $media->replace(
+                $pet?->avatar,
+                request()->file('avatar'),
+                'pet/avatars'
+            );
+        }
+
+        return $data;
     }
 }

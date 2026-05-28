@@ -22,8 +22,8 @@ class AddressResource extends JsonResource
             'city' => City::query()->find($this->city_id)->name,
             'address' => $this->address,
             'postal_code' => $this->postal_code,
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude
+            'latitude' => (float)$this->latitude,
+            'longitude' => (float)$this->longitude
         ];
     }
 }

@@ -32,7 +32,7 @@ return new class extends Migration
             $table->text('bio')->nullable();
 
             $table->tinyInteger('gender_type')
-                ->default(GenderType::MALE->value)
+                ->default(GenderType::UNKNOWN->value)
                 ->comment('1 For Male , 2 For FeMale');
 
             $table->tinyInteger('activity_status')

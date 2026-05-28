@@ -77,7 +77,7 @@ class UserForm
                     ->schema([
                         FileUpload::make('avatar')
                             ->image()
-                            ->directory('users/avatar')
+                            ->directory('users/avatars')
                             ->label('عکس پروفایل')
                             ->imageEditor(),
 

@@ -6,11 +6,12 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\ProfileResource;
 use App\Models\UserAddress;
+use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
-class ProfileController extends Controller
+class ProfileController extends BaseController
 {
 
 
@@ -23,9 +24,7 @@ class ProfileController extends Controller
 
         try {
             $user = auth()->user();
-            return ApiResponse::Success('عملیات موفق', [
-                ProfileResource::make($user)
-            ]);
+            return ApiResponse::Success('عملیات موفق', ProfileResource::make($user));
         } catch (\Exception $exception) {
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
@@ -35,24 +34,14 @@ class ProfileController extends Controller
      * auth token needed
      * @return JsonResponse
      * @throws \Throwable
-     * @params from request : [ first_name,last_name,email,avatar,bith_date,national_code,gender_type,bio ]
+     * @params from profileData funtion
      */
     public function updateProfile()
     {
         DB::beginTransaction();
         try {
             $user = auth()->user();
-            $user->update([
-                'first_name' => request('first_name'),
-                'last_name' => request('last_name'),
-                'email' => request('email'),
-                //TODO: Set the current image address
-                'avatar' => request('avatar'),
-                'birth_date' => request('birth_date'),
-                'national_code' => request('national_code'),
-                'gender_type' => request('gender_type'),
-                'bio' => request('bio'),
-            ]);
+            $user->update($this->profileData($user));
             DB::commit();
 
             return ApiResponse::Success('عملیات موفق');
@@ -66,21 +55,14 @@ class ProfileController extends Controller
      * auth token needed
      * @return JsonResponse
      * @throws \Throwable
-     * @params from request : [ province_id,city_id,postal_code,address,latitude,longitude ]
+     * @params from addressData Function
      */
     public function addAddress()
     {
         DB::beginTransaction();
         try {
             $user = auth()->user();
-            $user->addresses()->create([
-                'province_id' => request('province_id'),
-                'city_id' => request('city_id'),
-                'postal_code' => request('postal_code'),
-                'address' => request('address'),
-                'latitude' => request('latitude'),
-                'longitude' => request('longitude'),
-            ]);
+            $user->addresses()->create($this->addressData());
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
         } catch (\Exception $exception) {
@@ -95,20 +77,12 @@ class ProfileController extends Controller
      * @param UserAddress $address
      * @return JsonResponse
      * @throws \Throwable
-     * @params from request : [ province_id,city_id,postal_code,address,latitude,longitude ]
      */
     public function updateAddress(UserAddress $address)
     {
         DB::beginTransaction();
         try {
-            $address->update([
-                'province_id' => request('province_id'),
-                'city_id' => request('city_id'),
-                'postal_code' => request('postal_code'),
-                'address' => request('address'),
-                'latitude' => request('latitude'),
-                'longitude' => request('longitude'),
-            ]);
+            $address->update($this->addressData());
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
         } catch (\Exception $exception) {
@@ -136,5 +110,58 @@ class ProfileController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
 
         }
+    }
+
+
+    /**
+     * get ProfileData form request ()
+     * @params $user , $media
+     * @return array
+     */
+    private function profileData($user)
+    {
+        $media = app(MediaService::class);
+        $data = array_filter(
+            request()->only([
+                'first_name',
+                'last_name',
+                'email',
+                'birth_date',
+                'national_code',
+                'gender_type',
+                'bio'
+            ]),
+            fn($value) => !is_null($value)
+        );
+
+        if (request()->hasFile('avatar')) {
+            $data['avatar'] = $media->replace(
+                $user->avatar,
+                request()->file('avatar'),
+                'users/avatars'
+            );
+        }
+        return $data;
+    }
+
+    /**
+     * get AddressData from request()
+     * @return array
+     * @params from request : [ province_id,city_id,postal_code,address,latitude,longitude ]
+     */
+    private function addressData()
+    {
+        return array_filter(
+            request()->only([
+                'province_id',
+                'city_id',
+                'postal_code',
+                'address',
+                'latitude',
+                'longitude',
+            ]),
+            fn($value) => !is_null($value)
+        );
+
     }
 }

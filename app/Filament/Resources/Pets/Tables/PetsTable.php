@@ -18,7 +18,7 @@ class PetsTable
             ->columns([
                 ImageColumn::make('avatar')
                     ->label('تصویر')
-                    ->square() ,
+                    ->square(),
                 TextColumn::make('user.fullName')
                     ->label('کاربر')
                     ->sortable(),

@@ -10,7 +10,7 @@ use App\Models\Breed;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
-class BreedsController extends Controller
+class BreedsController extends BaseController
 {
     /**
      * return Breeds List

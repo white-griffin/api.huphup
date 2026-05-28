@@ -24,7 +24,7 @@ class ProfileResource extends JsonResource
             'avatar' => $this->avatar_url,
             'birth_date' => Verta::instance($this->birth_date)->format('Y/m/d'),
             'national_code' => $this->national_code,
-            'gender_type' => GenderType::label($this->gender_type),
+            'gender_type' => $this->gender_type,
             'bio' => $this->bio,
             'addresses' => AddressResource::collection($this->addresses),
         ];
