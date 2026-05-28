@@ -21,7 +21,10 @@ class PetController extends BaseController
     public function getPets()
     {
         try {
-            $pets = auth()->user()->pets;
+            $pets = auth()->user()
+                ->pets()
+                ->with('species','breed')
+                ->get();
 
             return ApiResponse::success('عملیات موفق', PetResource::collection($pets));
         }catch (\Exception $e) {

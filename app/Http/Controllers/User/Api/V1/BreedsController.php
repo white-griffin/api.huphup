@@ -21,6 +21,7 @@ class BreedsController extends BaseController
         try {
             $breeds = Breed::query()
                 ->where('activity_status',ActivityStatus::ACTIVE)
+                ->with('species')
                 ->get();
 
             return ApiResponse::success('عملیات موفق',BreedResource::collection($breeds));
