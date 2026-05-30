@@ -54,7 +54,7 @@ class ServicesTable
             ])
             ->recordActions([
                 EditAction::make(),
-            ])
+            ])->recordActionsColumnLabel('عملیات')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

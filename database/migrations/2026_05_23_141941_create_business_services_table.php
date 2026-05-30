@@ -14,10 +14,10 @@ return new class extends Migration
     {
         Schema::create('business_services', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('business_profile_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->foreignId('service_id')->constrained()->cascadeOnDelete();
-            $table->bigInteger('price');
-            $table->unsignedBigInteger('duration')->nullable();
+            $table->unsignedBigInteger('price');
+            $table->unsignedInteger('duration')->nullable();
 
             // تنظیمات اختصاصی - JSON
             // مثال: {"requires_appointment": true, "max_weight": 30, "includes": ["bath", "nail_trim"]}
@@ -26,7 +26,7 @@ return new class extends Migration
                 ->default(ActivityStatus::ACTIVE->value)
                 ->comment('1 For Active , 2 For InActive');
 
-            $table->unique(['business_profile_id', 'service_id']);
+            $table->unique(['business_id', 'service_id']);
             $table->index(['service_id']);
             $table->timestamps();
         });

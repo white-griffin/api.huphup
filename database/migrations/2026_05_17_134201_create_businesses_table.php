@@ -1,7 +1,8 @@
 <?php
 
-use App\Enums\MemberActivityStatuses;
-use App\Enums\ProviderTypes;
+use App\Enums\ActivityStatus;
+use App\Enums\BusinessTypes;
+use App\Enums\VerificationStatuses;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,15 +14,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('business_profiles', function (Blueprint $table) {
+        Schema::create('businesses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->tinyInteger('provider_type')
-                ->default(ProviderTypes::SHOPPING); // نوع کسب‌وکار
+            $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
+            $table->tinyInteger('business_type')
+                ->default(BusinessTypes::SHOPPING); // نوع کسب‌وکار
 
             //Main Business Data
-            $table->string('business_name');
-            $table->string('License_code');
+            $table->string('name');
+            $table->string('license_code')->nullable()->unique();
             $table->text('description')->nullable();
             $table->string('logo')->nullable();
             $table->string('cover_image')->nullable();
@@ -38,22 +39,31 @@ return new class extends Migration
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
 
+            // اطلاعات بانکی (در سطح کسب‌وکار)
+            $table->string('bank_name')->nullable();
+            $table->string('bank_account_holder')->nullable(); // صاحب حساب
+            $table->string('bank_card', 16)->nullable();        // شماره کارت
+            $table->string('bank_iban', 26)->nullable();        // شبا (بدون IR)
+
             // تنظیمات اختصاصی هر نوع کسب‌وکار - JSON
             // مثال vendor: {"commission_rate": 15, "min_order": 50000}
             // مثال vet: {"consultation_fee": 200000, "emergency_available": true}
             $table->json('settings')->nullable();
 
-            $table->tinyInteger('activity_status')
-                ->default(MemberActivityStatuses::PENDING->value)
-                ->comment('0 For Pending,1 For Active , 2 For Suspended , 3 For Rejected');
+            $table->tinyInteger('verification_status')
+                ->default(VerificationStatuses::PENDING->value)
+                ->comment('0 Pending, 1 Verified, 2 Rejected');
             $table->timestamp('verified_at')->nullable(); // زمان تایید
             $table->text('rejection_reason')->nullable(); // دلیل رد درخواست
+
+            $table->tinyInteger('activity_status')
+                ->default(ActivityStatus::ACTIVE->value)
+                ->comment('1 For Active , 2 For InActive');
 
             $table->timestamps();
             $table->softDeletes();
 
             $table->index(['latitude', 'longitude']); // برای جستجوی جغرافیایی
-
         });
     }
 
@@ -62,6 +72,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('business_profiles');
+        Schema::dropIfExists('businesses');
     }
 };

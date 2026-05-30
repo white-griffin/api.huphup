@@ -4,7 +4,7 @@ namespace App\Enums;
 
 use App\Enums\Contracts\EnumContractInterface;
 
-enum ProviderTypes: string implements Contracts\EnumContractInterface
+enum BusinessTypes: string implements Contracts\EnumContractInterface
 {
 
     case CLINIC = '1';
