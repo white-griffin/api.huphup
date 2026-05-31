@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Filament\Resources\Providers\Schemas;
+namespace App\Filament\Resources\Businesses\Schemas;
 
-use App\Enums\GenderType;
+use App\Enums\ActivityStatus;
+use App\Enums\BusinessTypes;
 use App\Enums\VerificationDocumentType;
 use App\Enums\VerificationStatuses;
 use App\Models\City;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
@@ -20,62 +20,81 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
-class ProviderForm
+class BusinessForm
 {
     public static function configure(Schema $schema): Schema
     {
         return $schema
-            ->columns(1)
             ->components([
-                Section::make('اطلاعات هویتی')
+
+                Section::make('اطلاعات اصلی')
                     ->schema([
                         Grid::make(3)
                             ->schema([
-                                TextInput::make('first_name')
+                                Select::make('provider_id')
+                                    ->label('تامین کننده')
+                                    ->relationship('provider', 'first_name')
+                                    ->getOptionLabelFromRecordUsing(fn($record) => $record->name)
+                                    ->placeholder('نام تامین کننده را وارد کنید')
+                                    ->searchable()
+                                    ->preload()
+                                    ->required(),
+
+                                Select::make('business_type')
+                                    ->label('نوع کسب و کار')
+                                    ->required()
+                                    ->options(BusinessTypes::labels()),
+
+                                TextInput::make('name')
                                     ->label('نام')
                                     ->required(),
-                                TextInput::make('last_name')
-                                    ->label('نام خانوادگی')
-                                    ->required(),
-                                TextInput::make('national_code')
-                                    ->label('کدملی')
-                                    ->required(),
+                            ])->columnSpanFull(),
+
+                        Grid::make()
+                            ->schema([
+                                FileUpload::make('logo')
+                                    ->label('لوگو')
+                                    ->image()
+                                    ->directory('businesses/logos'),
+                                FileUpload::make('cover_image')
+                                    ->label('کاور')
+                                    ->image()
+                                    ->directory('businesses/covers'),
                             ])->columnSpanFull(),
 
                         Grid::make(3)
                             ->schema([
-                                TextInput::make('father_name')
-                                    ->label('نام پدر')
-                                    ->default(null),
-                                DatePicker::make('birth_date')
-                                    ->jalali()
-                                    ->label('تاریخ تولد'),
-                                Select::make('gender')
-                                    ->label('جنسیت')
-                                    ->options(GenderType::labels()),
-                            ])->columnSpanFull(),
-
-                        Grid::make(3)
-                            ->schema([
-                                TextInput::make('mobile')
-                                    ->label('موبایل')
+                                TextInput::make('phone')
+                                    ->label('تلفن')
+                                    ->tel()
                                     ->required(),
-
                                 TextInput::make('email')
                                     ->label('ایمیل')
                                     ->email()
                                     ->default(null),
-
-                                TextInput::make('password')
-                                    ->label('رمز عبور')
-                                    ->password()
-                                    ->revealable()
-                                    ->minLength(6)
-                                    ->required(fn(string $context) => $context === 'create') // فقط موقع ساخت
-                                    ->dehydrated(fn($state) => filled($state)), // فقط وقتی چیزی وارد شده ذخیره کنه
+                                TextInput::make('website')
+                                    ->label('وب سایت')
+                                    ->url()
+                                    ->default(null),
                             ])->columnSpanFull(),
 
+                        Grid::make()
+                            ->schema([
+                                Textarea::make('description')
+                                    ->label('توضیحات')
+                                    ->default(null)
+                                    ->columnSpanFull(),
+                                Radio::make('activity_status')
+                                    ->label('وضعیت')
+                                    ->options(ActivityStatus::labels())
+                                    ->default(ActivityStatus::ACTIVE->value)
+                                    ->inline(),
+                            ])
+                    ])->columnSpanFull(),
 
+
+                Section::make('اطلاعات جغرافیایی')
+                    ->schema([
                         Grid::make(3)
                             ->schema([
                                 Select::make('province_id')
@@ -99,7 +118,7 @@ class ProviderForm
                                     ->required()
                                     ->disabled(fn(Get $get): bool => blank($get('province_id'))),
 
-                                TextInput::make('postal_code')
+                                TextInput::make('license_code')
                                     ->label('کد پستی')
                                     ->default(null),
                             ])->columnSpanFull(),
@@ -108,6 +127,43 @@ class ProviderForm
                             ->label('آدرس')
                             ->default(null)
                             ->columnSpanFull(),
+
+                        Grid::make()
+                            ->schema([
+                                TextInput::make('latitude')
+                                    ->numeric()
+                                    ->default(null),
+
+                                TextInput::make('longitude')
+                                    ->numeric()
+                                    ->default(null),
+                            ])
+                    ])->columnSpanFull(),
+
+                Section::make('اطلاعات بانکی')
+                    ->schema([
+                        Grid::make(4)
+                            ->schema([
+                                TextInput::make('bank_name')
+                                    ->label('نام بانک')
+                                    ->default(null),
+                                TextInput::make('bank_account_holder')
+                                    ->label('نام صاحب حساب')
+                                    ->default(null),
+                                TextInput::make('bank_card')
+                                    ->label('شماره کارت')
+                                    ->default(null),
+                                TextInput::make('bank_iban')
+                                    ->label('شماره شبا (بدون IR)')
+                                    ->default(null),
+
+                            ])
+                            ->columnSpanFull(),
+
+                    ])->columnSpanFull(),
+
+                Section::make('اطلاعات احراز هویت')
+                    ->schema([
 
                         Radio::make('verification_status')
                             ->label('احراز سامانه')
@@ -141,39 +197,27 @@ class ProviderForm
                             ->required(fn(Get $get) => in_array($get('verification_status'), [
                                 VerificationStatuses::REJECTED->value,
                                 VerificationStatuses::SUSPENDED->value,
-                            ]))
-                    ]),
+                            ])),
+                    ])->columnSpanFull(),
 
-                Section::make('مدارک')
+                Section::make('تنظیمات')
                     ->schema([
-                        Repeater::make('documents')
-                            ->relationship()
-                            ->label('مدارک هویتی')
+                        Repeater::make('settings')
+                            ->label('تنظیمات کسب و کار')
                             ->schema([
-                                Select::make('type')
-                                    ->label('نوع مدرک')
-                                    ->options(VerificationDocumentType::labels())
+                                TextInput::make('title')
+                                    ->label('عنوان')
                                     ->required(),
 
-                                Select::make('verification_status ')
-                                    ->label('وضعیت')
-                                    ->options(VerificationStatuses::labels())
-                                    ->default(VerificationStatuses::PENDING->value),
-
-                                FileUpload::make('image')
-                                    ->label('تصویر')
-                                    ->image()
-                                    ->directory('provider/documents')
+                                TextInput::make('value')
+                                    ->label('مقدار')
                                     ->required(),
-
 
                             ])
-                            ->columns(3)
-                            ->addActionLabel('افزودن مدرک')
+                            ->addActionLabel('افزودن آیتم')
+                            ->columns(2)
                             ->collapsible(),
-                    ]),
+                    ])->columnSpanFull()
             ]);
-
-
     }
 }

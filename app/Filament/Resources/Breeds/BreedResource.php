@@ -24,7 +24,7 @@ class BreedResource extends Resource
 
     protected static ?string $modelLabel = 'نژاد حیوان';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 6;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::RectangleGroup;
 

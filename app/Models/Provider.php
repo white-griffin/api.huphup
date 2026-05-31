@@ -23,4 +23,12 @@ class Provider extends Model
     {
         return $this->belongsTo(City::class);
     }
+
+    public function getNameAttribute(): string
+    {
+        $full = trim(($this->first_name ?? '').' '.($this->last_name ?? ''));
+        return $full !== ''
+            ? $full
+            : ($this->mobile ?? $this->email ?? 'تامین کننده');
+    }
 }

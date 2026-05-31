@@ -24,7 +24,7 @@ class ServiceResource extends Resource
 
     protected static ?string $modelLabel = 'خدمت';
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 8;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::ClipboardDocumentList;
 

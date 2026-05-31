@@ -33,6 +33,7 @@ return new class extends Migration
             $table->string('website')->nullable();
 
             //Address
+            $table->foreignId('province_id')->constrained('provinces');
             $table->foreignId('city_id')->constrained('cities');
             $table->text('address');
             $table->string('postal_code', 10)->nullable();
