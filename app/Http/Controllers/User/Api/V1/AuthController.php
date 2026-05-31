@@ -65,39 +65,41 @@ class AuthController extends BaseController
      */
     public function checkCode(Request $request)
     {
-        $request->validate([
-            'mobile' => 'required',
+        $validation = $request->validate([
+            'mobile'   => 'required',
             'otp_code' => 'required',
-        ],[
-            'otp_code.required' => 'وارد کردن کد تایید الزامی است ',
+        ], [
+            'mobile.required'   => 'وارد کردن شماره موبایل الزامی است',
+            'otp_code.required' => 'وارد کردن کد تایید الزامی است',
         ]);
+
+
+        $user = User::query()->where('mobile', $validation['mobile'])->first();
+
+        if (! $user) {
+            return ApiResponse::Fail(Response::HTTP_NOT_FOUND, 'کاربری با این شماره یافت نشد');
+        }
+
+        if ($user->otp_code != $validation['otp_code']) {
+            return ApiResponse::Fail(Response::HTTP_UNAUTHORIZED, 'کد تایید صحیح نیست');
+        }
 
         DB::beginTransaction();
         try {
+            $user->activity_status = ActivityStatus::ACTIVE->value;
+            $user->save();
+            $user->tokens()->delete();
 
-            $user = User::query()->where('mobile',request('mobile'))->first();
+            DB::commit();
 
-            if ($user->otp_code == request('otp_code')){
-                $user->activity_status = ActivityStatus::ACTIVE->value;
-                $user->save();
-                $user->tokens()->delete();
-
-                DB::commit();
-                return ApiResponse::Success('با موفقیت وارد شدید',
-                    [
-                        'token' => $user->createToken("API TOKEN")->plainTextToken,
-                    ]);
-
-
-            }else{
-                DB::rollBack();
-                return ApiResponse::Fail(Response::HTTP_UNAUTHORIZED,'کد تایید صحیح نیست');
-
-            }
-        }catch (\Exception $exception){
+            return ApiResponse::Success('با موفقیت وارد شدید', [
+                'token' => $user->createToken('API TOKEN')->plainTextToken,
+            ]);
+        } catch (\Exception $exception) {
             DB::rollBack();
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,$exception->getMessage());
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
         }
+
     }
 
     /**
