@@ -10,6 +10,7 @@ use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends BaseController
 {
