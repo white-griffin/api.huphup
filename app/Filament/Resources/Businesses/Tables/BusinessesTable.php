@@ -21,6 +21,9 @@ class BusinessesTable
     {
         return $table
             ->columns([
+                ImageColumn::make('logo')
+                    ->label('لوگو')
+                    ->circular(),
                 TextColumn::make('provider.fullName')
                     ->label('تامین کننده')
                     ->sortable(),
@@ -35,9 +38,7 @@ class BusinessesTable
                     ->label('کد ثبتی')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                ImageColumn::make('logo')
-                    ->label('لوگو')
-                    ->circular(),
+
                 TextColumn::make('phone')
                     ->label('تلفن')
                     ->searchable(),
@@ -82,7 +83,7 @@ class BusinessesTable
             ])
             ->recordActions([
                 EditAction::make(),
-            ])
+            ])->recordActionsColumnLabel('عملیات')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

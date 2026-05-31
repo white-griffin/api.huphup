@@ -34,7 +34,7 @@ class BusinessForm
                                 Select::make('provider_id')
                                     ->label('تامین کننده')
                                     ->relationship('provider', 'first_name')
-                                    ->getOptionLabelFromRecordUsing(fn($record) => $record->name)
+                                    ->getOptionLabelFromRecordUsing(fn($record) => $record->fullName)
                                     ->placeholder('نام تامین کننده را وارد کنید')
                                     ->searchable()
                                     ->preload()
@@ -74,7 +74,6 @@ class BusinessForm
                                     ->default(null),
                                 TextInput::make('website')
                                     ->label('وب سایت')
-                                    ->url()
                                     ->default(null),
                             ])->columnSpanFull(),
 

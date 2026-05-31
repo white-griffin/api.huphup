@@ -11,6 +11,9 @@ class Business extends Model
     use SoftDeletes;
     protected $guarded = ['id'];
 
+    protected $casts =[
+        'settings' => 'array',
+    ];
     public function province(): BelongsTo
     {
         return $this->belongsTo(Province::class);
