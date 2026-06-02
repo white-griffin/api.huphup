@@ -71,7 +71,7 @@ class AuthController extends BaseController
             'mobile.required' => 'وارد کردن شماره موبایل الزامی است',
             'mobile.regex' => 'فرمت شماره تلفن صحیح نیست',
             'otp_code.required' => 'وارد کردن کد تایید الزامی است',
-            'otp_code.digits' => 'کد تایید باید ۵ رقمی باشد',
+            'otp_code.digits' => 'کد تایید باید 5 رقمی باشد',
         ]);
 
 
@@ -113,7 +113,8 @@ class AuthController extends BaseController
     {
 
         try {
-            $templateId = 123456; // شناسه الگو
+            $lineNumber = "9982008664";
+            $templateId = 595494; // شناسه الگو
             $parameters = [
                 [
                     "name" => "CODE",

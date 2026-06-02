@@ -19,6 +19,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Hash;
 
 class ProviderForm
 {
@@ -69,10 +70,14 @@ class ProviderForm
                                 TextInput::make('password')
                                     ->label('رمز عبور')
                                     ->password()
-                                    ->revealable()
-                                    ->minLength(6)
-                                    ->required(fn(string $context) => $context === 'create') // فقط موقع ساخت
-                                    ->dehydrated(fn($state) => filled($state)), // فقط وقتی چیزی وارد شده ذخیره کنه
+                                    ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                                    ->dehydrated(fn ($state) => filled($state))
+                                    ->required(fn (string $context): bool => $context === 'create')
+                                    ->maxLength(255)
+                                    ->afterStateHydrated(function ($component) {
+                                        $component->state(null);
+                                    })
+
                             ])->columnSpanFull(),
 
 

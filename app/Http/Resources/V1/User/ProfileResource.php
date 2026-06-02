@@ -22,7 +22,7 @@ class ProfileResource extends JsonResource
             'email' => $this->email,
             'mobile' => $this->mobile,
             'avatar' => $this->avatar_url,
-            'birth_date' => Verta::instance($this->birth_date)->format('Y/m/d'),
+            'birth_date' => $this->birth_date,
             'national_code' => $this->national_code,
             'gender_type' => $this->gender_type,
             'bio' => $this->bio,

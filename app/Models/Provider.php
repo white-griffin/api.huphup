@@ -4,9 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Provider extends Model
+class Provider extends Authenticatable
 {
+    use HasApiTokens;
     protected $guarded = ['id'];
 
     public function documents()
