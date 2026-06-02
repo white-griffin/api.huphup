@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Businesses;
 use App\Filament\Resources\Businesses\Pages\CreateBusiness;
 use App\Filament\Resources\Businesses\Pages\EditBusiness;
 use App\Filament\Resources\Businesses\Pages\ListBusinesses;
+use App\Filament\Resources\Businesses\RelationManagers\ServicesRelationManager;
 use App\Filament\Resources\Businesses\Schemas\BusinessForm;
 use App\Filament\Resources\Businesses\Tables\BusinessesTable;
 use App\Models\Business;
@@ -43,7 +44,7 @@ class BusinessResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ServicesRelationManager::class,
         ];
     }
 

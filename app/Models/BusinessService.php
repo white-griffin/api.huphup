@@ -2,9 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class BusinessService extends Model
+class BusinessService extends Pivot
 {
-    //
+    protected $guarded =['id'];
+
+    protected $casts = [
+        'settings' => 'array',
+    ];
 }

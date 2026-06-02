@@ -89,7 +89,9 @@ class BusinessForm
                                     ->default(ActivityStatus::ACTIVE->value)
                                     ->inline(),
                             ])
-                    ])->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->columnSpanFull(),
 
 
                 Section::make('اطلاعات جغرافیایی')
@@ -137,7 +139,9 @@ class BusinessForm
                                     ->numeric()
                                     ->default(null),
                             ])
-                    ])->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->columnSpanFull(),
 
                 Section::make('اطلاعات بانکی')
                     ->schema([
@@ -159,7 +163,9 @@ class BusinessForm
                             ])
                             ->columnSpanFull(),
 
-                    ])->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->columnSpanFull(),
 
                 Section::make('اطلاعات احراز هویت')
                     ->schema([
@@ -197,7 +203,9 @@ class BusinessForm
                                 VerificationStatuses::REJECTED->value,
                                 VerificationStatuses::SUSPENDED->value,
                             ])),
-                    ])->columnSpanFull(),
+                    ])
+                    ->collapsed()
+                    ->columnSpanFull(),
 
                 Section::make('تنظیمات')
                     ->schema([
@@ -216,7 +224,9 @@ class BusinessForm
                             ->addActionLabel('افزودن آیتم')
                             ->columns(2)
                             ->collapsible(),
-                    ])->columnSpanFull()
+                    ])
+                    ->collapsed()
+                    ->columnSpanFull()
             ]);
     }
 }
