@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\User\Api\V1;
 
+use App\Enums\GenderType;
 use App\Helpers\Api\ApiResponse;
-use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\PetResource;
 use App\Models\Pet;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PetController extends BaseController
 {
@@ -54,11 +55,13 @@ class PetController extends BaseController
      */
     public function storePet()
     {
+        $data = $this->petData();
+
         DB::beginTransaction();
         try {
             $user = auth()->user();
 
-            $user->pets()->create($this->petData());
+            $user->pets()->create($data);
             DB::commit();
 
             return ApiResponse::Success('عملیات موفق');
@@ -76,10 +79,11 @@ class PetController extends BaseController
      */
     public function updatePet(Pet $pet)
     {
+        $data = $this->petData($pet);
 
         DB::beginTransaction();
         try {
-            $pet->update($this->petData($pet));
+            $pet->update($data);
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
         }catch (\Exception $e) {
@@ -98,18 +102,44 @@ class PetController extends BaseController
     private function petData($pet = null)
     {
         $media = app(MediaService::class);
-        $data =  array_filter(
-            request()->only([
-                'species_id',
-                'breed_id',
-                'name',
-                'gender_type',
-                'weight',
-                'color',
-                'medical_records',
-                'setting',
-                'bio'
-            ]),
+        $required = $pet ? 'sometimes' : 'required';
+        $speciesId = request('species_id', $pet?->species_id);
+
+        $data = request()->validate([
+            'species_id' => [$required, 'integer', 'exists:species,id'],
+            'breed_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('breeds', 'id')->where(fn ($query) => $query->where('species_id', $speciesId)),
+            ],
+            'name' => [$required, 'string', 'max:100'],
+            'gender_type' => ['nullable', Rule::in(array_map(fn (GenderType $type) => $type->value, GenderType::cases()))],
+            'birth_date' => ['nullable', 'date'],
+            'weight' => ['nullable', 'numeric', 'between:0,999.99'],
+            'color' => ['nullable', 'string', 'max:50'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'medical_records' => ['nullable', 'array'],
+            'settings' => ['nullable', 'array'],
+            'bio' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'species_id.required' => 'گونه حیوان را انتخاب کنید',
+            'species_id.exists' => 'گونه انتخاب شده معتبر نیست',
+            'breed_id.exists' => 'نژاد انتخاب شده معتبر نیست',
+            'name.required' => 'نام حیوان را وارد کنید',
+            'gender_type.in' => 'جنسیت انتخاب شده معتبر نیست',
+            'birth_date.date' => 'تاریخ تولد معتبر نیست',
+            'weight.numeric' => 'وزن باید عددی باشد',
+            'weight.between' => 'وزن وارد شده معتبر نیست',
+            'color.max' => 'رنگ حیوان بیش از حد مجاز است',
+            'avatar.image' => 'فایل آواتار باید تصویر باشد',
+            'avatar.mimes' => 'فرمت تصویر آواتار معتبر نیست',
+            'avatar.max' => 'حجم تصویر آواتار نباید بیشتر از ۲ مگابایت باشد',
+            'medical_records.array' => 'سوابق پزشکی باید آرایه باشد',
+            'settings.array' => 'تنظیمات باید آرایه باشد',
+        ]);
+
+        $data = array_filter(
+            $data,
             fn($value) => !is_null($value)
         );
 

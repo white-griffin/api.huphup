@@ -22,11 +22,10 @@ class AuthController extends BaseController
     public function login(Request $request)
     {
         $request->validate([
-            'mobile' => 'required|numeric|min:7',
+            'mobile' => ['required', 'string', 'regex:/^09\d{9}$/'],
         ],[
             'mobile.required' => 'شماره تماس را وارد کنید',
-            'mobile.min' => 'شماره تماس را کامل وارد کنید',
-            'mobile.numeric' => 'فرمت شماره تلفن صحیح نیست ',
+            'mobile.regex' => 'فرمت شماره تلفن صحیح نیست',
         ]);
 
         try {
@@ -66,11 +65,13 @@ class AuthController extends BaseController
     public function checkCode(Request $request)
     {
         $validation = $request->validate([
-            'mobile'   => 'required',
-            'otp_code' => 'required',
+            'mobile' => ['required', 'string', 'regex:/^09\d{9}$/'],
+            'otp_code' => ['required', 'digits:5'],
         ], [
-            'mobile.required'   => 'وارد کردن شماره موبایل الزامی است',
+            'mobile.required' => 'وارد کردن شماره موبایل الزامی است',
+            'mobile.regex' => 'فرمت شماره تلفن صحیح نیست',
             'otp_code.required' => 'وارد کردن کد تایید الزامی است',
+            'otp_code.digits' => 'کد تایید باید ۵ رقمی باشد',
         ]);
 
 
