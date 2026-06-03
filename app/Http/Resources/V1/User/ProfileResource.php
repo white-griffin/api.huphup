@@ -27,6 +27,8 @@ class ProfileResource extends JsonResource
             'gender_type' => $this->gender_type,
             'bio' => $this->bio,
             'addresses' => AddressResource::collection($this->addresses),
+            'longitude' => $this->longitude,
+            'latitude' => $this->latitude
         ];
     }
 }

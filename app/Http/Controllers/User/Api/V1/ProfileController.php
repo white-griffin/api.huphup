@@ -137,6 +137,8 @@ class ProfileController extends BaseController
             'gender_type' => ['nullable', Rule::in(array_map(fn (GenderType $type) => $type->value, GenderType::cases()))],
             'bio' => ['nullable', 'string', 'max:1000'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ], [
             'email.email' => 'فرمت ایمیل صحیح نیست',
             'email.unique' => 'این ایمیل قبلا ثبت شده است',
@@ -146,6 +148,8 @@ class ProfileController extends BaseController
             'avatar.image' => 'فایل آواتار باید تصویر باشد',
             'avatar.mimes' => 'فرمت تصویر آواتار معتبر نیست',
             'avatar.max' => 'حجم تصویر آواتار نباید بیشتر از ۲ مگابایت باشد',
+            'latitude.between' => 'عرض جغرافیایی معتبر نیست',
+            'longitude.between' => 'طول جغرافیایی معتبر نیست',
         ]);
 
         $data = array_filter(

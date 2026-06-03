@@ -30,6 +30,8 @@ return new class extends Migration
             $table->date('birth_date')->nullable();
             $table->string('national_code')->nullable();
             $table->text('bio')->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
 
             $table->tinyInteger('gender_type')
                 ->default(GenderType::UNKNOWN->value)
@@ -42,6 +44,7 @@ return new class extends Migration
             $table->softDeletes();
             $table->rememberToken();
             $table->timestamps();
+            $table->index(['latitude', 'longitude']);
         });
 
         Schema::create('sessions', function (Blueprint $table) {
