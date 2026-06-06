@@ -13,7 +13,7 @@ class CategoryResource extends JsonResource
     {
         return [
             'parent' => self::make($this->parent),
-            'children' => self::collection($this->collection),
+            'children' => self::collection($this->children),
             'name' => $this->name,
             'slug' => $this->slug,
             'image' => $this->image_url,

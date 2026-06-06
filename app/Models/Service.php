@@ -9,6 +9,12 @@ class Service extends Model
 {
     protected $guarded = ['id'];
 
+    public function scopeForBusiness($query)
+    {
+        return $query->whereHas('businesses', function ($q) {
+            $q->where('business_id', business()->id);
+        });
+    }
 
     public function businesses(): BelongsToMany
     {

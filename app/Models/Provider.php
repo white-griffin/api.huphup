@@ -34,4 +34,9 @@ class Provider extends Authenticatable
             ? $full
             : ($this->mobile ?? $this->email ?? 'تامین کننده');
     }
+
+    public function businesses()
+    {
+        return $this->hasMany(Business::class);
+    }
 }

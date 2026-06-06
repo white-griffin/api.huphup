@@ -27,7 +27,7 @@ return new class extends Migration
                 ->comment('1 For Active , 2 For InActive');
 
             $table->unique(['business_id', 'service_id']);
-            $table->index(['service_id']);
+            $table->index(['service_id','business_id']);
             $table->timestamps();
         });
     }

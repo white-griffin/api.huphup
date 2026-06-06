@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BusinessScope;
+use App\Models\Traits\BelongsToBusiness;
+use App\Support\SlugService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,10 +13,27 @@ use Illuminate\Support\Facades\Storage;
 
 class Category extends Model
 {
+    use BelongsToBusiness;
     protected $guarded =['id'];
 
     protected $appends = ['image_url'];
 
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+    protected static function booted(): void
+    {
+        static::saving(function ($category) {
+
+            if (!$category->slug && $category->name) {
+                $category->slug = app(SlugService::class)
+                    ->generate($category);
+            }
+
+        });
+    }
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BusinessScope;
+use App\Models\Traits\BelongsToBusiness;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
+    use BelongsToBusiness;
+
     protected $guarded = ['id'];
 
     protected function casts(): array
