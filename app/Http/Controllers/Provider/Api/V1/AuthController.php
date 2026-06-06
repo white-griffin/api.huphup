@@ -165,7 +165,7 @@ class AuthController extends BaseController
     public function logOut()
     {
         try {
-            request()->user()->tokens()->delete();
+            request()->user('provider')->tokens()->delete();
             return ApiResponse::Success('با موفقیت خارج شدید');
 
         } catch (\Exception $e) {

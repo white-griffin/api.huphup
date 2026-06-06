@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Business extends Model
 {
@@ -16,6 +17,24 @@ class Business extends Model
     protected $casts =[
         'settings' => 'array',
     ];
+
+    protected $appends = [
+        'logo_url','cover_url'
+    ];
+
+    public function getLogoUrlAttribute()
+    {
+        return $this->logo
+            ? Storage::disk('public')->url($this->logo)
+            : null;
+    }
+
+    public function getCoverUrlAttribute()
+    {
+        return $this->cover_image
+            ? Storage::disk('public')->url($this->cover_image)
+            : null;
+    }
     public function province(): BelongsTo
     {
         return $this->belongsTo(Province::class);
