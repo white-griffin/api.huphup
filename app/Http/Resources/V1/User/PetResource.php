@@ -28,7 +28,7 @@ class PetResource extends JsonResource
                 'name_fa' => $this->breed->name_fa,
             ],
             'name' => $this->name,
-            'gender_type' => GenderType::label($this->gender_type),
+            'gender_type' => $this->gender_type,
             'birth_date' => $this->birth_date,
             'weight' => $this->weight,
             'color' => $this->color,

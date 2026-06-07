@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Scopes\BusinessScope;
 use App\Models\Traits\BelongsToBusiness;
+use App\Support\SlugService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -25,6 +26,21 @@ class Product extends Model
         ];
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+    protected static function booted(): void
+    {
+        static::saving(function ($product) {
+
+            if (!$product->slug && $product->name) {
+                $product->slug = app(SlugService::class)
+                    ->generate($product);
+            }
+
+        });
+    }
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);

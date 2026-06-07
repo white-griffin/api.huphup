@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('name');
             $table->boolean('is_primary')->default(false); // تصویر شاخص
             $table->integer('order')->default(0); // ترتیب نمایش
+
+            $table->index(['product_id','order']);
+            $table->unique(['product_id','is_primary']);
             $table->timestamps();
         });
     }

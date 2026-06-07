@@ -18,9 +18,7 @@ class CategoryController extends BaseController
     {
         try {
             $categories = CategoryResource::collection(
-                Category::query()
-                    ->where('activity_status', ActivityStatus::ACTIVE->value)
-                    ->paginate()
+                Category::query()->paginate()
             );
             return ApiResponse::success('عملیات موفق', $categories);
         } catch (\Exception $exception) {
