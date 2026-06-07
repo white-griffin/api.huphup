@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Storage;
 
 class Category extends Model
 {
-    use BelongsToBusiness;
     protected $guarded =['id'];
 
     protected $appends = ['image_url'];
@@ -33,10 +32,6 @@ class Category extends Model
             }
 
         });
-    }
-    public function business(): BelongsTo
-    {
-        return $this->belongsTo(Business::class);
     }
 
     public function parent(): BelongsTo

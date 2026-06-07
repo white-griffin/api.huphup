@@ -58,10 +58,6 @@ class Business extends Model
             ->withTimestamps();
     }
 
-    public function categories(): HasMany
-    {
-        return $this->hasMany(Category::class);
-    }
 
     public function products(): HasMany
     {

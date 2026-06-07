@@ -23,9 +23,6 @@ class CategoryController extends Controller
                     ->when(request()->filled('type'),
                         fn($q) => $q->where('type', request()->query('type'))
                     )
-                    ->when(request()->filled('business'),
-                        fn($q) => $q->where('business_id', request()->query('business'))
-                    )
                     ->with('children')
                     ->get()
             );
