@@ -6,7 +6,7 @@ use App\Enums\ActivityStatus;
 use App\Enums\PublicationStatus;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\V1\User\CategoryResource;
+use App\Http\Resources\V1\Provider\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;

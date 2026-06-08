@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Provider\Api\V1;
 
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\V1\User\ProductResource;
+use App\Http\Resources\V1\Provider\ProductResource;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\MediaService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -49,6 +51,8 @@ class ProductController extends Controller
                     $this->storeProductImages($product);
                 }
 
+                $this->setCategories($product, $data['categories']);
+
             });
             return ApiResponse::success('عملیات موفق');
         }catch (\Exception $exception){
@@ -69,6 +73,8 @@ class ProductController extends Controller
                 if (request()->hasFile('images')) {
                     $this->storeProductImages($product);
                 }
+
+                $this->setCategories($product, $data['categories']);
             });
             return ApiResponse::success('عملیات موفق');
         } catch (\Exception $exception) {
@@ -82,10 +88,19 @@ class ProductController extends Controller
 
         $data = request()->validate([
             'name' => [$required, 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
             'price' => [$required, 'numeric'],
+            'discount_price' => ['nullable', 'numeric'],
             'stock' => [$required, 'numeric'],
+            'sku' => ['nullable', 'string', 'max:255'],
+            'attributes' => ['nullable', 'array'],
             'images' => ['sometimes','array'],
-            'images.*' => ['image','max:2048']
+            'images.*' => ['image','max:2048'],
+            'categories' => ['required','array'],
+            'categories.*' => [
+                'required',
+                Rule::exists('categories','slug')
+            ]
         ],[
             'name.required' => 'نام محصول را وارد کنید',
             'name.max' => 'نام محصول طولانی تر از حد مجاز است',
@@ -93,12 +108,23 @@ class ProductController extends Controller
             'price.numeric' => 'فرمت قیمت محصول باید عدد باشد',
             'stock.required' => 'تعداد موجودی را وارد کنید',
             'stock.numeric' => 'فرمت موجودی باید عدد باشد',
+            'categories.required' => 'دسته بندی ها را انتخاب کنید',
         ]);
 
         return array_filter(
             $data,
             fn($value) => !is_null($value)
         );
+    }
+
+    private function setCategories($product, $categories)
+    {
+        $categoryIds = Category::query()
+            ->whereIn('slug', $categories)
+            ->pluck('id')
+            ->toArray();
+
+        $product->categories()->sync($categoryIds);
     }
 
     /* {{ --- Image Controll Section --- }} */
@@ -117,7 +143,7 @@ class ProductController extends Controller
 
         foreach (request()->file('images') as $index => $image) {
 
-            $path = $media->store($image, 'product/images');
+            $path = $media->upload($image, 'product/images');
 
             $images[] = [
                 'name' => $path,
@@ -146,7 +172,7 @@ class ProductController extends Controller
 
                 foreach (request()->file('images') as $index => $file) {
 
-                    $path = $media->store($file, 'product/images');
+                    $path = $media->upload($file, 'product/images');
 
                     $product->images()->create([
                         'name' => $path,
@@ -205,7 +231,6 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
         }
     }
-
     public function reorder()
     {
         request()->validate([

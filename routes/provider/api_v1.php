@@ -15,6 +15,9 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
     Route::post('/{product}', 'update');
 
     Route::prefix('{product}/images')->group(function () {
-
+        Route::post('/', 'uploadImages');
+        Route::delete('/{image}', 'deleteImage');
+        Route::post('/set-primary/{image}', 'setPrimary');
+        Route::post('/re-order', 'reorder');
     });
 });

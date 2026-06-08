@@ -4,13 +4,9 @@ namespace App\Http\Controllers\Provider\Api\V1;
 
 use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
-use App\Http\Resources\V1\User\CategoryResource;
+use App\Http\Resources\V1\Provider\CategoryResource;
 use App\Models\Category;
-use App\Services\MediaService;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class CategoryController extends BaseController
 {

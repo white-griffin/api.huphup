@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\V1\User;
+namespace App\Http\Resources\V1\Provider;
 
 use App\Enums\CategoryTypes;
 use Illuminate\Http\Request;

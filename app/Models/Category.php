@@ -44,7 +44,7 @@ class Category extends Model
 
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'category_product')->withTimestamps();
+        return $this->belongsToMany(Product::class, 'category_products')->withTimestamps();
     }
 
     public function getImageUrlAttribute()
