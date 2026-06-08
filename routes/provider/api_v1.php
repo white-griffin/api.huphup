@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Provider\Api\V1\BrandController;
 use App\Http\Controllers\Provider\Api\V1\CategoryController;
 use App\Http\Controllers\Provider\Api\V1\ProductController;
 
@@ -20,4 +21,9 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
         Route::post('/set-primary/{image}', 'setPrimary');
         Route::post('/re-order', 'reorder');
     });
+});
+
+
+Route::controller(BrandController::class)->prefix('brands')->group(function () {
+    Route::get('/', 'index');
 });

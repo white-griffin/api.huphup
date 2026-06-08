@@ -15,6 +15,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
             $table->foreignId('business_id')->constrained()->cascadeOnDelete(); // متعلق به کدام کسب‌وکار
             $table->string('name'); // نام محصول
             $table->string('slug'); // شناسه URL
