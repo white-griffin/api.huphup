@@ -85,8 +85,8 @@ class ProductController extends Controller
     private function productData($product = null)
     {
         $required = $product ? 'sometimes' : 'required';
-
         $data = request()->validate([
+            'brand_id' => ['required'],
             'name' => [$required, 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => [$required, 'numeric'],

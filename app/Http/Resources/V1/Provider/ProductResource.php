@@ -21,7 +21,8 @@ class ProductResource extends JsonResource
             'sku' => $this->sku,
             'attributes' => $this->attributes,
             'images' => ProductImageResource::collection($this->images),
-            'categories' => CategoryResource::collection($this->categories)
+            'categories' => CategoryResource::collection($this->categories),
+            'brand' => BrandResource::make($this->brand)
         ];
     }
 }
