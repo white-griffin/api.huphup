@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Attribute;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -47,6 +48,30 @@ class User extends Authenticatable
         ];
     }
 
+    protected function firstName(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => is_string($value) ? trim($value) : $value
+        );
+    }
+
+    protected function lastName(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => is_string($value) ? trim($value) : $value
+        );
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => is_string($value)
+                ? strtolower(trim($value))
+                : $value
+        );
+    }
+
+
     public function getAvatarUrlAttribute()
     {
         return $this->avatar
@@ -68,6 +93,7 @@ class User extends Authenticatable
     {
         return $this->hasMany(Pet::class);
     }
+
 
 
 

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;
 use Ipe\Sdk\Facades\SmsIr;
 
@@ -38,14 +39,16 @@ class AuthController extends BaseController
                 ]
             );
 
-            $otp_code = mt_rand(10000, 99999);
+            $otp_code = Env::get('APP_ENV') == 'production' ? rand(100000, 999999) : '111111';
             $user->update(['otp_code' => $otp_code]);
             $user->tokens()->delete();
-            $sendOtp = $this->sendOtp($user->mobile, $otp_code);
-            if ($sendOtp['code'] != 1){
+            if (Env::get('APP_ENV') == 'production') {
+                $sendOtp = $this->sendOtp($user->mobile, $otp_code);
+                if ($sendOtp['code'] != 1){
 
-                return ApiResponse::Fail(501,'خطا در ارسال کد'
-                    ,$sendOtp);
+                    return ApiResponse::Fail(501,'خطا در ارسال کد'
+                        ,$sendOtp);
+                }
             }
 
             return ApiResponse::Success('رمز ارسال شد');
@@ -66,12 +69,12 @@ class AuthController extends BaseController
     {
         $validation = $request->validate([
             'mobile' => ['required', 'string', 'regex:/^09\d{9}$/'],
-            'otp_code' => ['required', 'digits:5'],
+            'otp_code' => ['required', 'digits:6'],
         ], [
             'mobile.required' => 'وارد کردن شماره موبایل الزامی است',
             'mobile.regex' => 'فرمت شماره تلفن صحیح نیست',
             'otp_code.required' => 'وارد کردن کد تایید الزامی است',
-            'otp_code.digits' => 'کد تایید باید 5 رقمی باشد',
+            'otp_code.digits' => 'کد تایید باید 6 رقمی باشد',
         ]);
 
 
