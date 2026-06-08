@@ -12,8 +12,16 @@ class CategoryResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'parent' => self::make($this->parent),
-            'children' => self::collection($this->children),
+            'parent' => $this->whenLoaded('parent', function () {
+                return [
+                    'name' => $this->parent->name,
+                    'slug' => $this->parent->slug,
+                ];
+            }),
+
+            'children' => CategoryResource::collection(
+                $this->whenLoaded('children')
+            ),
             'name' => $this->name,
             'slug' => $this->slug,
             'image' => $this->image_url,

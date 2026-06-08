@@ -20,6 +20,7 @@ class CategoryController extends BaseController
             $categories = CategoryResource::collection(
                 Category::query()
                     ->where('activity_status',ActivityStatus::ACTIVE->value)
+                    ->with(['children','parent'])
                     ->paginate()
             );
             return ApiResponse::success('عملیات موفق', $categories);
