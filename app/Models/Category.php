@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Scopes\BusinessScope;
-use App\Models\Traits\BelongsToBusiness;
 use App\Support\SlugService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

@@ -3,28 +3,44 @@
 namespace App\Support;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class SlugService
 {
+
+
     public function generate(Model $model, string $field = 'name'): string
     {
         $base = $this->slugify($model->{$field});
         $slug = $base;
         $i = 1;
 
+        $query = $model->newQuery()
+            ->where('slug', $slug);
+
+        if (Schema::hasColumn($model->getTable(), 'business_id')) {
+            $query->where('business_id', business()->id);
+        }
+
         while (
-        $model->newQuery()
-            ->where('business_id', business()->id)
-            ->where('slug', $slug)
-            ->when($model->exists, fn ($q) => $q->where('id', '!=', $model->id))
+        $query->when($model->exists, fn ($q) => $q->where('id', '!=', $model->id))
             ->exists()
         ) {
+
             $slug = "{$base}-{$i}";
             $i++;
+
+            $query = $model->newQuery()
+                ->where('slug', $slug);
+
+            if (Schema::hasColumn($model->getTable(), 'business_id')) {
+                $query->where('business_id', business()->id);
+            }
         }
 
         return $slug;
     }
+
 
     private function slugify(string $text): string
     {

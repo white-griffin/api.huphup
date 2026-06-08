@@ -29,10 +29,6 @@ return new class extends Migration
                 ->comment('1 For Active , 2 For InActive');
 
             $table->timestamps();
-
-            $table->unique(['business_id', 'slug']); // اسلاگ در هر کسب‌وکار یکتاست
-
-            $table->index('business_id');
         });
     }
 
