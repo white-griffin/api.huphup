@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('schedule_breaks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('business_schedule_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('schedule_id')->constrained('business_schedules')->cascadeOnDelete();
             $table->time('start_time');
             $table->time('end_time');
             $table->timestamps();

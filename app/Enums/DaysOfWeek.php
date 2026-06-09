@@ -7,13 +7,13 @@ use App\Enums\Contracts\EnumContractInterface;
 enum DaysOfWeek: string implements Contracts\EnumContractInterface
 {
 
-    case SATURDAY = '1';
-    case SUNDAY = '2';
-    case MONDAY = '3';
-    case TUESDAY = '4';
-    case WEDNESDAY = '5';
-    case THURSDAY = '6';
-    case FRIDAY = '7';
+    case SATURDAY = '0';
+    case SUNDAY = '1';
+    case MONDAY = '2';
+    case TUESDAY = '3';
+    case WEDNESDAY = '4';
+    case THURSDAY = '5';
+    case FRIDAY = '6';
 
     public static function labels(): array
     {

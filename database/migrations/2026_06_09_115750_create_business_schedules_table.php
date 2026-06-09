@@ -16,9 +16,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->tinyInteger('day_of_week'); // 1=Sat ... 7=Fri
-            $table->time('open_time');
-            $table->time('close_time');
+            $table->time('start_time');
+            $table->time('end_time');
             $table->unsignedInteger('slot_duration')->default(30); // دقیقه
+            $table->unsignedSmallInteger('capacity')->default(1); // parallel slots
             $table->tinyInteger('activity_status')
                 ->default(ActivityStatus::ACTIVE->value)
                 ->comment('1 For Active , 0 For InActive');
