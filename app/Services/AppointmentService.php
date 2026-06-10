@@ -7,6 +7,7 @@ use App\Enums\AppointmentStatuses;
 use App\Models\BusinessOffDay;
 use App\Models\BusinessSchedule;
 use App\Models\Appointment;
+use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -155,12 +156,13 @@ class AppointmentService
      * فیلتر کردن اسلات‌هایی که سرویس با مدت مشخص در آن جا می‌شود
      */
     protected function filterByServiceDuration(
-        Collection $slots,
-        int $serviceDuration,
-        int $businessId,
-        Carbon $date,
+        Collection       $slots,
+        int              $serviceDuration,
+        int              $businessId,
+        Carbon           $date,
         BusinessSchedule $schedule
-    ): Collection {
+    ): Collection
+    {
         return $slots->filter(function (Carbon $slot) use ($serviceDuration, $businessId, $date, $schedule) {
             $endTime = $slot->copy()->addMinutes($serviceDuration);
             $scheduleEnd = Carbon::parse($date->format('Y-m-d') . ' ' . $schedule->end_time);
@@ -205,7 +207,7 @@ class AppointmentService
         $start = Carbon::parse($startTime);
         $end = $start->copy()->addMinutes($serviceDuration);
         $date = $start->format('Y-m-d');
-        $dayOfWeek = $this->getIranianDayOfWeek($date);
+        $dayOfWeek = $this->getIranianDayOfWeek($start);
 
         // چک روز تعطیل
         if ($this->isOffDay($businessId, $start)) {
@@ -253,4 +255,33 @@ class AppointmentService
 
         return $overlappingCount < $schedule->capacity;
     }
+
+    public function book(int $businessId, Service $service, int $petId, int $userId, string $startsAt,string $note): Appointment
+    {
+        $startsAt = Carbon::parse($startsAt);
+        $endsAt = $startsAt->copy()->addMinutes($service->duration);
+
+        $slots = $this->getAvailableSlots($businessId, $service, $startsAt->toDateString());
+
+        abort_unless(
+            collect($slots)->contains('starts_at', $startsAt->toDateTimeString()),
+            422,
+            'زمان مورد نظر در دسترس نیست.'
+        );
+
+        return Appointment::query()
+            ->create([
+                'business_id' => $businessId,
+                'service_id' => $service->id,
+                'user_id' => $userId,
+                'pet_id' => $petId,
+                'start_time' => $startsAt,
+                'end_time' => $endsAt,
+                'service_duration' => $service->duration,
+                'service_price' => $service->price,
+                'note' => $note,
+                'status' => AppointmentStatuses::PENDING->value,
+            ]);
+    }
+
 }
