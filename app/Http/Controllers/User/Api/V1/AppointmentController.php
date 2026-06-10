@@ -8,8 +8,9 @@ use App\Http\Resources\V1\User\AppointmentResource;
 use App\Models\Appointment;
 use App\Models\Service;
 use App\Services\AppointmentService;
+use Carbon\Carbon;
 use Illuminate\Http\Response;
-use PHPUnit\Exception;
+use Illuminate\Validation\Rule;
 
 class AppointmentController extends Controller
 {
@@ -22,7 +23,8 @@ class AppointmentController extends Controller
                 Appointment::query()
                     ->where('user_id', auth()->id())
                     ->with(['service', 'pet', 'business'])
-                    ->orderByDesc('starts_at')
+                    ->orderByDesc('date')
+                    ->orderByDesc('start_time')
                     ->get()
             );
 
@@ -43,7 +45,12 @@ class AppointmentController extends Controller
             $service = Service::query()
                 ->findOrFail(request()->service_id);
 
-            $slots = $this->service->getAvailableSlots($businessId, $service, request()->date);
+            $businessService = $service->businesses()
+                ->where('business_id', $businessId)
+                ->firstOrFail()
+                ->pivot;
+
+            $slots = $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration);
 
             return ApiResponse::success('عملیات موفق',$slots);
 
@@ -67,7 +74,7 @@ class AppointmentController extends Controller
                 petId:      $data['pet_id'],
                 userId:     auth()->id(),
                 startsAt:   $data['starts_at'],
-                note: $data['note']
+                note: $data['note'] ?? null
             );
 
             return ApiResponse::Success('عملیات موفق',$appointment);
@@ -81,12 +88,17 @@ class AppointmentController extends Controller
     public function cancel(Appointment $appointment)
     {
         try {
+            abort_if($appointment->user_id !== auth()->id(), Response::HTTP_FORBIDDEN);
 
-            if ($appointment->starts_at->isPast()){
+            $appointmentStartsAt = Carbon::parse(
+                $appointment->date->toDateString() . ' ' . $appointment->start_time->format('H:i:s')
+            );
+
+            if ($appointmentStartsAt->isPast()){
                 return ApiResponse::Fail(Response::HTTP_UNPROCESSABLE_ENTITY,'تاریخ رزرو گذشته است');
             }
 
-            $appointment->update(['status' => 'cancelled']);
+            $appointment->update(['status' => \App\Enums\AppointmentStatuses::CANCELLED->value]);
             return ApiResponse::Success('عملیات موفق');
 
         }catch (\Exception $exception){
@@ -101,8 +113,12 @@ class AppointmentController extends Controller
         return request()->validate([
             'business_id' => 'required|exists:businesses,id',
             'service_id'  => 'required|exists:services,id',
-            'pet_id'      => 'required|exists:pets,id',
+            'pet_id'      => [
+                'required',
+                Rule::exists('pets', 'id')->where('user_id', auth()->id()),
+            ],
             'starts_at'   => 'required|date|after_or_equal:now',
+            'note'        => 'nullable|string',
         ]);
     }
 }

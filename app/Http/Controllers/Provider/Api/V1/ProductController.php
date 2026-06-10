@@ -179,6 +179,8 @@ class ProductController extends Controller
                         'order' => $lastOrder + $index + 1,
                         'is_primary' => !$hasPrimary && $index === 0
                     ]);
+
+                    $hasPrimary = true;
                 }
             });
 
@@ -220,9 +222,11 @@ class ProductController extends Controller
         try {
             DB::transaction(function () use ($product, $image) {
 
-                $product->images()->update(['is_primary' => false]);
-
                 $image->update(['is_primary' => true]);
+
+                $product->images()
+                    ->whereKeyNot($image->id)
+                    ->update(['is_primary' => false]);
             });
 
             return ApiResponse::success('تصویر شاخص تغییر کرد');

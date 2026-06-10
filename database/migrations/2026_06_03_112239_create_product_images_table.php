@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('order')->default(0); // ترتیب نمایش
 
             $table->index(['product_id','order']);
-            $table->unique(['product_id','is_primary']);
+            $table->index(['product_id','is_primary']);
             $table->timestamps();
         });
     }
