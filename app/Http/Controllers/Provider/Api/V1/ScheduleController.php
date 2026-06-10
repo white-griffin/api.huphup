@@ -13,11 +13,9 @@ class ScheduleController extends Controller
     public function index()
     {
         try {
-            $business = app('business');
 
             $businessSchedules = BusinessScheduleResource::collection(
                 BusinessSchedule::with('breaks')
-                    ->where('business_id', $business->id)
                     ->get()
             );
 

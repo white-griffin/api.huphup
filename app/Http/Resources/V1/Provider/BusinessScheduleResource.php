@@ -18,7 +18,8 @@ class BusinessScheduleResource extends JsonResource
             'end_time' => $this->end_time,
             'slot_duration' => $this->slot_duration,
             'capacity' => $this->capacity,
-            'activity_status' => $this->activity_status
+            'activity_status' => $this->activity_status,
+            'breaks' => ScheduleBreaksResource::collection($this->breaks)
         ];
     }
 }
