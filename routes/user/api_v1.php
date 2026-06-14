@@ -31,6 +31,7 @@ Route::controller(PetController::class)->prefix('pets')->middleware('auth:sanctu
         Route::post('/', 'storePet');
         Route::get('/{pet}', 'getPet');
         Route::post('/{pet}', 'updatePet');
+        Route::delete('/{pet}', 'deletePet');
     });
 
 

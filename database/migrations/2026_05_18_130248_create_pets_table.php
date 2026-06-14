@@ -29,6 +29,7 @@ return new class extends Migration
             $table->json('medical_records')->nullable();
             $table->json('settings')->nullable();
             $table->text('bio')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

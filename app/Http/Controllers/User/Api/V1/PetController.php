@@ -24,11 +24,11 @@ class PetController extends BaseController
         try {
             $pets = auth()->user()
                 ->pets()
-                ->with('species','breed')
+                ->with('species', 'breed')
                 ->get();
 
             return ApiResponse::success('عملیات موفق', PetResource::collection($pets));
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
@@ -43,7 +43,7 @@ class PetController extends BaseController
     {
         try {
             return ApiResponse::success('عملیات موفق', PetResource::make($pet));
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
@@ -65,7 +65,8 @@ class PetController extends BaseController
             DB::commit();
 
             return ApiResponse::Success('عملیات موفق');
-        }catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
         DB::rollBack();
         return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
     }
@@ -86,13 +87,26 @@ class PetController extends BaseController
             $pet->update($data);
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
 
     }
 
+    public function deletePet(Pet $pet)
+    {
+        try {
+            DB::beginTransaction();
+            $pet->delete();
+            DB::commit();
+            return ApiResponse::Success('عملیات موفق');
+        } catch (\Exception $e) {
+            report($e);
+            DB::rollBack();
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+        }
+    }
 
     /**
      * return Pet data to inner functions for CRUD
@@ -110,10 +124,10 @@ class PetController extends BaseController
             'breed_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('breeds', 'id')->where(fn ($query) => $query->where('species_id', $speciesId)),
+                Rule::exists('breeds', 'id')->where(fn($query) => $query->where('species_id', $speciesId)),
             ],
             'name' => [$required, 'string', 'max:100'],
-            'gender_type' => ['nullable', Rule::in(array_map(fn (GenderType $type) => $type->value, GenderType::cases()))],
+            'gender_type' => ['nullable', Rule::in(array_map(fn(GenderType $type) => $type->value, GenderType::cases()))],
             'birth_date' => ['nullable', 'date'],
             'weight' => ['nullable', 'numeric', 'between:0,999.99'],
             'color' => ['nullable', 'string', 'max:50'],
@@ -141,7 +155,7 @@ class PetController extends BaseController
             fn($value) => !is_null($value)
         );
 
-        if (request()->hasFile('avatar') ) {
+        if (request()->hasFile('avatar')) {
             $data['avatar'] = $media->replace(
                 $pet?->avatar,
                 request()->file('avatar'),
