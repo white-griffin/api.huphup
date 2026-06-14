@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\User\Api\V1\AppointmentController;
 use App\Http\Controllers\User\Api\V1\BreedsController;
+use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
+use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\PetController;
 use App\Http\Controllers\User\Api\V1\ProfileController;
 use App\Http\Controllers\User\Api\V1\SpeciesController;
@@ -40,3 +42,18 @@ Route::controller(AppointmentController::class)->prefix('appointments')
         Route::post('/', 'store');
         Route::get('/cancel/{appointment}', 'cancel');
     });
+
+Route::prefix('chat/conversations')->middleware('auth:sanctum')->group(function () {
+    Route::controller(ConversationController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{conversation}', 'show');
+        Route::delete('/{conversation}', 'leave');
+    });
+
+    Route::controller(MessageController::class)->group(function () {
+        Route::get('/{conversation}/messages', 'index');
+        Route::post('/{conversation}/messages', 'store');
+        Route::post('/{conversation}/read', 'markAsRead');
+    });
+});

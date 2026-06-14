@@ -12,6 +12,7 @@
         "hekmatinasser/verta": "^9.0",
         "ipe/smsir-php": "^1.0",
         "laravel/framework": "^11.0",
+        "laravel/reverb": "^1.10",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "mokhosh/filament-jalali": "^5.1",

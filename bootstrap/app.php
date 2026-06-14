@@ -37,7 +37,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'resolve.business' => ResolveBusiness::class,
         ]);
-    })
+    })->withBroadcasting(
+        channels: __DIR__ . '/../routes/channels.php',
+        attributes: ['middleware' => ['api', 'auth:sanctum']],
+    )
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
