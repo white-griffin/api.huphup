@@ -22,7 +22,7 @@ class MessageController extends Controller
 
             $messages = MessageResource::collection(
                 $conversation->messages()
-                    ->with('sender:id,name')
+                    ->with('sender:id,first_name,last_name,avatar')
                     ->latest()
                     ->paginate(50)
             );

@@ -20,6 +20,7 @@ return new class extends Migration
                 ->comment('1=Public,2=Private');
 
             $table->string('name')->nullable();          // فقط برای group
+            $table->string('image')->nullable();
             $table->unsignedBigInteger('created_by')->nullable(); // admin_id
             $table->boolean('activity_status')
                 ->default(ActivityStatus::ACTIVE->value)

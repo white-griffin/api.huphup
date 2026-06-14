@@ -15,8 +15,9 @@ class ConversationResource extends JsonResource
         $me = $request->user();
         return [
             'id' => $this->id,
+            'image' => $this->image_url,
             'type' => $this->type,
-            'name' => $this->type === AccessStatuses::PUBLIC->value
+            'name' => $this->type == AccessStatuses::PUBLIC->value
                 ? $this->name
                 : $this->getPrivateName($me),
             'activity_status' => $this->activity_status,

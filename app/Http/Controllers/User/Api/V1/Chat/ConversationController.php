@@ -26,7 +26,7 @@ class ConversationController extends Controller
                             ->where('sender_id', '!=', Auth::id());
                     }])
                     ->latest()
-                    ->paginate(20)
+                    ->cursorPaginate(20)
             );
 
             return ApiResponse::success('عملیات موفق', $conversations);
@@ -89,6 +89,46 @@ class ConversationController extends Controller
         }catch (\Exception $exception){
             report($exception);
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
+        }
+    }
+
+    // لیست گروه‌های عمومی (با وضعیت عضویت)
+    public function groups()
+    {
+        try {
+            $groups = Conversation::query()
+                ->where('type', AccessStatuses::PUBLIC->value)
+                ->withCount('participants')
+                ->with('creator:id,first_name,last_name')
+                ->paginate(15);
+
+            return ApiResponse::success('عملیات موفق',
+                ConversationResource::collection($groups)
+            );
+        } catch (\Exception $e) {
+            report($e);
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
+        }
+    }
+
+// عضویت در گروه
+    public function join(Conversation $conversation)
+    {
+        try {
+            if ($conversation->type != AccessStatuses::PUBLIC->value) {
+                return ApiResponse::Fail(Response::HTTP_BAD_REQUEST, 'این مکالمه گروهی نیست');
+            }
+
+            if ($conversation->participants()->where('user_id', Auth::id())->exists()) {
+                return ApiResponse::Fail(Response::HTTP_UNPROCESSABLE_ENTITY, 'قبلاً عضو شده‌اید');
+            }
+
+            $conversation->participants()->attach(Auth::id(), ['joined_at' => now()]);
+
+            return ApiResponse::success('با موفقیت عضو شدید');
+        } catch (\Exception $e) {
+            report($e);
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
 

@@ -118,8 +118,8 @@ class PetController extends BaseController
             'weight' => ['nullable', 'numeric', 'between:0,999.99'],
             'color' => ['nullable', 'string', 'max:50'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'medical_records' => ['nullable', 'array'],
-            'settings' => ['nullable', 'array'],
+            'medical_records' => ['nullable'],
+            'settings' => ['nullable'],
             'bio' => ['nullable', 'string', 'max:1000'],
         ], [
             'species_id.required' => 'گونه حیوان را انتخاب کنید',
@@ -134,8 +134,6 @@ class PetController extends BaseController
             'avatar.image' => 'فایل آواتار باید تصویر باشد',
             'avatar.mimes' => 'فرمت تصویر آواتار معتبر نیست',
             'avatar.max' => 'حجم تصویر آواتار نباید بیشتر از ۲ مگابایت باشد',
-            'medical_records.array' => 'سوابق پزشکی باید آرایه باشد',
-            'settings.array' => 'تنظیمات باید آرایه باشد',
         ]);
 
         $data = array_filter(

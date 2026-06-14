@@ -43,12 +43,19 @@ Route::controller(AppointmentController::class)->prefix('appointments')
         Route::get('/cancel/{appointment}', 'cancel');
     });
 
-Route::prefix('chat/conversations')->middleware('auth:sanctum')->group(function () {
+Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
     Route::controller(ConversationController::class)->group(function () {
-        Route::get('/', 'index');
-        Route::post('/', 'store');
-        Route::get('/{conversation}', 'show');
-        Route::delete('/{conversation}', 'leave');
+       Route::prefix('conversations')->group(function () {
+           Route::get('/', 'index');
+           Route::post('/', 'store');
+           Route::get('/{conversation}', 'show');
+           Route::delete('/{conversation}', 'leave');
+       });
+
+       Route::prefix('groups')->group(function () {
+           Route::get('/', 'groups');
+           Route::post('/{conversation}/join', 'join');
+       });
     });
 
     Route::controller(MessageController::class)->group(function () {
