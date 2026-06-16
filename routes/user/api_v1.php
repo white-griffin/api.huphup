@@ -5,6 +5,7 @@ use App\Http\Controllers\User\Api\V1\BreedsController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\PetController;
+use App\Http\Controllers\User\Api\V1\ProductController;
 use App\Http\Controllers\User\Api\V1\ProfileController;
 use App\Http\Controllers\User\Api\V1\SpeciesController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,11 @@ Route::controller(AppointmentController::class)->prefix('appointments')
         Route::post('/', 'store');
         Route::get('/cancel/{appointment}', 'cancel');
     });
+
+Route::controller(ProductController::class)->prefix('products')->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{product}', 'show');
+});
 
 Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
     Route::controller(ConversationController::class)->group(function () {

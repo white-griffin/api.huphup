@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User\Api\V1;
 
 use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
-use App\Http\Resources\V1\User\SpeciesResource;
+use App\Http\Resources\V1\User\Pets\SpeciesResource;
 use App\Models\Species;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;

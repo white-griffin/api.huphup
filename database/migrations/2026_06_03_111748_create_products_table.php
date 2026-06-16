@@ -25,7 +25,7 @@ return new class extends Migration
             $table->integer('stock')->default(0); // موجودی انبار
             $table->string('sku')->nullable(); // کد انبار
             $table->tinyInteger('publication_status')
-                ->default(PublicationStatus::DRAFT);
+                ->default(PublicationStatus::PENDING);
             $table->json('attributes')->nullable(); // ویژگی‌های سفارشی (رنگ، سایز و...)
             $table->timestamps();
 

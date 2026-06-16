@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Http\Resources\V1\Provider;
+namespace App\Http\Resources\V1\User\Products;
 
+
+use App\Http\Resources\V1\User\CategoryResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -20,7 +22,6 @@ class ProductResource extends JsonResource
             'discount_price' => $this->discount_price,
             'stock' => $this->stock,
             'sku' => $this->sku,
-            'publication_status' => $this->publication_status,
             'attributes' => $this->attributes,
             'images' => ProductImageResource::collection($this->images),
             'categories' => CategoryResource::collection($this->categories),

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\User\Api\V1;
 
 use App\Enums\GenderType;
 use App\Helpers\Api\ApiResponse;
-use App\Http\Resources\V1\User\PetResource;
+use App\Http\Resources\V1\User\Pets\PetResource;
 use App\Models\Pet;
 use App\Services\MediaService;
 use Illuminate\Http\JsonResponse;
