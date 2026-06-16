@@ -26,7 +26,6 @@ return new class extends Migration
             $table->string('sku')->nullable(); // کد انبار
             $table->tinyInteger('publication_status')
                 ->default(PublicationStatus::PENDING);
-            $table->json('attributes')->nullable(); // ویژگی‌های سفارشی (رنگ، سایز و...)
             $table->timestamps();
 
             $table->unique(['business_id', 'slug']); // اسلاگ یکتا در هر کسب‌وکار

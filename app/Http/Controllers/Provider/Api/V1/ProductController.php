@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Provider\Api\V1;
 
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\V1\Provider\ProductResource;
+use App\Http\Resources\V1\Provider\Products\ProductResource;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\MediaService;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -19,13 +20,15 @@ class ProductController extends Controller
     {
         try {
             $products = ProductResource::collection(
-                Product::query()->paginate()
+                Product::query()
+                    ->with(['activeVariations', 'images', 'categories', 'brand'])
+                    ->paginate()
             );
 
             return ApiResponse::success('عملیات موفق', $products);
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
         }
     }
     public function show(Product $product)
@@ -33,48 +36,64 @@ class ProductController extends Controller
         try {
             $product = ProductResource::make($product);
             return ApiResponse::Success('عملیات موفق', $product);
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
         }
     }
-
     public function store()
     {
         $data = $this->productData();
-        try {
-            DB::transaction(function () use ($data) {
 
-                $product = Product::query()->create($data);
+        $variations = $data['variations'] ?? [];
+        $categories = $data['categories'] ?? [];
+
+        // حذف فیلدهایی که نباید وارد جدول products بشن
+        $productData = Arr::except($data, ['variations', 'categories']);
+
+        try {
+            DB::transaction(function () use ($productData, $variations, $categories) {
+
+                $product = Product::query()->create($productData);
 
                 if (request()->hasFile('images')) {
                     $this->storeProductImages($product);
                 }
 
-                $this->setCategories($product, $data['categories']);
+                $this->setCategories($product, $categories);
 
+                if (!empty($variations)) {
+                    $this->syncVariations($product, $variations);
+                }
             });
             return ApiResponse::success('عملیات موفق');
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
-
     public function update(Product $product)
     {
         $data = $this->productData($product);
 
-        try {
-            DB::transaction(function () use ($product, $data) {
+        $variations = $data['variations'] ?? [];
+        $categories = $data['categories'] ?? [];
+        $productData = Arr::except($data, ['variations', 'categories']);
 
-                $product->update($data);
+        try {
+            DB::transaction(function () use ($product, $productData, $variations, $categories) {
+
+                $product->update($productData);
 
                 if (request()->hasFile('images')) {
                     $this->storeProductImages($product);
                 }
 
-                $this->setCategories($product, $data['categories']);
+                $this->setCategories($product, $categories);
+
+                if (!empty($variations)) {
+                    $this->syncVariations($product, $variations);
+                }
             });
             return ApiResponse::success('عملیات موفق');
         } catch (\Exception $exception) {
@@ -93,15 +112,20 @@ class ProductController extends Controller
             'discount_price' => ['nullable', 'numeric'],
             'stock' => [$required, 'numeric'],
             'sku' => ['nullable', 'string', 'max:255'],
-            'attributes' => ['nullable', 'array'],
-            'images' => ['sometimes','array'],
-            'images.*' => ['image','max:2048'],
-            'categories' => ['required','array'],
+            'images' => ['sometimes', 'array'],
+            'images.*' => ['image', 'max:2048'],
+            'categories' => ['required', 'array'],
             'categories.*' => [
                 'required',
-                Rule::exists('categories','slug')
-            ]
-        ],[
+                Rule::exists('categories', 'slug')
+            ],
+            'variations' => ['sometimes', 'array'],
+            'variations.*.sku' => ['nullable', 'string', 'max:255'],
+            'variations.*.price' => ['required_with:variations', 'numeric'],
+            'variations.*.stock' => ['required_with:variations', 'integer'],
+            'variations.*.is_active' => ['boolean'],
+            'variations.*.attributes' => ['required_with:variations', 'array'],
+        ], [
             'name.required' => 'نام محصول را وارد کنید',
             'name.max' => 'نام محصول طولانی تر از حد مجاز است',
             'price.required' => 'قیمت را وارد کنید',
@@ -111,12 +135,12 @@ class ProductController extends Controller
             'categories.required' => 'دسته بندی ها را انتخاب کنید',
         ]);
 
-        return array_filter(
-            $data,
-            fn($value) => !is_null($value)
-        );
-    }
+        $variations = $data['variations'] ?? [];
+        unset($data['variations']);
 
+        return ['product' => array_filter($data, fn($v) => !is_null($v)), 'variations' => $variations];
+
+    }
     private function setCategories($product, $categories)
     {
         $categoryIds = Category::query()
@@ -126,6 +150,14 @@ class ProductController extends Controller
 
         $product->categories()->sync($categoryIds);
     }
+    private function syncVariations(Product $product, array $variations): void
+    {
+        // در update، variationهای قدیمی حذف میشن و جدید جایگزین میشن
+        $product->variations()->delete();
+
+        $product->variations()->createMany($variations);
+    }
+
 
     /* {{ --- Image Controll Section --- }} */
     private function storeProductImages($product)
@@ -186,9 +218,9 @@ class ProductController extends Controller
 
             return ApiResponse::success('تصاویر اضافه شد');
 
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
     public function deleteImage(Product $product, ProductImage $image)
@@ -210,9 +242,9 @@ class ProductController extends Controller
             });
 
             return ApiResponse::success('تصویر حذف شد');
-        }catch(\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
     public function setPrimary(Product $product, ProductImage $image)
@@ -230,9 +262,9 @@ class ProductController extends Controller
             });
 
             return ApiResponse::success('تصویر شاخص تغییر کرد');
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
     public function reorder()
@@ -255,12 +287,11 @@ class ProductController extends Controller
             });
 
             return ApiResponse::success('ترتیب بروزرسانی شد');
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
-
 
 
 }

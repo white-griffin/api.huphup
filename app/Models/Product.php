@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ActivityStatus;
 use App\Models\Scopes\BusinessScope;
 use App\Models\Traits\BelongsToBusiness;
 use App\Support\SlugService;
@@ -20,7 +21,6 @@ class Product extends Model
     protected function casts(): array
     {
         return [
-            'attributes' => 'array',
             'price' => 'decimal:0',
             'discount_price' => 'decimal:0',
         ];
@@ -66,4 +66,30 @@ class Product extends Model
     {
         return $this->hasOne(ProductImage::class)->where('is_primary', true);
     }
+
+    public function variations(): HasMany
+    {
+        return $this->hasMany(ProductVariation::class);
+    }
+
+    public function activeVariations(): HasMany
+    {
+        return $this->hasMany(ProductVariation::class)->where('is_default', true);
+    }
+
+    // در Product.php
+    public function getEffectivePrice(): string
+    {
+        return $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->exists()
+            ? $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->min('price')
+            : $this->price;
+    }
+
+    public function getTotalStock(): int
+    {
+        return $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->exists()
+            ? $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->sum('stock')
+            : $this->stock;
+    }
+
 }

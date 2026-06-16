@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Provider\Api\V1;
 
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\V1\Provider\BrandResource;
+use App\Http\Resources\V1\Provider\Products\BrandResource;
 use App\Models\Brand;
 use Illuminate\Http\Response;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\V1\Provider;
+namespace App\Http\Resources\V1\Provider\Products;
 
 use App\Models\Brand;
 use Illuminate\Http\Request;
