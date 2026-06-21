@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\User\Api\V1;
+namespace App\Http\Controllers\User\Api\V1\Pets;
 
 use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
+use App\Http\Controllers\User\Api\V1\BaseController;
 use App\Http\Resources\V1\User\Pets\SpeciesResource;
 use App\Models\Species;
 use Illuminate\Http\JsonResponse;

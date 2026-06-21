@@ -1,13 +1,13 @@
 <?php
 
 use App\Http\Controllers\User\Api\V1\AppointmentController;
-use App\Http\Controllers\User\Api\V1\BreedsController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
-use App\Http\Controllers\User\Api\V1\PetController;
+use App\Http\Controllers\User\Api\V1\Pets\BreedsController;
+use App\Http\Controllers\User\Api\V1\Pets\PetController;
+use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
 use App\Http\Controllers\User\Api\V1\ProductController;
 use App\Http\Controllers\User\Api\V1\ProfileController;
-use App\Http\Controllers\User\Api\V1\SpeciesController;
 use Illuminate\Support\Facades\Route;
 
 Route::controller(ProfileController::class)->middleware('auth:sanctum')->group(function () {
