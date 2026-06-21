@@ -3,6 +3,8 @@
 use App\Http\Controllers\User\Api\V1\AppointmentController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
+use App\Http\Controllers\User\Api\V1\PetRoutine\PetRoutineController;
+use App\Http\Controllers\User\Api\V1\PetRoutine\RoutineTemplateController;
 use App\Http\Controllers\User\Api\V1\Pets\BreedsController;
 use App\Http\Controllers\User\Api\V1\Pets\PetController;
 use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
@@ -52,17 +54,17 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
 
 Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
     Route::controller(ConversationController::class)->group(function () {
-       Route::prefix('conversations')->group(function () {
-           Route::get('/', 'index');
-           Route::post('/', 'store');
-           Route::get('/{conversation}', 'show');
-           Route::delete('/{conversation}', 'leave');
-       });
+        Route::prefix('conversations')->group(function () {
+            Route::get('/', 'index');
+            Route::post('/', 'store');
+            Route::get('/{conversation}', 'show');
+            Route::delete('/{conversation}', 'leave');
+        });
 
-       Route::prefix('groups')->group(function () {
-           Route::get('/', 'groups');
-           Route::post('/{conversation}/join', 'join');
-       });
+        Route::prefix('groups')->group(function () {
+            Route::get('/', 'groups');
+            Route::post('/{conversation}/join', 'join');
+        });
     });
 
     Route::controller(MessageController::class)->group(function () {
@@ -71,3 +73,22 @@ Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
         Route::post('/{conversation}/read', 'markAsRead');
     });
 });
+
+Route::controller(PetRoutineController::class)
+    ->middleware('auth:sanctum')
+    ->prefix('pet-routines')
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{pet_routine}', 'show');
+        Route::post('/{pet_routine}', 'update');
+        Route::delete('/{pet_routine}', 'destroy');
+    });
+
+Route::controller(RoutineTemplateController::class)
+    ->middleware('auth:sanctum')
+    ->prefix('routine-templates')
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{routine_template}', 'show');
+    });
