@@ -22,12 +22,13 @@ class RoutineTemplatesTable
                     ->label('عنوان')
                     ->searchable(),
 
-                TextColumn::make('species.name')
+                TextColumn::make('species.name_fa')
                     ->label('نوع حیوان')
                     ->placeholder('همه'),
 
                 TextColumn::make('routine_category')
-                    ->label('دسته'),
+                    ->label('دسته')
+                    ->formatStateUsing(fn ($state) => RoutineCategoryTypes::label($state)),
 
                 TextColumn::make('default_interval_days')
                     ->label('بازه روز'),
@@ -53,7 +54,7 @@ class RoutineTemplatesTable
             ->recordActions([
                 EditAction::make(),
                 DeleteAction::make()
-            ])
+            ])->recordActionsColumnLabel('عملیات')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
