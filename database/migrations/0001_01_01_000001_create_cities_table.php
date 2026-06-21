@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('name_en')->nullable();
             $table->string('latitude')->nullable();
             $table->string('longitude')->nullable();
+
+            $table->index('province');
         });
     }
 

@@ -21,7 +21,7 @@ class LocationController extends Controller
     public function cities()
     {
         try {
-            $cities = City::all();
+            $cities = City::query()->where('province', request('province_id'))->get();
             return ApiResponse::Success('عملیات موفق',$cities);
         }catch (\Exception $exception){
             return ApiResponse::Fail(500, 'خطا در دریافت اطلاعات');
