@@ -43,6 +43,9 @@ class PetController extends BaseController
     public function getPet(Pet $pet)
     {
         try {
+            $this->authorizePetOwner($pet);
+            $pet->loadMissing(['species', 'breed']);
+
             return ApiResponse::success('عملیات موفق', PetResource::make($pet));
         } catch (\Exception $e) {
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
@@ -81,6 +84,8 @@ class PetController extends BaseController
      */
     public function updatePet(Pet $pet)
     {
+        $this->authorizePetOwner($pet);
+
         $data = $this->petData($pet);
 
         DB::beginTransaction();
@@ -98,6 +103,8 @@ class PetController extends BaseController
     public function deletePet(Pet $pet)
     {
         try {
+            $this->authorizePetOwner($pet);
+
             DB::beginTransaction();
             $pet->delete();
             DB::commit();
@@ -166,4 +173,10 @@ class PetController extends BaseController
 
         return $data;
     }
+
+    private function authorizePetOwner(Pet $pet): void
+    {
+        abort_if($pet->user_id !== auth()->id(), Response::HTTP_FORBIDDEN);
+    }
+
 }

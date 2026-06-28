@@ -74,7 +74,9 @@ class Product extends Model
 
     public function activeVariations(): HasMany
     {
-        return $this->hasMany(ProductVariation::class)->where('is_default', true);
+        return $this->hasMany(ProductVariation::class)
+            ->where('activity_status',ActivityStatus::ACTIVE->value)
+            ->where('is_default', true);
     }
 
     // در Product.php

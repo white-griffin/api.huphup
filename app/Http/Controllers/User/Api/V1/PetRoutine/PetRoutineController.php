@@ -26,7 +26,8 @@ class PetRoutineController extends BaseController
         try {
             $routines = PetRoutineResource::collection(
                 PetRoutine::query()
-                    ->where('pet_id', request()->pet_id)
+                    ->whereHas('pet', fn ($query) => $query->where('user_id', auth()->id()))
+                    ->when(request()->filled('pet_id'), fn ($query) => $query->where('pet_id', request()->pet_id))
                     ->with(['pet', 'template'])
                     ->latest()
                     ->get()
@@ -57,6 +58,7 @@ class PetRoutineController extends BaseController
             // --------------------------------------------------
             $template = RoutineTemplate::query()->findOrFail($data['routine_template_id']);
 
+            $data['start_date'] = $data['start_date'] ?? now()->toDateString();
             $data['interval_days'] = $data['interval_days'] ?? $template->default_interval_days;
             $data['next_due_at'] = $data['next_due_at'] ?? now()->addDays($data['interval_days']);
             $data['notification_enabled'] = $data['notification_enabled'] ?? true;
@@ -88,6 +90,8 @@ class PetRoutineController extends BaseController
     public function show(PetRoutine $pet_routine)
     {
         try {
+            $this->authorizeRoutineOwner($pet_routine);
+
             $pet_routine->load(['pet', 'template', 'template.actions']);
 
             $progress = app(RoutineProgressService::class)->calculate($pet_routine);
@@ -113,6 +117,8 @@ class PetRoutineController extends BaseController
      */
     public function update(UpdatePetRoutineRequest $request, PetRoutine $pet_routine)
     {
+        $this->authorizeRoutineOwner($pet_routine);
+
         $data = $request->data();
 
         DB::beginTransaction();
@@ -140,6 +146,8 @@ class PetRoutineController extends BaseController
     {
         DB::beginTransaction();
         try {
+            $this->authorizeRoutineOwner($pet_routine);
+
             $pet_routine->delete();
             DB::commit();
             return ApiResponse::Success('روتین با موفقیت حذف شد');
@@ -150,5 +158,10 @@ class PetRoutineController extends BaseController
                 'خطا در حذف روتین'
             );
         }
+    }
+
+    private function authorizeRoutineOwner(PetRoutine $routine): void
+    {
+        abort_if($routine->pet()->where('user_id', auth()->id())->doesntExist(), Response::HTTP_FORBIDDEN);
     }
 }

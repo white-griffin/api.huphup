@@ -16,7 +16,8 @@ class ProductController extends Controller
         try {
             $products = ProductResource::collection(
                 Product::query()
-                    ->where('publication_status',PublicationStatus::PUBLISHED)
+                    ->with(['images', 'categories', 'brand'])
+                    ->where('publication_status', PublicationStatus::PUBLISHED->value)
                     ->cursorPaginate()
             );
 
@@ -31,8 +32,11 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         try {
-            $products = ProductResource::collection($product);
-            return ApiResponse::Success('عملیات موفق', $products);
+            abort_if($product->publication_status != PublicationStatus::PUBLISHED->value, Response::HTTP_NOT_FOUND);
+
+            $product->loadMissing(['images', 'categories', 'brand']);
+
+            return ApiResponse::Success('عملیات موفق', ProductResource::make($product));
         }catch (\Exception $exception){
             report($exception);
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');

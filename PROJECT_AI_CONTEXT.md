@@ -2,10 +2,12 @@
 
 این فایل برای کپی‌کردن در ابتدای گفتگو با AI ساخته شده است تا مدل بتواند بدون بررسی کامل ریپو، معماری، دامنه، APIها و نکات حساس پروژه را بفهمد.
 
+آخرین به‌روزرسانی: 2026-06-22
+
 ## خلاصه پروژه
 
 - پروژه یک بک‌اند API با Laravel 11 و PHP 8.2 برای پلتفرم خدمات حیوانات خانگی «هاپ‌هاپ» است.
-- دامنه اصلی شامل کاربران، حیوانات خانگی، providerها، کسب‌وکارها، خدمات، رزرو نوبت، محصولات، دسته‌بندی‌ها، برندها و چت کاربری است.
+- دامنه اصلی شامل کاربران، حیوانات خانگی، providerها، کسب‌وکارها، خدمات، رزرو نوبت، محصولات، تنوع محصول، دسته‌بندی‌ها، برندها، چت کاربری، مکان‌ها و روتین مراقبت حیوانات است.
 - احراز هویت API با Laravel Sanctum انجام می‌شود.
 - پنل مدیریت با Filament 4 روی مسیر `/admin` پیاده‌سازی شده و از guard جداگانه `admin` استفاده می‌کند.
 - زبان پیام‌ها و بخش زیادی از نام‌گذاری دامنه فارسی است، اما ساختار کد بر اساس Laravel/Eloquent استاندارد است.
@@ -34,14 +36,19 @@
 ## ساختار مهم پوشه‌ها
 
 - `app/Http/Controllers/User/Api/V1`: کنترلرهای API کاربر
+- `app/Http/Controllers/User/Api/V1/Pets`: کنترلرهای species، breed و pet
+- `app/Http/Controllers/User/Api/V1/PetRoutine`: کنترلرهای روتین حیوانات و templateها
 - `app/Http/Controllers/Provider/Api/V1`: کنترلرهای API provider
 - `app/Http/Resources/V1`: resourceهای خروجی API
+- `app/Http/Requests/User/Api/V1/PetRoutine`: validation requestهای روتین حیوانات
 - `app/Models`: مدل‌های Eloquent
-- `app/Services`: سرویس‌های دامنه مثل رزرو و فایل
+- `app/Services`: سرویس‌های دامنه مثل رزرو، فایل و روتین‌ها
+- `app/Services/Routines/Resolvers`: resolverهای پیشنهادهای مرتبط با روتین
 - `app/Enums`: enumهای وضعیت‌ها و نوع‌ها
 - `app/Filament/Resources`: resourceهای پنل ادمین
 - `database/migrations`: schema دیتابیس
-- `database/seeders`: seed اولیه کاربران، ادمین، شهرها، گونه‌ها و نژادها
+- `database/seeders`: seed اولیه کاربران، ادمین، مکان‌ها، حیوانات، محصولات، رزرو، چت و روتین‌ها
+- `database/sqls`: فایل‌های SQL کشور، استان و شهر
 - `routes/user`: routeهای API کاربر
 - `routes/provider`: routeهای API provider
 
@@ -122,11 +129,22 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 
 ## APIهای User
 
-همه مسیرهای نیازمند token از `auth:sanctum` استفاده می‌کنند.
+### Location
+
+کنترلر: `app/Http/Controllers/User/Api/V1/LocationController.php`
+
+- `GET /api/v1/user/location/provinces`
+- `GET /api/v1/user/location/cities`
+  - ورودی query: `province_id`
+  - شهرها با شرط `where('province', request('province_id'))` گرفته می‌شوند.
+
+این routeها فعلاً middleware احراز هویت ندارند.
 
 ### Profile و Address
 
 کنترلر: `app/Http/Controllers/User/Api/V1/ProfileController.php`
+
+همه routeهای این بخش نیازمند `auth:sanctum` هستند.
 
 - `GET /api/v1/user/profile`
 - `POST /api/v1/user/profile`
@@ -140,29 +158,47 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 
 کنترلرها:
 
-- `app/Http/Controllers/User/Api/V1/SpeciesController.php`
-- `app/Http/Controllers/User/Api/V1/BreedsController.php`
+- `app/Http/Controllers/User/Api/V1/Pets/SpeciesController.php`
+- `app/Http/Controllers/User/Api/V1/Pets/BreedsController.php`
 
 مسیرها:
 
 - `GET /api/v1/user/species`
 - `GET /api/v1/user/breeds`
 
+این routeها فعلاً middleware احراز هویت ندارند.
+
 ### Pets
 
-کنترلر: `app/Http/Controllers/User/Api/V1/PetController.php`
+کنترلر: `app/Http/Controllers/User/Api/V1/Pets/PetController.php`
+
+همه routeهای این بخش نیازمند `auth:sanctum` هستند.
 
 - `GET /api/v1/user/pets`
 - `POST /api/v1/user/pets`
 - `GET /api/v1/user/pets/{pet}`
 - `POST /api/v1/user/pets/{pet}`
+- `DELETE /api/v1/user/pets/{pet}`
 
 برای تصویر pet از `MediaService` و مسیر `pet/avatars` استفاده می‌شود.
+
+### User Products
+
+کنترلر: `app/Http/Controllers/User/Api/V1/ProductController.php`
+
+- `GET /api/v1/user/products`
+  - فقط محصول‌های دارای `publication_status = PublicationStatus::PUBLISHED` را با `cursorPaginate()` برمی‌گرداند.
+- `GET /api/v1/user/products/{product}`
+  - route model binding روی `Product` است و کلید route محصول `slug` است.
+
+خروجی با `app/Http/Resources/V1/User/Products/ProductResource.php` شامل محصول، تصاویر، categoryها و brand است.
 
 ### Appointments
 
 کنترلر: `app/Http/Controllers/User/Api/V1/AppointmentController.php`
 سرویس: `app/Services/AppointmentService.php`
+
+همه routeهای این بخش نیازمند `auth:sanctum` هستند.
 
 - `GET /api/v1/user/appointments/{businessId}/available-slots`
   - ورودی: `service_id`, `date`
@@ -184,17 +220,56 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 - `app/Http/Controllers/User/Api/V1/Chat/ConversationController.php`
 - `app/Http/Controllers/User/Api/V1/Chat/MessageController.php`
 
-مسیرها:
+همه routeهای این بخش نیازمند `auth:sanctum` هستند.
 
 - `GET /api/v1/user/chat/conversations`
 - `POST /api/v1/user/chat/conversations`
 - `GET /api/v1/user/chat/conversations/{conversation}`
 - `DELETE /api/v1/user/chat/conversations/{conversation}`
-- `GET /api/v1/user/chat/conversations/{conversation}/messages`
-- `POST /api/v1/user/chat/conversations/{conversation}/messages`
-- `POST /api/v1/user/chat/conversations/{conversation}/read`
+- `GET /api/v1/user/chat/groups`
+- `POST /api/v1/user/chat/groups/{conversation}/join`
+- `GET /api/v1/user/chat/{conversation}/messages`
+- `POST /api/v1/user/chat/{conversation}/messages`
+- `POST /api/v1/user/chat/{conversation}/read`
 
-چت private بین کاربران است. ارسال پیام event `App\Events\User\MessageSent` را broadcast می‌کند. channel خصوصی `conversation.{conversationId}` در `routes/channels.php` فقط برای participantها مجاز است.
+چت private و group بین کاربران را پوشش می‌دهد. ارسال پیام event `App\Events\User\MessageSent` را broadcast می‌کند. channel خصوصی `conversation.{conversationId}` در `routes/channels.php` فقط برای participantها مجاز است.
+
+### Pet Routines
+
+کنترلرها:
+
+- `app/Http/Controllers/User/Api/V1/PetRoutine/PetRoutineController.php`
+- `app/Http/Controllers/User/Api/V1/PetRoutine/RoutineTemplateController.php`
+
+Requestها:
+
+- `app/Http/Requests/User/Api/V1/PetRoutine/StorePetRoutineRequest.php`
+- `app/Http/Requests/User/Api/V1/PetRoutine/UpdatePetRoutineRequest.php`
+
+همه routeهای این بخش نیازمند `auth:sanctum` هستند.
+
+- `GET /api/v1/user/pet-routines`
+  - با query `pet_id` فیلتر می‌شود.
+- `POST /api/v1/user/pet-routines`
+  - ورودی‌های اصلی: `pet_id`, `routine_template_id`, `interval_days?`, `last_done_at?`, `next_due_at?`, `notification_enabled?`, `settings?`, `notes?`
+  - `pet_id` باید متعلق به user جاری باشد.
+  - اگر `interval_days` یا `next_due_at` ارسال نشود، از template مقدار پیش‌فرض گرفته می‌شود.
+- `GET /api/v1/user/pet-routines/{pet_routine}`
+  - خروجی شامل routine، progress و recommendations است.
+- `POST /api/v1/user/pet-routines/{pet_routine}`
+- `DELETE /api/v1/user/pet-routines/{pet_routine}`
+
+### Routine Templates
+
+کنترلر: `app/Http/Controllers/User/Api/V1/PetRoutine/RoutineTemplateController.php`
+
+همه routeهای این بخش نیازمند `auth:sanctum` هستند.
+
+- `GET /api/v1/user/routine-templates`
+  - templateهای فعال را با شرط `activity_status = ActivityStatus::ACTIVE` برمی‌گرداند.
+- `GET /api/v1/user/routine-templates/{routine_template}`
+
+Templateها دارای species، category روتین، interval پیش‌فرض، reminder، تصویر و توضیح هستند.
 
 ## APIهای Provider
 
@@ -223,9 +298,11 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 نکته‌ها:
 
 - route key محصول `slug` است.
+- `Product` از trait `BelongsToBusiness` استفاده می‌کند.
 - categoryها با slug دریافت و به id تبدیل می‌شوند.
 - تصاویر در `product/images` ذخیره می‌شوند.
 - تصویر اول در نبود تصویر primary، به‌عنوان primary ثبت می‌شود.
+- product variations در مدل و seed وجود دارد، اما route اختصاصی provider برای مدیریت variationها در `routes/provider/api_v1.php` دیده نمی‌شود.
 
 ### Brands
 
@@ -286,6 +363,15 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 - accessorها: `logo_url`, `cover_url`
 - pivot `services()` از جدول `business_services` فیلدهای `price`, `duration`, `settings`, `activity_status` دارد.
 
+### Province و City
+
+فایل‌ها:
+
+- `app/Models/Province.php`
+- `app/Models/City.php`
+
+برای API مکان استفاده می‌شوند. seed داده‌های کشور، استان و شهر از `StateCitySeeder` و فایل‌های SQL داخل `database/sqls` انجام می‌شود.
+
 ### Pet
 
 فایل: `app/Models/Pet.php`
@@ -311,16 +397,25 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 
 `Service` خدمات پایه را نگه می‌دارد. `BusinessService` pivot بین business و service است و قیمت، مدت، تنظیمات و وضعیت سرویس را نگه می‌دارد.
 
-### Product, Category, Brand, ProductImage
+### Product, ProductVariation, Category, Brand, ProductImage
 
 فایل‌ها:
 
 - `app/Models/Product.php`
+- `app/Models/ProductVariation.php`
 - `app/Models/Category.php`
 - `app/Models/Brand.php`
 - `app/Models/ProductImage.php`
 
-Product به Business و Brand تعلق دارد، چند Category دارد و چند تصویر دارد. Product، Category و Brand با slug کار می‌کنند. Category ساختار parent/children دارد.
+نکته‌ها:
+
+- `Product` به Business و Brand تعلق دارد، چند Category دارد، چند تصویر دارد و چند Variation دارد.
+- `Product` با slug route-binding می‌شود و slug در زمان save با `app/Support/SlugService.php` تولید می‌شود.
+- `Product` از trait `BelongsToBusiness` استفاده می‌کند و در provider context با business محدود می‌شود.
+- `ProductVariation` شامل `price`, `discount_price`, `stock`, `sku`, `attributes`, `is_default`, `activity_status` است.
+- attributeهای variation بر اساس enum `ProductAttributeType` تعریف شده‌اند: رنگ، سایز و وزن.
+- `Product::getEffectivePrice()` کمترین قیمت variation فعال را در صورت وجود برمی‌گرداند؛ در غیر این صورت قیمت خود محصول را.
+- `Product::getTotalStock()` مجموع stock variationهای فعال را در صورت وجود برمی‌گرداند؛ در غیر این صورت stock خود محصول را.
 
 ### Appointment
 
@@ -340,6 +435,23 @@ Product به Business و Brand تعلق دارد، چند Category دارد و �
 - `app/Models/ConversationParticipant.php`
 
 Conversation با Userها رابطه many-to-many از جدول `conversation_participants` دارد. Message به Conversation و sender تعلق دارد و `read_at` دارد.
+
+### RoutineTemplate, PetRoutine, RoutineAction
+
+فایل‌ها:
+
+- `app/Models/RoutineTemplate.php`
+- `app/Models/PetRoutine.php`
+- `app/Models/RoutineAction.php`
+
+نکته‌ها:
+
+- `RoutineTemplate` قالب‌های روتین مثل سلامت، مراقبت، تغذیه، فعالیت و نگهداری را نگه می‌دارد.
+- `RoutineTemplate` به `Species` تعلق دارد و با `actions()` به پیشنهادهای مرتبط وصل می‌شود.
+- `PetRoutine` روتین فعال/برنامه‌ریزی‌شده روی یک pet است و به `Pet` و `RoutineTemplate` تعلق دارد.
+- `PetRoutine` فیلدهای `start_date`, `last_done_at`, `next_due_at`, `notification_enabled`, `routine_status`, `settings` دارد.
+- `RoutineAction` یک target پیشنهادی برای template است و با `target_type`, `target_id`, `priority` کار می‌کند.
+- target typeهای پشتیبانی‌شده در resolver فعلی: `service`, `product`, `category`.
 
 ## سیستم رزرو نوبت
 
@@ -364,6 +476,24 @@ Conversation با Userها رابطه many-to-many از جدول `conversation_p
 - `appointments`
 - `business_services`
 
+## سیستم روتین حیوانات
+
+فایل‌های اصلی:
+
+- `app/Services/Routines/RoutineProgressService.php`
+- `app/Services/Routines/RoutineRecommendationService.php`
+- `app/Services/Routines/Resolvers/ResolverFactory.php`
+- `app/Helpers/Data/RoutineProgressData.php`
+- `app/Helpers/Data/RoutineRecommendationContext.php`
+
+رفتار:
+
+- `RoutineProgressService::calculate()` بر اساس `last_done_at`، `start_date`، `next_due_at` و `interval_days` درصد پیشرفت، روزهای باقی‌مانده و وضعیت را محاسبه می‌کند.
+- وضعیت‌های محاسبه‌شده شامل upcoming، due soon، due today، overdue، paused و archived هستند.
+- `RoutineRecommendationService::getRecommendations()` اکشن‌های template را بر اساس priority مرتب می‌کند و برای هر action از resolver مربوط به `target_type` استفاده می‌کند.
+- `ServiceResolver` از `BusinessService`، `ProductResolver` از `Product` و `CategoryResolver` از محصولات یک category پیشنهاد می‌سازند.
+- context پیشنهاد شامل pet، business اختیاری و limit پیش‌فرض 10 است.
+
 ## پنل ادمین Filament
 
 Provider پنل: `app/Providers/Filament/AdminPanelProvider.php`
@@ -386,6 +516,9 @@ Resourceهای اصلی:
 - Services
 - Categories
 - Brands
+- Products
+- Groups
+- RoutineTemplates
 
 ## Response Format
 
@@ -426,6 +559,10 @@ Helper: `app/Helpers/Api/ApiResponse.php`
 - `GenderType`
 - `MessageTypes`: نوع پیام
 - `PublicationStatus`
+- `RoutineCategoryTypes`: سلامت، مراقبت، تغذیه، فعالیت، نگهداری
+- `RoutineStatuses`: آینده، به‌زودی، موعد امروز، معوقه، متوقف، بایگانی‌شده
+- `Priorities`: پایین، معمولی، ضروری
+- `ProductAttributeType`: رنگ، سایز، وزن
 - `VerificationStatuses`
 - `VerificationDocumentType`
 - `FileTypes`, `FolderNames`, `FileAddresses`
@@ -452,6 +589,7 @@ Migrationها در `database/migrations` هستند.
 - `products`
 - `category_products`
 - `product_images`
+- `product_variations`
 - `business_schedules`
 - `schedule_breaks`
 - `business_off_days`
@@ -459,6 +597,9 @@ Migrationها در `database/migrations` هستند.
 - `conversations`
 - `conversation_participants`
 - `messages`
+- `routine_templates`
+- `pet_routines`
+- `routine_actions`
 
 جداول زیرساخت:
 
@@ -471,17 +612,31 @@ Migrationها در `database/migrations` هستند.
 Seederهای مهم:
 
 - `DatabaseSeeder`
+- `StateCitySeeder`
 - `AdminSeeder`
 - `UserSeeder`
+- `ProviderSeeder`
+- `BusinessSeeder`
+- `ServiceSeeder`
+- `BusinessServiceSeeder`
 - `SpeciesSeeder`
 - `BreedsSeeder`
 - `PetSeeder`
-- `StateCitySeeder`
+- `CategorySeeder`
+- `BrandSeeder`
+- `ProductSeeder`
+- `ProductVariationSeeder`
+- `AppointmentSeeder`
+- `ConversationSeeder`
+- `MessageSeeder`
+- `RoutineTemplateSeeder`
+- `PetRoutineSeeder`
+- `RoutineActionSeeder`
 
 ## نکات توسعه برای AI
 
 - این پروژه API-first است؛ پنل Filament برای مدیریت داده و ادمین است.
-- برای تغییر API ابتدا route، controller، resource، model، migration و enum مرتبط را همزمان بررسی کن.
+- برای تغییر API ابتدا route، controller، request، resource، model، migration و enum مرتبط را همزمان بررسی کن.
 - در APIهای provider همیشه context کسب‌وکار از `X-Business-Id` مهم است.
 - اگر مدلی trait `BelongsToBusiness` دارد، queryهای آن در context provider ممکن است با `BusinessScope` محدود شوند.
 - در job، console و test اگر business در container bind نشده باشد، scope کسب‌وکار ممکن است اعمال نشود.
@@ -489,17 +644,30 @@ Seederهای مهم:
 - برای فایل‌ها از `MediaService` و disk `public` استفاده می‌شود.
 - تاریخ‌های UI ممکن است شمسی باشند، اما منطق دیتابیس عمدتاً با Carbon و تاریخ میلادی کار می‌کند.
 - اگر validation فارسی وجود دارد، پیام‌های جدید را هم فارسی و هم‌سبک نگه دار.
+- برای productها به slug route key توجه کن.
+- برای pet routineها مالکیت pet نسبت به user جاری مهم است و باید در route/model bindingهای بعدی هم رعایت شود.
 
 ## موارد قابل بررسی و ریسک‌های احتمالی
 
 این‌ها الزاماً bug قطعی نیستند، ولی برای توسعه بعدی باید در نظر گرفته شوند:
 
+- `LocationController::cities` از ستون `province` برای فیلتر با `province_id` استفاده می‌کند؛ نام ستون schema باید بررسی شود.
+- `ProductController` کاربر در متد `show` از `ProductResource::collection($product)` استفاده کرده، در حالی که برای single model معمولاً `ProductResource::make($product)` درست است.
+- `Product::activeVariations()` فعلاً `is_default = true` را فیلتر می‌کند، نه `activity_status = active`؛ نام متد می‌تواند گمراه‌کننده باشد.
+- `ProductVariation::getAttribute(ProductAttributeType $key)` با متد پایه Eloquent هم‌نام است و ممکن است رفتار attribute access را تحت تأثیر قرار دهد.
+- در `StorePetRoutineRequest` شرط template با ستون `is_active` نوشته شده، اما migration `routine_templates` ستون `activity_status` دارد.
+- در migration `pet_routines` ستون `start_date` اجباری است، اما `StorePetRoutineRequest` آن را validate نمی‌کند و controller مقدار پیش‌فرض برایش نمی‌گذارد.
+- در requestهای pet routine فیلد `notes` validate می‌شود، اما migration `pet_routines` ستون `notes` ندارد.
+- `PetRoutineController::index` صرفاً با `request()->pet_id` فیلتر می‌کند؛ اگر `pet_id` ارسال نشود یا مالکیت در query کنترل نشود ممکن است رفتار ناخواسته داشته باشد.
+- `PetRoutineController::show/update/destroy` روی route model binding مالکیت user جاری را صریح کنترل نمی‌کند.
+- `RoutineRecommendationService::getRecommendations()` businessId را فقط پارامتر اختیاری می‌گیرد؛ API فعلی در show مقدار businessId به آن پاس نمی‌دهد.
+- `CategoryResolver` بدون business context با `where('business_id', null)` خروجی نمی‌دهد؛ برای پیشنهاد category عمومی باید رفتار بازبینی شود.
 - `ScheduleController::validateScheduleData` از rule `after:*.start_time` استفاده کرده که ممکن است در validation آرایه‌ای Laravel درست کار نکند و نیاز به بازبینی داشته باشد.
 - `AppointmentService::getIranianDayOfWeek` و enum `DaysOfWeek` باید با مقادیر دیتابیس scheduleها تطبیق داده شوند؛ هر ناسازگاری باعث پیدا نشدن schedule می‌شود.
 - `Appointment::casts` برای `start_time` و `end_time` از `datetime` استفاده می‌کند، در حالی که migration احتمالاً نوع `time` دارد؛ این موضوع در format و parse باید تست شود.
 - در `AppointmentService::book` فیلد `notes` ذخیره می‌شود؛ migration/model باید همین نام را داشته باشد، نه `note`.
 - در migration `product_images` اگر unique روی `product_id` و `is_primary` باشد، هر محصول فقط یک تصویر غیر primary می‌تواند داشته باشد؛ برای چند تصویر باید schema بازبینی شود.
-- در بعضی resourceها احتمال N+1 query وجود دارد؛ مخصوصاً اگر داخل resource برای province/city query مستقیم انجام شده باشد.
+- در بعضی resourceها احتمال N+1 query وجود دارد؛ مخصوصاً resourceهای product که images، categories و brand را بدون الزام eager-load مصرف می‌کنند.
 - در `ProfileController::deleteAddress` پارامتر `$address` type-hint نشده، اما route model binding مورد انتظار به نظر می‌رسد؛ این مورد باید بررسی شود.
 - دسترسی مالکیت در برخی route model bindingهای user مثل pet/address باید کنترل شود تا کاربر به داده کاربر دیگر دسترسی نداشته باشد.
 
@@ -517,11 +685,24 @@ Seederهای مهم:
 - `app/Models/Scopes/BusinessScope.php`
 - `app/Services/AppointmentService.php`
 - `app/Services/MediaService.php`
+- `app/Services/Routines/RoutineProgressService.php`
+- `app/Services/Routines/RoutineRecommendationService.php`
+- `app/Services/Routines/Resolvers/ResolverFactory.php`
 - `app/Http/Controllers/User/Api/V1/AppointmentController.php`
+- `app/Http/Controllers/User/Api/V1/LocationController.php`
+- `app/Http/Controllers/User/Api/V1/ProductController.php`
+- `app/Http/Controllers/User/Api/V1/PetRoutine/PetRoutineController.php`
+- `app/Http/Controllers/User/Api/V1/PetRoutine/RoutineTemplateController.php`
 - `app/Http/Controllers/User/Api/V1/Chat/ConversationController.php`
 - `app/Http/Controllers/User/Api/V1/Chat/MessageController.php`
 - `app/Http/Controllers/Provider/Api/V1/ProductController.php`
 - `app/Http/Controllers/User/Api/V1/AuthController.php`
 - `app/Http/Controllers/Provider/Api/V1/AuthController.php`
+- `app/Models/Product.php`
+- `app/Models/ProductVariation.php`
+- `app/Models/RoutineTemplate.php`
+- `app/Models/PetRoutine.php`
+- `app/Models/RoutineAction.php`
 - `app/Providers/Filament/AdminPanelProvider.php`
 - `database/migrations`
+- `database/seeders/DatabaseSeeder.php`

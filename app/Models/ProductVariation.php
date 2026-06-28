@@ -19,10 +19,7 @@ class ProductVariation extends Model
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * دریافت مقدار یک ویژگی خاص
-     */
-    public function getAttribute(ProductAttributeType $key): mixed
+    public function getVariationAttribute(ProductAttributeType $key): mixed
     {
         return $this->attributes[$key->value] ?? null;
     }

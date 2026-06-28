@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\User\Api\V1\PetRoutine;
 
+use App\Enums\ActivityStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,19 +36,18 @@ class StorePetRoutineRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('routine_templates', 'id')->where(function ($query) {
-                    $query->where('is_active', 1);
+                    $query->where('activity_status',ActivityStatus::ACTIVE->value);
                 }),
             ],
 
+            'start_date' => ['nullable', 'date'],
             'interval_days' => ['nullable', 'integer', 'min:1'],
             'last_done_at' => ['nullable', 'date'],
-            'next_due_at' => ['nullable', 'date', 'after_or_equal:last_done_at'],
+            'next_due_at' => ['nullable', 'date'],
 
             'notification_enabled' => ['nullable', 'boolean'],
 
             'settings' => ['nullable', 'array'],
-
-            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 
@@ -60,17 +60,15 @@ class StorePetRoutineRequest extends FormRequest
             'routine_template_id.required' => 'قالب روتین را انتخاب کنید',
             'routine_template_id.exists' => 'قالب روتین انتخاب شده معتبر نیست',
 
+            'start_date.date' => 'تاریخ شروع روتین معتبر نیست',
             'interval_days.integer' => 'بازه زمانی باید عدد باشد',
             'interval_days.min' => 'بازه زمانی باید حداقل ۱ روز باشد',
 
             'last_done_at.date' => 'تاریخ انجام آخرین روتین معتبر نیست',
             'next_due_at.date' => 'تاریخ موعد بعدی معتبر نیست',
-            'next_due_at.after_or_equal' => 'موعد بعدی نمی‌تواند قبل از تاریخ انجام آخرین روتین باشد',
 
             'notification_enabled.boolean' => 'وضعیت اعلان معتبر نیست',
             'settings.array' => 'تنظیمات باید آرایه باشد',
-            'notes.string' => 'یادداشت باید متنی باشد',
-            'notes.max' => 'یادداشت نباید بیشتر از ۱۰۰۰ کاراکتر باشد',
         ];
     }
 

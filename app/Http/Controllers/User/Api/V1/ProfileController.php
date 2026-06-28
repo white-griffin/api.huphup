@@ -85,6 +85,8 @@ class ProfileController extends BaseController
      */
     public function updateAddress(UserAddress $address)
     {
+        $this->authorizeAddressOwner($address);
+
         $data = $this->addressData(true);
 
         DB::beginTransaction();
@@ -101,14 +103,16 @@ class ProfileController extends BaseController
 
     /** Delete User's Address
      * auth token needed
-     * @param $address
+     * @param UserAddress $address
      * @return JsonResponse
      * @throws \Throwable
      */
-    public function deleteAddress($address)
+    public function deleteAddress(UserAddress $address)
     {
         DB::beginTransaction();
         try {
+            $this->authorizeAddressOwner($address);
+
             $address->delete();
             DB::commit();
             return ApiResponse::Success('عملیات موفق');
@@ -119,6 +123,11 @@ class ProfileController extends BaseController
         }
     }
 
+
+    private function authorizeAddressOwner(UserAddress $address): void
+    {
+        abort_if($address->user_id !== auth()->id(), Response::HTTP_FORBIDDEN);
+    }
 
     /**
      * get ProfileData form request ()
