@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\User\Api\V1;
+namespace App\Http\Controllers\User\Api\V1\User;
 
 use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
+use App\Http\Controllers\User\Api\V1\BaseController;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

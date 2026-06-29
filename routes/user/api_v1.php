@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\User\Api\V1\AppointmentController;
+use App\Http\Controllers\User\Api\V1\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\LocationController;
@@ -10,7 +11,7 @@ use App\Http\Controllers\User\Api\V1\Pets\BreedsController;
 use App\Http\Controllers\User\Api\V1\Pets\PetController;
 use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
 use App\Http\Controllers\User\Api\V1\ProductController;
-use App\Http\Controllers\User\Api\V1\ProfileController;
+use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::controller(LocationController::class)->prefix('location')->group(function (){
@@ -52,6 +53,11 @@ Route::controller(AppointmentController::class)->prefix('appointments')
         Route::post('/', 'store');
         Route::get('/cancel/{appointment}', 'cancel');
     });
+
+Route::controller(BusinessController::class)->prefix('businesses')->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{business}', 'show');
+});
 
 Route::controller(ProductController::class)->prefix('products')->group(function () {
     Route::get('/', 'index');

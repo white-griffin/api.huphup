@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\User\Api\V1\AuthController;
+use App\Http\Controllers\User\Api\V1\User\AuthController;
 
 Route::controller(AuthController::class)->group(function (){
     Route::post('/login','login');

@@ -13,7 +13,7 @@ class ProductImageResource extends JsonResource
     {
         return [
             'path' => $this->image_url,
-            'is_primary' => $this->is_primary,
+            'is_primary' => (bool)$this->is_primary,
             'order' => $this->order
         ];
     }

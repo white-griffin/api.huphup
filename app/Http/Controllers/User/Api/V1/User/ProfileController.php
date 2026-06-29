@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\User\Api\V1;
+namespace App\Http\Controllers\User\Api\V1\User;
 
 use App\Enums\GenderType;
 use App\Helpers\Api\ApiResponse;
+use App\Http\Controllers\User\Api\V1\BaseController;
 use App\Http\Resources\V1\User\ProfileResource;
 use App\Models\UserAddress;
 use App\Services\MediaService;
