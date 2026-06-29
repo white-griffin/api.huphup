@@ -11,6 +11,7 @@ enum PublicationStatus: string implements EnumContractInterface
     case SCHEDULED = '4';
     case PUBLISHED = '1';
     case ARCHIVED = '2';
+
     case PENDING = '0';
     case REJECTED = '3';
 

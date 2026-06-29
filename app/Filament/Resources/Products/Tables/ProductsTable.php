@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products\Tables;
 
+use App\Enums\PublicationStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -16,34 +17,41 @@ class ProductsTable
         return $table
             ->columns([
                 TextColumn::make('business.name')
+                    ->label('فروشگاه')
                     ->searchable(),
                 TextColumn::make('brand.name')
+                    ->label('برند')
                     ->searchable(),
                 TextColumn::make('name')
-                    ->searchable(),
-                TextColumn::make('slug')
+                    ->label('نام')
                     ->searchable(),
                 TextColumn::make('price')
-                    ->money()
+                    ->label('قیمت اصلی')
                     ->sortable(),
                 TextColumn::make('discount_price')
-                    ->money()
+                    ->label('قیمت تخفیف خورده')
+                    ->default('بدون تخفیف')
                     ->sortable(),
                 TextColumn::make('stock')
+                    ->label('موجودی')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('sku')
+                    ->label('کد انبار')
                     ->label('SKU')
                     ->searchable(),
                 TextColumn::make('publication_status')
-                    ->numeric()
+                    ->label('وضعیت انتشار')
+                    ->formatStateUsing(fn ($state) => PublicationStatus::label((string) $state) ?? '—')
                     ->sortable(),
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->label('تاریخ ایجاد')
+                    ->jalaliDate('Y/m/d')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->label('تاریخ ویرایش')
+                    ->jalaliDate('Y/m/d')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -52,8 +60,8 @@ class ProductsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
-            ])
+//                EditAction::make(),
+            ])->recordActionsColumnLabel('عملیات')
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

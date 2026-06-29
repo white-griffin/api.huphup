@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('sku')->nullable(); // کد انبار
             $table->tinyInteger('publication_status')
                 ->default(PublicationStatus::PENDING);
+            $table->text('reject_reason')->nullable();
             $table->timestamps();
 
             $table->unique(['business_id', 'slug']); // اسلاگ یکتا در هر کسب‌وکار
