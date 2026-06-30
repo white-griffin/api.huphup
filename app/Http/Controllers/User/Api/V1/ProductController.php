@@ -7,6 +7,8 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\Products\ProductResource;
 use App\Models\Product;
+use App\Services\Search\FuzzySearchService;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class ProductController extends Controller
@@ -42,4 +44,35 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
         }
     }
+
+    public function search(Request $request, FuzzySearchService $searchService)
+    {
+        $query = trim((string) $request->get('q', ''));
+
+        if ($query === '') {
+            return ApiResponse::Success('عملیات موفق',ProductResource::collection(
+                Product::query()
+                    ->where('publication_status',PublicationStatus::PUBLISHED->value)
+                    ->paginate(15)
+            ));
+        }
+
+        $matchedIds = array_slice($searchService->search('products.index', $query, 100), 0, 200);
+
+        if (empty($matchedIds)) {
+            return ApiResponse::Success('محصولی یافت نشد',null);
+        }
+
+        return ApiResponse::Success('عملیات موفق',
+            ProductResource::collection(
+                Product::query()
+                    ->where('publication_status',PublicationStatus::PUBLISHED->value)
+                    ->whereIn('id', $matchedIds)
+                    ->orderByRaw('FIELD(id,' . implode(',', array_map('intval', $matchedIds)) . ')')
+                    ->paginate(15)
+            )
+        );
+    }
+
+
 }

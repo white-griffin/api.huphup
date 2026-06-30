@@ -61,6 +61,7 @@ Route::controller(BusinessController::class)->prefix('businesses')->group(functi
 
 Route::controller(ProductController::class)->prefix('products')->group(function () {
     Route::get('/', 'index');
+    Route::get('/search', 'search');
     Route::get('/{product}', 'show');
 });
 

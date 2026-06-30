@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Enums\ActivityStatus;
-use App\Models\Scopes\BusinessScope;
 use App\Models\Traits\BelongsToBusiness;
+use App\Models\Traits\SearchableByTNT;
 use App\Support\SlugService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
-    use BelongsToBusiness;
+    use BelongsToBusiness,SearchableByTNT;
 
     protected $guarded = ['id'];
 
@@ -26,6 +26,20 @@ class Product extends Model
         ];
     }
 
+
+    // تعریف فیلدهایی که می‌خواهیم ایندکس شوند
+    public function toSearchableArray(): array
+    {
+        return [
+            'id'          => $this->id,
+            'name'        => $this->name,
+            'slug'         => $this->slug,
+            'business'         => $this->business->name,
+            'brand'       => $this->brand?->name ?? '',
+            'category'    => $this->category?->name ?? '',
+            'description' => strip_tags($this->description ?? ''),
+        ];
+    }
 
     public function getRouteKeyName(): string
     {
