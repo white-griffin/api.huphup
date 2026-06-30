@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\User\Api\V1;
+namespace App\Http\Controllers\User\Api\V1\Products;
 
 use App\Enums\PublicationStatus;
 use App\Helpers\Api\ApiResponse;

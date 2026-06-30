@@ -10,7 +10,8 @@ use App\Http\Controllers\User\Api\V1\PetRoutine\RoutineTemplateController;
 use App\Http\Controllers\User\Api\V1\Pets\BreedsController;
 use App\Http\Controllers\User\Api\V1\Pets\PetController;
 use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
-use App\Http\Controllers\User\Api\V1\ProductController;
+use App\Http\Controllers\User\Api\V1\Products\CategoryController;
+use App\Http\Controllers\User\Api\V1\Products\ProductController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +58,11 @@ Route::controller(AppointmentController::class)->prefix('appointments')
 Route::controller(BusinessController::class)->prefix('businesses')->group(function () {
     Route::get('/', 'index');
     Route::get('/{business}', 'show');
+});
+
+Route::controller(CategoryController::class)->prefix('categories')->group(function () {
+    Route::get('/', 'index');
+    Route::get('/{category}', 'show');
 });
 
 Route::controller(ProductController::class)->prefix('products')->group(function () {

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\User\Api\V1;
+namespace App\Http\Controllers\User\Api\V1\Products;
 
 use App\Enums\ActivityStatus;
 use App\Enums\PublicationStatus;
@@ -32,12 +32,11 @@ class CategoryController extends Controller
         }
     }
 
-    public function show($slug): JsonResponse
+    public function show(Category $category): JsonResponse
     {
         try {
-            $category = CategoryResource::make(
-                Category::query()
-                    ->where('slug', $slug)
+            $categoryData = CategoryResource::make(
+                $category
                     ->with([
                         'children', 'products' => function ($q) {
                             $q->where('publication_status', PublicationStatus::PUBLISHED->value)
@@ -45,7 +44,7 @@ class CategoryController extends Controller
                         }])
                     ->first()
             );
-            return ApiResponse::success('عملیات موفق', $category);
+            return ApiResponse::success('عملیات موفق', $categoryData);
         } catch (\Exception $exception) {
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
         }
