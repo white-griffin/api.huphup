@@ -66,8 +66,7 @@ Route::controller(CategoryController::class)->prefix('categories')->group(functi
 });
 
 Route::controller(ProductController::class)->prefix('products')->group(function () {
-    Route::get('/', 'index');
-    Route::get('/search', 'search');
+    Route::get('/', 'search');
     Route::get('/{product}', 'show');
 });
 

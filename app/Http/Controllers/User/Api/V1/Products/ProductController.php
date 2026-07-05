@@ -13,23 +13,6 @@ use Illuminate\Http\Response;
 
 class ProductController extends Controller
 {
-    public function index()
-    {
-        try {
-            $products = ProductResource::collection(
-                Product::query()
-                    ->with(['images', 'categories', 'brand'])
-                    ->where('publication_status', PublicationStatus::PUBLISHED->value)
-                    ->cursorPaginate()
-            );
-
-            return ApiResponse::Success('عملیات موفق', $products);
-        }catch (\Exception $exception){
-            report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
-        }
-    }
-
 
     public function show(Product $product)
     {
@@ -47,11 +30,16 @@ class ProductController extends Controller
 
     public function search(Request $request, FuzzySearchService $searchService)
     {
-        $query = trim((string) $request->get('q', ''));
+        $query = rawurldecode(trim((string) $request->get('q', '')));
 
         if ($query === '') {
             return ApiResponse::Success('عملیات موفق',ProductResource::collection(
                 Product::query()
+                    ->when(request()->filled('category_slug'),
+                        fn($q) => $q->whereHas('categories', function ($q) {
+                            $q->where('categories.slug', request()->category_slug);
+                        }
+                        ))
                     ->where('publication_status',PublicationStatus::PUBLISHED->value)
                     ->paginate(15)
             ));
@@ -66,6 +54,11 @@ class ProductController extends Controller
         return ApiResponse::Success('عملیات موفق',
             ProductResource::collection(
                 Product::query()
+                    ->when(request()->filled('category_slug'),
+                        fn($q) => $q->whereHas('categories', function ($q) {
+                            $q->where('categories.slug', request()->category_slug);
+                        }
+                        ))
                     ->where('publication_status',PublicationStatus::PUBLISHED->value)
                     ->whereIn('id', $matchedIds)
                     ->orderByRaw('FIELD(id,' . implode(',', array_map('intval', $matchedIds)) . ')')
