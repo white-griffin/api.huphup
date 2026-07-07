@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Provider\Api\V1;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\Provider\Products\ProductResource;
+use App\Models\AttributeOption;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -13,6 +14,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -21,7 +23,13 @@ class ProductController extends Controller
         try {
             $products = ProductResource::collection(
                 Product::query()
-                    ->with(['activeVariations', 'images', 'categories', 'brand'])
+                    ->with([
+                        'activeVariations.variationAttributes.attribute',
+                        'activeVariations.variationAttributes.option',
+                        'images',
+                        'categories',
+                        'brand',
+                    ])
                     ->paginate()
             );
 
@@ -31,25 +39,37 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
         }
     }
+
     public function show(Product $product)
     {
         try {
-            $product = ProductResource::make($product);
-            return ApiResponse::Success('عملیات موفق', $product);
+            $showProduct = ProductResource::make(
+                $product->load([
+                    'activeVariations.variationAttributes.attribute',
+                    'activeVariations.variationAttributes.option',
+                    'images',
+                    'categories',
+                    'brand',
+                ])
+            );
+            return ApiResponse::Success('عملیات موفق', $showProduct);
         } catch (\Exception $exception) {
             report($exception);
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
         }
     }
+
     public function store()
     {
         $data = $this->productData();
 
-        $variations = $data['variations'] ?? [];
-        $categories = $data['categories'] ?? [];
+        $variations = $data['variations'];
+        $categories = $data['categories'];
 
-        // حذف فیلدهایی که نباید وارد جدول products بشن
-        $productData = Arr::except($data, ['variations', 'categories']);
+        $productData = Arr::except($data, [
+            'variations',
+            'categories',
+        ]);
 
         try {
             DB::transaction(function () use ($productData, $variations, $categories) {
@@ -63,6 +83,7 @@ class ProductController extends Controller
                 $this->setCategories($product, $categories);
 
                 if (!empty($variations)) {
+
                     $this->syncVariations($product, $variations);
                 }
             });
@@ -72,13 +93,18 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
+
     public function update(Product $product)
     {
         $data = $this->productData($product);
 
-        $variations = $data['variations'] ?? [];
-        $categories = $data['categories'] ?? [];
-        $productData = Arr::except($data, ['variations', 'categories']);
+        $variations = $data['variations'];
+        $categories = $data['categories'];
+
+        $productData = Arr::except($data, [
+            'variations',
+            'categories',
+        ]);
 
         try {
             DB::transaction(function () use ($product, $productData, $variations, $categories) {
@@ -101,6 +127,7 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
+
     private function productData($product = null)
     {
         $required = $product ? 'sometimes' : 'required';
@@ -108,10 +135,6 @@ class ProductController extends Controller
             'brand_id' => ['required'],
             'name' => [$required, 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'price' => [$required, 'numeric'],
-            'discount_price' => ['nullable', 'numeric'],
-            'stock' => [$required, 'numeric'],
-            'sku' => ['nullable', 'string', 'max:255'],
             'images' => ['sometimes', 'array'],
             'images.*' => ['image', 'max:2048'],
             'categories' => ['required', 'array'],
@@ -119,28 +142,41 @@ class ProductController extends Controller
                 'required',
                 Rule::exists('categories', 'slug')
             ],
-            'variations' => ['sometimes', 'array'],
+            'variations' => ['required', 'array', 'min:1'],
+
+            'variations.*.price' => ['required', 'numeric'],
+            'variations.*.discount_price' => ['nullable', 'numeric'],
+            'variations.*.stock' => ['required', 'integer'],
             'variations.*.sku' => ['nullable', 'string', 'max:255'],
-            'variations.*.price' => ['required_with:variations', 'numeric'],
-            'variations.*.stock' => ['required_with:variations', 'integer'],
-            'variations.*.is_active' => ['boolean'],
-            'variations.*.attributes' => ['required_with:variations', 'array'],
+            'variations.*.is_default' => ['boolean'],
+            'variations.*.activity_status' => ['integer'],
+
+            'variations.*.attributes' => ['required', 'array', 'min:1'],
+
+            'variations.*.attributes.*.attribute_id' => [
+                'required',
+                Rule::exists('attributes', 'id'),
+            ],
+
+            'variations.*.attributes.*.attribute_option_id' => [
+                'required',
+                Rule::exists('attribute_options', 'id'),
+            ],
         ], [
             'name.required' => 'نام محصول را وارد کنید',
             'name.max' => 'نام محصول طولانی تر از حد مجاز است',
-            'price.required' => 'قیمت را وارد کنید',
-            'price.numeric' => 'فرمت قیمت محصول باید عدد باشد',
-            'stock.required' => 'تعداد موجودی را وارد کنید',
-            'stock.numeric' => 'فرمت موجودی باید عدد باشد',
             'categories.required' => 'دسته بندی ها را انتخاب کنید',
         ]);
 
         $variations = $data['variations'] ?? [];
         unset($data['variations']);
 
-        return ['product' => array_filter($data, fn($v) => !is_null($v)), 'variations' => $variations];
+        $data['variations'] = $variations;
+
+        return array_filter($data, fn($v) => !is_null($v));
 
     }
+
     private function setCategories($product, $categories)
     {
         $categoryIds = Category::query()
@@ -150,12 +186,41 @@ class ProductController extends Controller
 
         $product->categories()->sync($categoryIds);
     }
+
     private function syncVariations(Product $product, array $variations): void
     {
-        // در update، variationهای قدیمی حذف میشن و جدید جایگزین میشن
         $product->variations()->delete();
 
-        $product->variations()->createMany($variations);
+        foreach ($variations as $variationData) {
+
+            $attributes = $variationData['attributes'] ?? [];
+            unset($variationData['attributes']);
+
+            foreach ($attributes as $attribute) {
+
+                $exists = AttributeOption::query()
+                    ->where('id', $attribute['attribute_option_id'])
+                    ->where('attribute_id', $attribute['attribute_id'])
+                    ->exists();
+
+                if (!$exists) {
+                    throw ValidationException::withMessages([
+                        'variations' => 'Attribute option is invalid.',
+                    ]);
+                }
+            }
+
+            $variation = $product->variations()->create($variationData);
+
+            $variation->attributes()->createMany(
+                collect($attributes)
+                    ->map(fn($attribute) => [
+                        'attribute_id' => $attribute['attribute_id'],
+                        'attribute_option_id' => $attribute['attribute_option_id'],
+                    ])
+                    ->toArray()
+            );
+        }
     }
 
 
@@ -186,6 +251,7 @@ class ProductController extends Controller
 
         $product->images()->createMany($images);
     }
+
     public function uploadImages(Product $product)
     {
         request()->validate([
@@ -223,6 +289,7 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
+
     public function deleteImage(Product $product, ProductImage $image)
     {
         abort_if($image->product_id !== $product->id, 403);
@@ -247,6 +314,7 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
+
     public function setPrimary(Product $product, ProductImage $image)
     {
         abort_if($image->product_id !== $product->id, 403);
@@ -267,6 +335,7 @@ class ProductController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
+
     public function reorder()
     {
         request()->validate([

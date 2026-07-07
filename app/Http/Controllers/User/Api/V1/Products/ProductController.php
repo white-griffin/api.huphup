@@ -19,7 +19,13 @@ class ProductController extends Controller
         try {
             abort_if($product->publication_status != PublicationStatus::PUBLISHED->value, Response::HTTP_NOT_FOUND);
 
-            $product->loadMissing(['images', 'categories', 'brand']);
+            $product->loadMissing([
+                'images',
+                'categories',
+                'brand',
+                'activeVariations.variationAttributes.attribute',
+                'activeVariations.variationAttributes.option',
+            ]);
 
             return ApiResponse::Success('عملیات موفق', ProductResource::make($product));
         }catch (\Exception $exception){
@@ -41,6 +47,13 @@ class ProductController extends Controller
                         }
                         ))
                     ->where('publication_status',PublicationStatus::PUBLISHED->value)
+                    ->with([
+                        'images',
+                        'categories',
+                        'brand',
+                        'activeVariations.variationAttributes.attribute',
+                        'activeVariations.variationAttributes.option',
+                    ])
                     ->paginate(15)
             ));
         }
@@ -62,6 +75,13 @@ class ProductController extends Controller
                     ->where('publication_status',PublicationStatus::PUBLISHED->value)
                     ->whereIn('id', $matchedIds)
                     ->orderByRaw('FIELD(id,' . implode(',', array_map('intval', $matchedIds)) . ')')
+                    ->with([
+                        'images',
+                        'categories',
+                        'brand',
+                        'activeVariations.variationAttributes.attribute',
+                        'activeVariations.variationAttributes.option',
+                    ])
                     ->paginate(15)
             )
         );

@@ -13,32 +13,17 @@ class ProductVariationResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->id,
-            'sku'        => $this->sku,
-            'price'      => $this->price,
-            'stock'      => $this->stock,
-            'is_active'  => $this->is_active,
-            'attributes' => $this->formatAttributes(),
+            'id'              => $this->id,
+            'sku'             => $this->sku,
+            'price'           => $this->price,
+            'discount_price'  => $this->discount_price,
+            'stock'           => $this->stock,
+            'is_default'      => $this->is_default,
+            'activity_status' => $this->activity_status,
+
+            'attributes' => ProductVariationAttributeResource::collection(
+                $this->variationAttributes
+            ),
         ];
-    }
-
-    private function formatAttributes(): array
-    {
-        if (empty($this->attributes)) {
-            return [];
-        }
-
-        $formatted = [];
-
-        foreach ($this->attributes as $key => $value) {
-
-            $formatted[] = [
-                'key'   => $key,
-                'label' => ProductAttributeType::label($key) ?? $key,
-                'value' => $value,
-            ];
-        }
-
-        return $formatted;
     }
 }

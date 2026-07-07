@@ -14,18 +14,22 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'slug' => $this->slug,
-            'description' => $this->description,
-            'price' => (int)$this->price,
-            'discount_price' => (int)$this->discount_price,
-            'stock' => $this->stock,
-            'attributes' => $this->attributes,
-            'variations' => VariationResource::collection($this->activeVariations),
-            'images' => ProductImageResource::collection($this->images),
-            'categories' => CategoryResource::collection($this->categories),
-            'brand' => BrandResource::make($this->brand)
+            'id'                 => $this->id,
+            'name'               => $this->name,
+            'slug'               => $this->slug,
+            'description'        => $this->description,
+
+            'effective_price'    => (int) $this->activeVariations->min('price'),
+            'discount_price'     => (int) $this->activeVariations
+                ->whereNotNull('discount_price')
+                ->min('discount_price'),
+            'total_stock'        => (int) $this->activeVariations->sum('stock'),
+
+            'variations'         => VariationResource::collection($this->activeVariations),
+
+            'images'             => ProductImageResource::collection($this->images),
+            'categories'         => CategoryResource::collection($this->categories),
+            'brand'              => BrandResource::make($this->brand),
         ];
     }
 }

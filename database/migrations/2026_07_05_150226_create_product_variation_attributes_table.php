@@ -24,6 +24,13 @@ return new class extends Migration
                 'product_variation_id',
                 'attribute_id'
             ]);
+
+            $table->index('attribute_option_id');
+
+            $table->index([
+                'attribute_id',
+                'attribute_option_id'
+            ]);
             $table->timestamps();
         });
     }
