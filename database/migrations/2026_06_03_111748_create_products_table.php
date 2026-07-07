@@ -20,10 +20,6 @@ return new class extends Migration
             $table->string('name'); // نام محصول
             $table->string('slug'); // شناسه URL
             $table->text('description')->nullable(); // توضیحات
-            $table->decimal('price', 12, 0); // قیمت اصلی
-            $table->decimal('discount_price', 12, 0)->nullable(); // قیمت تخفیف‌خورده
-            $table->integer('stock')->default(0); // موجودی انبار
-            $table->string('sku')->nullable(); // کد انبار
             $table->tinyInteger('publication_status')
                 ->default(PublicationStatus::PENDING);
             $table->text('reject_reason')->nullable();

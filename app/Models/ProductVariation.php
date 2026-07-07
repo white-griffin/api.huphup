@@ -5,22 +5,20 @@ namespace App\Models;
 use App\Enums\ProductAttributeType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductVariation extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'attributes' => 'array',
-    ];
 
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
-    public function getVariationAttribute(ProductAttributeType $key): mixed
+    public function attributes(): HasMany
     {
-        return $this->attributes[$key->value] ?? null;
+        return $this->hasMany(ProductVariationAttribute::class);
     }
 }

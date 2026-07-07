@@ -12,14 +12,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_variations', function (Blueprint $table) {
+        Schema::create('attribute_options', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->decimal('price', 15, 2);
-            $table->decimal('discount_price', 15, 2)->nullable(); // قیمت تخفیف‌خورده
-            $table->unsignedInteger('stock')->default(0);
-            $table->string('sku')->nullable()->unique();
-            $table->boolean('is_default')->default(false);
+            $table->foreignId('attribute_id')->constrained('attributes');
+            $table->string('value');
+            $table->string('label');
+            $table->tinyInteger('sort_order')->default(0);
             $table->tinyInteger('activity_status')
                 ->default(ActivityStatus::ACTIVE->value)
                 ->comment('1 For Active , 2 For InActive');
@@ -32,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_variations');
+        Schema::dropIfExists('attribute_options');
     }
 };

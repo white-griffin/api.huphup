@@ -18,13 +18,6 @@ class Product extends Model
 
     protected $guarded = ['id'];
 
-    protected function casts(): array
-    {
-        return [
-            'price' => 'decimal:0',
-            'discount_price' => 'decimal:0',
-        ];
-    }
 
 
     // تعریف فیلدهایی که می‌خواهیم ایندکس شوند
@@ -93,19 +86,15 @@ class Product extends Model
             ->where('is_default', true);
     }
 
-    // در Product.php
+
     public function getEffectivePrice(): string
     {
-        return $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->exists()
-            ? $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->min('price')
-            : $this->price;
+        return $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->min('price');
     }
 
     public function getTotalStock(): int
     {
-        return $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->exists()
-            ? $this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->sum('stock')
-            : $this->stock;
+        return$this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->sum('stock');
     }
 
 }
