@@ -3,6 +3,7 @@
 use App\Http\Controllers\Provider\Api\V1\BrandController;
 use App\Http\Controllers\Provider\Api\V1\BusinessOffDayController;
 use App\Http\Controllers\Provider\Api\V1\CategoryController;
+use App\Http\Controllers\Provider\Api\V1\ProductAttributeController;
 use App\Http\Controllers\Provider\Api\V1\ProductController;
 use App\Http\Controllers\Provider\Api\V1\ScheduleBreakController;
 use App\Http\Controllers\Provider\Api\V1\ScheduleController;
@@ -26,6 +27,9 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
     });
 });
 
+Route::controller(ProductAttributeController::class)->prefix('attributes')->group(function () {
+    Route::get('/', 'index');
+});
 
 Route::controller(BrandController::class)->prefix('brands')->group(function () {
     Route::get('/', 'index');

@@ -148,7 +148,7 @@ class ProductController extends Controller
             'variations.*.discount_price' => ['nullable', 'numeric'],
             'variations.*.stock' => ['required', 'integer'],
             'variations.*.sku' => ['nullable', 'string', 'max:255'],
-            'variations.*.is_default' => ['boolean'],
+            'variations.*.is_default' => ['required', 'boolean'],
             'variations.*.activity_status' => ['integer'],
 
             'variations.*.attributes' => ['required', 'array', 'min:1'],
@@ -189,6 +189,61 @@ class ProductController extends Controller
 
     private function syncVariations(Product $product, array $variations): void
     {
+        $signatures = collect();
+
+        $defaultCount = collect($variations)
+            ->where('is_default', true)
+            ->count();
+
+        if ($defaultCount !== 1) {
+            throw ValidationException::withMessages([
+                'variations' => 'Exactly one default variation is required.',
+            ]);
+        }
+
+        $validOptions = AttributeOption::query()
+            ->pluck('attribute_id', 'id');
+
+        foreach ($variations as $variationData) {
+
+            $attributes = $variationData['attributes'] ?? [];
+            unset($variationData['attributes']);
+
+            if (count($attributes) !== collect($attributes)->pluck('attribute_id')->unique()->count()) {
+                throw ValidationException::withMessages([
+                    'variations' => 'Duplicate attributes in one variation.',
+                ]);
+            }
+
+            $signature = collect($attributes)
+                ->sortBy('attribute_id')
+                ->map(fn ($item) => $item['attribute_id'] . ':' . $item['attribute_option_id'])
+                ->implode('|');
+
+            if ($signatures->contains($signature)) {
+                throw ValidationException::withMessages([
+                    'variations' => 'Duplicate variation.',
+                ]);
+            }
+
+            $signatures->push($signature);
+
+            foreach ($attributes as $attribute) {
+
+                $optionId = $attribute['attribute_option_id'];
+                $attributeId = $attribute['attribute_id'];
+
+                if (
+                    !isset($validOptions[$optionId]) ||
+                    (int) $validOptions[$optionId] !== (int) $attributeId
+                ) {
+                    throw ValidationException::withMessages([
+                        'variations' => 'Attribute option is invalid.',
+                    ]);
+                }
+            }
+        }
+
         $product->variations()->delete();
 
         foreach ($variations as $variationData) {
@@ -196,25 +251,11 @@ class ProductController extends Controller
             $attributes = $variationData['attributes'] ?? [];
             unset($variationData['attributes']);
 
-            foreach ($attributes as $attribute) {
-
-                $exists = AttributeOption::query()
-                    ->where('id', $attribute['attribute_option_id'])
-                    ->where('attribute_id', $attribute['attribute_id'])
-                    ->exists();
-
-                if (!$exists) {
-                    throw ValidationException::withMessages([
-                        'variations' => 'Attribute option is invalid.',
-                    ]);
-                }
-            }
-
             $variation = $product->variations()->create($variationData);
 
             $variation->attributes()->createMany(
                 collect($attributes)
-                    ->map(fn($attribute) => [
+                    ->map(fn ($attribute) => [
                         'attribute_id' => $attribute['attribute_id'],
                         'attribute_option_id' => $attribute['attribute_option_id'],
                     ])

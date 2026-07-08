@@ -11,12 +11,12 @@ class ProductVariationAttributeResource extends JsonResource
     {
         return [
             'attribute_id' => $this->attribute_id,
-            'name' => $this->attribute->name,
-            'slug' => $this->attribute->slug,
+            'attribute_name' => $this->attribute->name,
+            'attribute_slug' => $this->attribute->slug,
 
             'option_id' => $this->attribute_option_id,
-            'value' => $this->option->value,
-            'label' => $this->option->label,
+            'option_value' => $this->option->value,
+            'option_label' => $this->option->label,
             'option_slug' => $this->option->slug,
         ];
     }

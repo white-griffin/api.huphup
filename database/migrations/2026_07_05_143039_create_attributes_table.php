@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ActivityStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -16,6 +17,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->boolean('is_filterable')->default(false);
+            $table->tinyInteger('activity_status')
+                ->default(ActivityStatus::ACTIVE->value)
+                ->comment('1 For Active , 2 For InActive');
             $table->timestamps();
         });
     }
