@@ -20,30 +20,43 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             StateCitySeeder::class,
+
             AdminSeeder::class,
             UserSeeder::class,
             ProviderSeeder::class,
             ProviderDocumentSeeder::class,
+
             BusinessSeeder::class,
+
             ServiceSeeder::class,
             BusinessServiceSeeder::class,
+
             SpeciesSeeder::class,
             BreedsSeeder::class,
             PetSeeder::class,
             UserAddressSeeder::class,
+
             CategorySeeder::class,
             BrandSeeder::class,
+
+            AttributeSeeder::class,
+            AttributeOptionSeeder::class,
+
             ProductSeeder::class,
-            CategoryProductSeeder::class,
-            ProductImageSeeder::class,
             ProductVariationSeeder::class,
+            ProductVariationAttributeSeeder::class,
+            ProductImageSeeder::class,
+
             BusinessScheduleSeeder::class,
             ScheduleBreakSeeder::class,
             BusinessOffDaySeeder::class,
+
             AppointmentSeeder::class,
+
             ConversationSeeder::class,
             ConversationParticipantSeeder::class,
             MessageSeeder::class,
+
             RoutineTemplateSeeder::class,
             PetRoutineSeeder::class,
             RoutineActionSeeder::class,

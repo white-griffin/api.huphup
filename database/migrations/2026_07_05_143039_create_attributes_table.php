@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->boolean('is_filterable')->default(false);
+            $table->unsignedInteger('display_order')->default(0); // ترتیب نمایش
             $table->tinyInteger('activity_status')
                 ->default(ActivityStatus::ACTIVE->value)
                 ->comment('1 For Active , 2 For InActive');

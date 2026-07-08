@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('attribute_id')->constrained('attributes');
             $table->string('value');
             $table->string('label');
+            $table->string('slug');
             $table->tinyInteger('sort_order')->default(0);
             $table->tinyInteger('activity_status')
                 ->default(ActivityStatus::ACTIVE->value)

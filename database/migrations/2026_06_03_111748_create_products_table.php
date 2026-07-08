@@ -25,8 +25,6 @@ return new class extends Migration
             $table->text('reject_reason')->nullable();
             $table->timestamps();
 
-            $table->unique(['business_id', 'slug']); // اسلاگ یکتا در هر کسب‌وکار
-            $table->unique(['business_id', 'sku']); // کد انبار یکتا در هر کسب‌وکار
 
             $table->index('business_id');
         });

@@ -20,17 +20,20 @@ return new class extends Migration
 
             $table->foreignId('attribute_option_id')->constrained()->cascadeOnDelete();
 
-            $table->unique([
-                'product_variation_id',
-                'attribute_id'
-            ]);
+            $table->unique(
+                ['product_variation_id', 'attribute_id'],
+                'pva_unique'
+            );
 
-            $table->index('attribute_option_id');
+            $table->index(
+                ['attribute_option_id'],
+                'pva_option_idx'
+            );
 
-            $table->index([
-                'attribute_id',
-                'attribute_option_id'
-            ]);
+            $table->index(
+                ['attribute_id', 'attribute_option_id'],
+                'pva_attr_option_idx'
+            );
             $table->timestamps();
         });
     }
