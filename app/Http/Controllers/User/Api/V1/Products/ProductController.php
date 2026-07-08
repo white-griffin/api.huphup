@@ -7,6 +7,9 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\Products\ProductResource;
 use App\Models\Product;
+use App\Services\Product\ProductFacetService;
+use App\Services\Product\ProductFilterService;
+use App\Services\Product\ProductQueryService;
 use App\Services\Search\FuzzySearchService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -28,63 +31,60 @@ class ProductController extends Controller
             ]);
 
             return ApiResponse::Success('عملیات موفق', ProductResource::make($product));
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
         }
     }
 
-    public function search(Request $request, FuzzySearchService $searchService)
-    {
-        $query = rawurldecode(trim((string) $request->get('q', '')));
+    public function search(
+        Request $request,
+        FuzzySearchService $searchService,
+        ProductQueryService $queryService,
+        ProductFilterService $filterService,
+        ProductFacetService $facetService
+    ) {
 
-        if ($query === '') {
-            return ApiResponse::Success('عملیات موفق',ProductResource::collection(
-                Product::query()
-                    ->when(request()->filled('category_slug'),
-                        fn($q) => $q->whereHas('categories', function ($q) {
-                            $q->where('categories.slug', request()->category_slug);
-                        }
-                        ))
-                    ->where('publication_status',PublicationStatus::PUBLISHED->value)
-                    ->with([
-                        'images',
-                        'categories',
-                        'brand',
-                        'activeVariations.variationAttributes.attribute',
-                        'activeVariations.variationAttributes.option',
-                    ])
-                    ->paginate(15)
-            ));
+
+        $search = rawurldecode(trim((string) $request->get('q', '')));
+
+        $query = $queryService->make()
+            ->where('publication_status', PublicationStatus::PUBLISHED->value);
+
+        $query = $filterService->apply($query, $request);
+
+        if ($search != '') {
+
+            $matchedIds = array_slice(
+                $searchService->search('products.index', $search, 100),
+                0,
+                200
+            );
+
+            if (empty($matchedIds)) {
+                return ApiResponse::Success('محصولی یافت نشد', null);
+            }
+
+            $query->whereIn('id', $matchedIds)
+                ->orderByRaw(
+                    'FIELD(id,' . implode(',', array_map('intval', $matchedIds)) . ')'
+                );
         }
 
-        $matchedIds = array_slice($searchService->search('products.index', $query, 100), 0, 200);
+        $filters = $facetService->build(clone $query);
 
-        if (empty($matchedIds)) {
-            return ApiResponse::Success('محصولی یافت نشد',null);
-        }
+        $products = $query->paginate(15);
 
-        return ApiResponse::Success('عملیات موفق',
-            ProductResource::collection(
-                Product::query()
-                    ->when(request()->filled('category_slug'),
-                        fn($q) => $q->whereHas('categories', function ($q) {
-                            $q->where('categories.slug', request()->category_slug);
-                        }
-                        ))
-                    ->where('publication_status',PublicationStatus::PUBLISHED->value)
-                    ->whereIn('id', $matchedIds)
-                    ->orderByRaw('FIELD(id,' . implode(',', array_map('intval', $matchedIds)) . ')')
-                    ->with([
-                        'images',
-                        'categories',
-                        'brand',
-                        'activeVariations.variationAttributes.attribute',
-                        'activeVariations.variationAttributes.option',
-                    ])
-                    ->paginate(15)
-            )
-        );
+        return ApiResponse::Success('عملیات موفق', [
+            'products' => ProductResource::collection($products),
+            'filters' => $filters,
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ],
+        ]);
     }
 
 
