@@ -25,21 +25,6 @@ class ProductsTable
                 TextColumn::make('name')
                     ->label('نام')
                     ->searchable(),
-                TextColumn::make('price')
-                    ->label('قیمت اصلی')
-                    ->sortable(),
-                TextColumn::make('discount_price')
-                    ->label('قیمت تخفیف خورده')
-                    ->default('بدون تخفیف')
-                    ->sortable(),
-                TextColumn::make('stock')
-                    ->label('موجودی')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('sku')
-                    ->label('کد انبار')
-                    ->label('SKU')
-                    ->searchable(),
                 TextColumn::make('publication_status')
                     ->label('وضعیت انتشار')
                     ->formatStateUsing(fn ($state) => PublicationStatus::label((string) $state) ?? '—')
