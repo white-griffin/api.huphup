@@ -2,7 +2,7 @@
 
 این فایل برای کپی‌کردن در ابتدای گفتگو با AI ساخته شده است تا مدل بتواند بدون بررسی کامل ریپو، معماری، دامنه، APIها و نکات حساس پروژه را بفهمد.
 
-آخرین به‌روزرسانی: 2026-06-22
+آخرین به‌روزرسانی: 2026-07-09
 
 ## خلاصه پروژه
 
@@ -20,6 +20,7 @@
 - Laravel Reverb و broadcasting برای چت real-time
 - Filament `^4.0` برای پنل ادمین
 - BezhanSalleh Filament Shield و Spatie Laravel Permission برای نقش و مجوز
+- TeamTNT TNTSearch برای جستجوی fuzzy محصولات
 - `ipe/smsir-php` برای ارسال OTP از SmsIr
 - `morilog/jalali` و `hekmatinasser/verta` برای تاریخ شمسی
 - Vite، Tailwind CSS و Axios در بخش assets
@@ -43,6 +44,8 @@
 - `app/Http/Requests/User/Api/V1/PetRoutine`: validation requestهای روتین حیوانات
 - `app/Models`: مدل‌های Eloquent
 - `app/Services`: سرویس‌های دامنه مثل رزرو، فایل و روتین‌ها
+- `app/Services/Product`: سرویس‌های query، filter و facet محصولات
+- `app/Services/Search`: سرویس جستجوی fuzzy با TNTSearch
 - `app/Services/Routines/Resolvers`: resolverهای پیشنهادهای مرتبط با روتین
 - `app/Enums`: enumهای وضعیت‌ها و نوع‌ها
 - `app/Filament/Resources`: resourceهای پنل ادمین
@@ -182,16 +185,51 @@ Routeهای provider به‌جز auth با middlewareهای زیر محافظت 
 
 برای تصویر pet از `MediaService` و مسیر `pet/avatars` استفاده می‌شود.
 
+### User Businesses
+
+کنترلر: `app/Http/Controllers/User/Api/V1/BusinessController.php`
+
+- `GET /api/v1/user/businesses`
+  - فقط businessهای `verification_status = VerificationStatuses::ACTIVE` و `activity_status = ActivityStatus::ACTIVE` را برمی‌گرداند.
+  - query اختیاری `type` برای فیلتر `business_type` دارد.
+  - خروجی با `cursorPaginate(10)` است.
+- `GET /api/v1/user/businesses/{business}`
+
+این routeها فعلاً middleware احراز هویت ندارند.
+
+### User Categories
+
+کنترلر: `app/Http/Controllers/User/Api/V1/Products/CategoryController.php`
+
+- `GET /api/v1/user/categories`
+  - فقط categoryهای فعال و ریشه‌ای (`parent_id = null`) را همراه children برمی‌گرداند.
+  - query اختیاری `type` برای فیلتر نوع category دارد.
+- `GET /api/v1/user/categories/{category}`
+  - route model binding روی `Category` است و کلید route category `slug` است.
+  - محصولات publish شده category را همراه `primaryImage` load می‌کند.
+
 ### User Products
 
-کنترلر: `app/Http/Controllers/User/Api/V1/ProductController.php`
+کنترلر: `app/Http/Controllers/User/Api/V1/Products/ProductController.php`
+سرویس‌ها:
+
+- `app/Services/Product/ProductQueryService.php`
+- `app/Services/Product/ProductFilterService.php`
+- `app/Services/Product/ProductFacetService.php`
+- `app/Services/Search/FuzzySearchService.php`
 
 - `GET /api/v1/user/products`
-  - فقط محصول‌های دارای `publication_status = PublicationStatus::PUBLISHED` را با `cursorPaginate()` برمی‌گرداند.
+  - متد `search` فقط محصول‌های `PublicationStatus::PUBLISHED` را برمی‌گرداند.
+  - query جستجو: `q`
+  - فیلترها: `brand`, `category`, `attribute_options[attribute_id][]=option_id`, `min_price`, `max_price`
+  - sortها: `newest`, `oldest`, `price_asc`, `price_desc`, `name_asc`, `name_desc`
+  - اگر `q` ارسال شود، با `FuzzySearchService` روی ایندکس `products.index` جستجو می‌کند و ترتیب نتایج را با `FIELD(id, ...)` حفظ می‌کند.
+  - خروجی شامل `products`, `filters` و `pagination` است و paginate با اندازه 15 انجام می‌شود.
 - `GET /api/v1/user/products/{product}`
   - route model binding روی `Product` است و کلید route محصول `slug` است.
+  - فقط محصول publish شده قابل نمایش است.
 
-خروجی با `app/Http/Resources/V1/User/Products/ProductResource.php` شامل محصول، تصاویر، categoryها و brand است.
+خروجی با `app/Http/Resources/V1/User/Products/ProductResource.php` شامل محصول، تصاویر، categoryها، brand، variationهای active/default، `effective_price`, `discount_price` و `total_stock` است.
 
 ### Appointments
 
@@ -300,9 +338,24 @@ Templateها دارای species، category روتین، interval پیش‌فرض
 - route key محصول `slug` است.
 - `Product` از trait `BelongsToBusiness` استفاده می‌کند.
 - categoryها با slug دریافت و به id تبدیل می‌شوند.
+- endpointهای `index` و `show` محصول را با `activeVariations.variationAttributes.attribute`, `activeVariations.variationAttributes.option`, `images`, `categories`, `brand` eager-load می‌کنند.
+- create/update محصول variationها را هم در همان request sync می‌کند؛ route جداگانه‌ای برای CRUD مستقیم variation وجود ندارد.
+- payload create/update شامل `brand_id`, `name`, `description?`, `images[]?`, `categories[]`, `variations[]` است.
+- هر variation نیازمند `price`, `stock`, `is_default`, `attributes[]` است؛ `discount_price`, `sku`, `activity_status` اختیاری‌اند.
+- هر variation attribute شامل `attribute_id` و `attribute_option_id` است و option باید واقعاً متعلق به همان attribute باشد.
+- دقیقاً یک variation باید `is_default = true` داشته باشد.
+- variationهای تکراری و attributeهای تکراری داخل یک variation با validation دستی رد می‌شوند.
+- در update فعلی، `brand_id`, `categories` و `variations` همچنان required هستند؛ فقط `name` به `sometimes` تبدیل می‌شود.
 - تصاویر در `product/images` ذخیره می‌شوند.
 - تصویر اول در نبود تصویر primary، به‌عنوان primary ثبت می‌شود.
-- product variations در مدل و seed وجود دارد، اما route اختصاصی provider برای مدیریت variationها در `routes/provider/api_v1.php` دیده نمی‌شود.
+
+### Product Attributes
+
+کنترلر: `app/Http/Controllers/Provider/Api/V1/ProductAttributeController.php`
+
+- `GET /api/v1/provider/attributes`
+  - attributeهای فعال را همراه optionها برمی‌گرداند.
+  - برای ساخت payload variationها باید از `attributes[].id` و `options[].id` استفاده شود.
 
 ### Brands
 
@@ -397,12 +450,15 @@ Templateها دارای species، category روتین، interval پیش‌فرض
 
 `Service` خدمات پایه را نگه می‌دارد. `BusinessService` pivot بین business و service است و قیمت، مدت، تنظیمات و وضعیت سرویس را نگه می‌دارد.
 
-### Product, ProductVariation, Category, Brand, ProductImage
+### Product, ProductVariation, ProductVariationAttribute, Attribute, AttributeOption, Category, Brand, ProductImage
 
 فایل‌ها:
 
 - `app/Models/Product.php`
 - `app/Models/ProductVariation.php`
+- `app/Models/ProductVariationAttribute.php`
+- `app/Models/Attribute.php`
+- `app/Models/AttributeOption.php`
 - `app/Models/Category.php`
 - `app/Models/Brand.php`
 - `app/Models/ProductImage.php`
@@ -412,10 +468,37 @@ Templateها دارای species، category روتین، interval پیش‌فرض
 - `Product` به Business و Brand تعلق دارد، چند Category دارد، چند تصویر دارد و چند Variation دارد.
 - `Product` با slug route-binding می‌شود و slug در زمان save با `app/Support/SlugService.php` تولید می‌شود.
 - `Product` از trait `BelongsToBusiness` استفاده می‌کند و در provider context با business محدود می‌شود.
-- `ProductVariation` شامل `price`, `discount_price`, `stock`, `sku`, `attributes`, `is_default`, `activity_status` است.
-- attributeهای variation بر اساس enum `ProductAttributeType` تعریف شده‌اند: رنگ، سایز و وزن.
-- `Product::getEffectivePrice()` کمترین قیمت variation فعال را در صورت وجود برمی‌گرداند؛ در غیر این صورت قیمت خود محصول را.
-- `Product::getTotalStock()` مجموع stock variationهای فعال را در صورت وجود برمی‌گرداند؛ در غیر این صورت stock خود محصول را.
+- `Product` از trait `SearchableByTNT` استفاده می‌کند و `toSearchableArray()` فیلدهای `id`, `name`, `slug`, `business`, `brand`, `category`, `description` را برای ایندکس آماده می‌کند.
+- `Product::activeVariations()` فقط variationهای فعال و default را برمی‌گرداند؛ بنابراین با اسم متد کاملاً معادل همه variationهای فعال نیست.
+- `Product::getEffectivePrice()` کمترین قیمت variationهای فعال را برمی‌گرداند.
+- `Product::getTotalStock()` مجموع stock variationهای فعال را برمی‌گرداند.
+- `ProductVariation` شامل `product_id`, `price`, `discount_price`, `stock`, `sku`, `is_default`, `activity_status` است.
+- `ProductVariation::variationAttributes()` به `ProductVariationAttribute` وصل است.
+- `ProductVariationAttribute` سه رابطه `variation()`, `attribute()`, `option()` دارد.
+- `Attribute` شامل `name`, `slug`, `is_filterable`, `display_order`, `activity_status` است و چند `AttributeOption` دارد.
+- `AttributeOption` شامل `attribute_id`, `value`, `label`, `slug`, `sort_order`, `activity_status` است.
+- attributeهای variation دیگر روی enum `ProductAttributeType` ذخیره نمی‌شوند؛ schema جدید از جدول‌های `attributes`, `attribute_options`, `product_variation_attributes` استفاده می‌کند.
+- `Category` و `Brand` هر دو route key برابر `slug` دارند، در زمان save slug تولید می‌کنند و accessor تصویر دارند.
+
+## جستجو و فیلتر محصول
+
+فایل‌های اصلی:
+
+- `app/Services/Product/ProductQueryService.php`
+- `app/Services/Product/ProductFilterService.php`
+- `app/Services/Product/ProductFacetService.php`
+- `app/Services/Search/FuzzySearchService.php`
+- `app/Models/Traits/SearchableByTNT.php`
+- `app/Support/SearchNormalizer.php`
+
+رفتار:
+
+- `ProductQueryService::make()` query پایه product را با eager-load تصاویر، برند، categoryها و variation attributeها می‌سازد و publish بودن محصول را شرط می‌کند.
+- `ProductFilterService::apply()` فیلترهای brand، category، attribute optionها، بازه قیمت و sort را روی query اعمال می‌کند.
+- فیلتر attribute optionها بر اساس `whereHas('activeVariations.variationAttributes')` اعمال می‌شود؛ چون `activeVariations` فقط default را برمی‌گرداند، فیلترها فعلاً روی variation default/active اثر دارند.
+- `ProductFacetService::build()` facetهای قابل فیلتر را از `ProductVariationAttribute` می‌سازد و برای هر option تعداد محصول‌های unique را محاسبه می‌کند.
+- `FuzzySearchService` از TNTSearch با config `config/tntsearch.php` استفاده می‌کند و قبل از search متن را با `SearchNormalizer` normalize می‌کند.
+- `SearchableByTNT` روی eventهای `saved` و `deleted` ایندکس مدل را update/delete می‌کند؛ مدل باید ایندکس متناظر مثل `products.index` را داشته باشد.
 
 ### Appointment
 
@@ -520,6 +603,12 @@ Resourceهای اصلی:
 - Groups
 - RoutineTemplates
 
+نکته محصول در Filament:
+
+- `ProductResource` فعلی view/list دارد و edit action در table کامنت شده است.
+- `ProductInfolist` variationها و attributeهای هر variation و تصاویر را نمایش می‌دهد.
+- `ProductForm` هنوز فیلدهای قدیمی `price`, `discount_price`, `stock`, `sku` را مستقیم روی محصول نشان می‌دهد، در حالی که schema فعلی این فیلدها را در `product_variations` نگه می‌دارد؛ برای create/edit محصول در پنل باید بازبینی شود.
+
 ## Response Format
 
 Helper: `app/Helpers/Api/ApiResponse.php`
@@ -590,6 +679,9 @@ Migrationها در `database/migrations` هستند.
 - `category_products`
 - `product_images`
 - `product_variations`
+- `attributes`
+- `attribute_options`
+- `product_variation_attributes`
 - `business_schedules`
 - `schedule_breaks`
 - `business_off_days`
@@ -625,7 +717,10 @@ Seederهای مهم:
 - `CategorySeeder`
 - `BrandSeeder`
 - `ProductSeeder`
+- `AttributeSeeder`
+- `AttributeOptionSeeder`
 - `ProductVariationSeeder`
+- `ProductVariationAttributeSeeder`
 - `AppointmentSeeder`
 - `ConversationSeeder`
 - `MessageSeeder`
@@ -645,6 +740,9 @@ Seederهای مهم:
 - تاریخ‌های UI ممکن است شمسی باشند، اما منطق دیتابیس عمدتاً با Carbon و تاریخ میلادی کار می‌کند.
 - اگر validation فارسی وجود دارد، پیام‌های جدید را هم فارسی و هم‌سبک نگه دار.
 - برای productها به slug route key توجه کن.
+- برای product variations از schema جدید attribute/option استفاده کن، نه enum قدیمی `ProductAttributeType`.
+- در Provider Product create/update دقیقاً یک variation default لازم است و categoryها با slug ارسال می‌شوند.
+- جستجو و فیلتر محصول به `ProductQueryService`, `ProductFilterService`, `ProductFacetService` و TNTSearch وابسته است؛ قبل از تغییر behavior محصولات این سرویس‌ها را بررسی کن.
 - برای pet routineها مالکیت pet نسبت به user جاری مهم است و باید در route/model bindingهای بعدی هم رعایت شود.
 
 ## موارد قابل بررسی و ریسک‌های احتمالی
@@ -652,9 +750,15 @@ Seederهای مهم:
 این‌ها الزاماً bug قطعی نیستند، ولی برای توسعه بعدی باید در نظر گرفته شوند:
 
 - `LocationController::cities` از ستون `province` برای فیلتر با `province_id` استفاده می‌کند؛ نام ستون schema باید بررسی شود.
-- `ProductController` کاربر در متد `show` از `ProductResource::collection($product)` استفاده کرده، در حالی که برای single model معمولاً `ProductResource::make($product)` درست است.
-- `Product::activeVariations()` فعلاً `is_default = true` را فیلتر می‌کند، نه `activity_status = active`؛ نام متد می‌تواند گمراه‌کننده باشد.
-- `ProductVariation::getAttribute(ProductAttributeType $key)` با متد پایه Eloquent هم‌نام است و ممکن است رفتار attribute access را تحت تأثیر قرار دهد.
+- `Product::activeVariations()` هم `activity_status = active` و هم `is_default = true` را فیلتر می‌کند؛ نام متد می‌تواند گمراه‌کننده باشد چون همه variationهای فعال را برنمی‌گرداند.
+- `Product::toSearchableArray()` از `$this->category` استفاده می‌کند، اما مدل رابطه `categories()` دارد؛ این مورد ممکن است در indexing خطا یا داده ناقص ایجاد کند.
+- `Product::getEffectivePrice()` type-hint خروجی `string` دارد، اما `min('price')` ممکن است عدد decimal یا null برگرداند.
+- `ProductFilterService` فیلتر قیمت و attribute option را روی `activeVariations` اعمال می‌کند؛ چون این relation فقط defaultها را شامل می‌شود، variationهای فعال غیر default در فیلتر لحاظ نمی‌شوند.
+- `ProductQueryService::make()` خودش `publication_status = 1` را اعمال می‌کند و `ProductController::search` دوباره شرط `PublicationStatus::PUBLISHED` را اضافه می‌کند؛ تکراری ولی بی‌ضرر است.
+- `ProductFacetService::build()` از query فعلی pluck می‌گیرد؛ در queryهای دارای sort/search پیچیده باید performance و SQL بررسی شود.
+- `Provider ProductController::syncVariations()` در catch عمومی کنترلر قرار دارد؛ `ValidationException`های دستی ممکن است به جای 422 به 500 تبدیل شوند.
+- `ProductAttributeController::index()` در catch پارامترهای `ApiResponse::Fail` را ظاهراً با ترتیب ناسازگار صدا می‌زند.
+- `ProductForm` در Filament هنوز فیلدهای `price`, `discount_price`, `stock`, `sku` را مستقیم روی محصول دارد، اما migration فعلی `products` این ستون‌ها را ندارد.
 - در `StorePetRoutineRequest` شرط template با ستون `is_active` نوشته شده، اما migration `routine_templates` ستون `activity_status` دارد.
 - در migration `pet_routines` ستون `start_date` اجباری است، اما `StorePetRoutineRequest` آن را validate نمی‌کند و controller مقدار پیش‌فرض برایش نمی‌گذارد.
 - در requestهای pet routine فیلد `notes` validate می‌شود، اما migration `pet_routines` ستون `notes` ندارد.
@@ -690,7 +794,9 @@ Seederهای مهم:
 - `app/Services/Routines/Resolvers/ResolverFactory.php`
 - `app/Http/Controllers/User/Api/V1/AppointmentController.php`
 - `app/Http/Controllers/User/Api/V1/LocationController.php`
-- `app/Http/Controllers/User/Api/V1/ProductController.php`
+- `app/Http/Controllers/User/Api/V1/Products/ProductController.php`
+- `app/Http/Controllers/User/Api/V1/Products/CategoryController.php`
+- `app/Http/Controllers/User/Api/V1/BusinessController.php`
 - `app/Http/Controllers/User/Api/V1/PetRoutine/PetRoutineController.php`
 - `app/Http/Controllers/User/Api/V1/PetRoutine/RoutineTemplateController.php`
 - `app/Http/Controllers/User/Api/V1/Chat/ConversationController.php`
@@ -700,9 +806,16 @@ Seederهای مهم:
 - `app/Http/Controllers/Provider/Api/V1/AuthController.php`
 - `app/Models/Product.php`
 - `app/Models/ProductVariation.php`
+- `app/Models/ProductVariationAttribute.php`
+- `app/Models/Attribute.php`
+- `app/Models/AttributeOption.php`
 - `app/Models/RoutineTemplate.php`
 - `app/Models/PetRoutine.php`
 - `app/Models/RoutineAction.php`
 - `app/Providers/Filament/AdminPanelProvider.php`
+- `app/Services/Product/ProductQueryService.php`
+- `app/Services/Product/ProductFilterService.php`
+- `app/Services/Product/ProductFacetService.php`
+- `app/Services/Search/FuzzySearchService.php`
 - `database/migrations`
 - `database/seeders/DatabaseSeeder.php`
