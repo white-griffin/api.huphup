@@ -19,7 +19,8 @@
         "mokhosh/filament-jalali": "^5.1",
         "morilog/jalali": "^3.5",
         "spatie/laravel-permission": "^6.25",
-        "teamtnt/tntsearch": "^5.0"
+        "teamtnt/tntsearch": "^5.0",
+        "ext-http": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

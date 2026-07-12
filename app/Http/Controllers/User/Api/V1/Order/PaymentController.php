@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers\User\Api\V1\Order;
+
+use App\Enums\PaymentStatuses;
+use App\Helpers\Api\ApiResponse;
+use App\Http\Controllers\Controller;
+use App\Models\Payment;
+use App\Services\Payment\PaymentService;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+class PaymentController extends Controller
+{
+    public function __construct(
+        protected PaymentService $paymentService
+    ) {
+    }
+
+    /**
+     * شروع فرآیند پرداخت
+     */
+    public function pay(Payment $payment)
+    {
+        $payment->load('payable');
+
+        $result = $this->paymentService->initiate($payment);
+
+        return ApiResponse::Success([
+            'redirect_url' => $result['redirect_url'],
+        ]);
+    }
+
+    /**
+     * Callback درگاه
+     */
+    public function callback(Request $request, string $gateway)
+    {
+        $payment = $this->paymentService->handleCallback(
+            gatewayName: $gateway,
+            payload: $request->all()
+        );
+
+        if ($payment->payment_status == PaymentStatuses::PAID->value) {
+
+            return ApiResponse::Success(
+                'پرداخت با موفقیت انجام شد.',
+                $payment,
+            );
+        }
+
+        return ApiResponse::Fail(
+            Response::HTTP_BAD_REQUEST,
+            'پرداخت ناموفق بود.'
+        );
+    }
+}

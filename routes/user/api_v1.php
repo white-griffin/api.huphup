@@ -5,6 +5,8 @@ use App\Http\Controllers\User\Api\V1\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\LocationController;
+use App\Http\Controllers\User\Api\V1\Order\OrderController;
+use App\Http\Controllers\User\Api\V1\Order\PaymentController;
 use App\Http\Controllers\User\Api\V1\PetRoutine\PetRoutineController;
 use App\Http\Controllers\User\Api\V1\PetRoutine\RoutineTemplateController;
 use App\Http\Controllers\User\Api\V1\Pets\BreedsController;
@@ -110,3 +112,21 @@ Route::controller(RoutineTemplateController::class)
         Route::get('/', 'index');
         Route::get('/{routine_template}', 'show');
     });
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::apiResource('orders', OrderController::class)
+        ->only(['index', 'store', 'show']);
+
+    Route::prefix('payments')->group(function () {
+
+        Route::post('{payment}/pay', [PaymentController::class, 'pay']);
+
+    });
+
+});
+
+Route::match(['GET', 'POST'], 'payments/callback/{gateway}', [
+    PaymentController::class,
+    'callback',
+])->name('payments.callback');
