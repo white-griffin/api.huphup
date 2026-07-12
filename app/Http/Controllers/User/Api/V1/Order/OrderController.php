@@ -41,7 +41,6 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'gateway' => ['required', 'integer'],
             'notes' => ['nullable', 'string'],
 
             'items' => ['required', 'array', 'min:1'],
@@ -64,16 +63,8 @@ class OrderController extends Controller
             notes: $data['notes'] ?? null,
         );
 
-        $payment = $this->paymentService->create(
-            payable: $order,
-            userId: $request->user()->id,
-            amount: $order->total_amount,
-            gateway: $data['gateway'],
-        );
-
         return ApiResponse::Success( 'عملیات موفق',[
             'order'   => $order,
-            'payment' => $payment,
         ]);
     }
 

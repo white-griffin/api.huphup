@@ -15,6 +15,44 @@ use ValueError;
 
 class PaymentService
 {
+    public function createForOrder(
+        Order $order,
+        $gateway,
+    ): Payment {
+        return DB::transaction(function () use ($order, $gateway) {
+
+            $order = Order::query()
+                ->lockForUpdate()
+                ->findOrFail($order->id);
+
+            $paidPayment = $order->payments()
+                ->where('payment_status', PaymentStatuses::PAID->value)
+                ->exists();
+
+            if ($paidPayment) {
+                throw new PaymentGatewayException('این سفارش قبلاً پرداخت شده است.');
+            }
+
+            $activePayment = $order->payments()
+                ->whereIn('payment_status', [
+                    PaymentStatuses::UNPAID->value,
+                    PaymentStatuses::PROCESSING->value,
+                ])
+                ->latest()
+                ->first();
+
+            if ($activePayment) {
+                return $activePayment;
+            }
+
+            return $this->create(
+                payable: $order,
+                userId: $order->user_id,
+                amount: $order->total_amount,
+                gateway: $gateway,
+            );
+        });
+    }
     /**
      * یک رکورد Payment می‌سازد و متصل به payable (Order, Appointment, Wallet, ...)
      */

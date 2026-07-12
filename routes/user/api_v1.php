@@ -120,7 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('payments')->group(function () {
 
-        Route::post('{payment}/pay', [PaymentController::class, 'pay']);
+        Route::post('/pay', [PaymentController::class, 'pay']);
 
     });
 

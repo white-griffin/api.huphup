@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\User\Api\V1\Order;
 
+use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\Payment;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -17,12 +18,26 @@ class PaymentController extends Controller
     ) {
     }
 
+
     /**
      * شروع فرآیند پرداخت
      */
-    public function pay(Payment $payment)
+    public function pay(Request $request)
     {
-        $payment->load('payable');
+        $data = $request->validate([
+            'order_id' => ['required', 'integer'],
+            'gateway' => ['required', Rule::enum(PaymentGateways::class)],
+        ]);
+
+        $order = $request->user()
+            ->orders()
+            ->findOrFail($data['order_id']);
+
+
+        $payment = $this->paymentService->createForOrder(
+            order: $order,
+            gateway: $data['gateway'],
+        );
 
         $result = $this->paymentService->initiate($payment);
 
