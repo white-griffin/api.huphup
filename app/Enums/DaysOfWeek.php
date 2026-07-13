@@ -47,6 +47,11 @@ enum DaysOfWeek: string implements Contracts\EnumContractInterface
         return self::labels()[$value] ?? null;
     }
 
+    public static function fromEnglishLabel(string $englishLabel): ?self
+    {
+        $key = array_search(strtolower($englishLabel), array_map('strtolower', self::englishLabels()));
+        return $key !== false ? self::tryFrom($key) : null;
+    }
     public static function fromValue(string $value): ?self {
         return self::from($value);
     }

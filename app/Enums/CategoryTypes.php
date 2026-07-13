@@ -29,6 +29,11 @@ enum CategoryTypes: string implements Contracts\EnumContractInterface
         ];
     }
 
+    public static function fromEnglishLabel(string $englishLabel): ?self
+    {
+        $key = array_search(strtolower($englishLabel), array_map('strtolower', self::englishLabels()));
+        return $key !== false ? self::tryFrom($key) : null;
+    }
     public static function englishLabel(string $value): ?string
     {
         return self::englishLabels()[$value] ?? null;
