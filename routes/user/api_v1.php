@@ -5,6 +5,7 @@ use App\Http\Controllers\User\Api\V1\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\LocationController;
+use App\Http\Controllers\User\Api\V1\NotificationController;
 use App\Http\Controllers\User\Api\V1\Order\OrderController;
 use App\Http\Controllers\User\Api\V1\Order\PaymentController;
 use App\Http\Controllers\User\Api\V1\PetRoutine\PetRoutineController;
@@ -124,5 +125,13 @@ Route::controller(PaymentController::class)->prefix('payments')
     ->group(function () {
         Route::post('/pay', 'pay')->middleware('auth:sanctum');
         Route::post('/callback/{gateway}', 'callback')->name('payments.callback');
+    });
+
+Route::controller(NotificationController::class)
+    ->prefix('notifications')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::post('/{id}/read', 'markAsRead');
     });
 

@@ -43,12 +43,12 @@ class Order extends Model implements HandlesPayment
     public function paymentSucceeded(Payment $payment): void
     {
         app(OrderPaymentService::class)
-            ->succeeded($this, $payment);
+            ->succeeded($this);
     }
 
     public function paymentFailed(Payment $payment): void
     {
         app(OrderPaymentService::class)
-            ->failed($this, $payment);
+            ->failed($this);
     }
 }

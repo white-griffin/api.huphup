@@ -5,6 +5,7 @@ namespace App\Services\Order;
 use App\Enums\OrderStatuses;
 use App\Enums\PaymentStatuses;
 use App\Models\Order;
+use App\Notifications\User\V1\OrderCreatedNotification;
 use Illuminate\Support\Facades\DB;
 
 class OrderPaymentService
@@ -26,6 +27,10 @@ class OrderPaymentService
                 'payment_status' => PaymentStatuses::PAID->value,
                 'order_status'   => OrderStatuses::PAID->value,
             ]);
+
+            $order->user->notify(
+                new OrderCreatedNotification($order)
+            );
 
             // TODO:
             // ارسال نوتیفیکیشن
