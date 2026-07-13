@@ -51,6 +51,7 @@ class PaymentController extends Controller
      */
     public function callback(Request $request, string $gateway)
     {
+
         $payment = $this->paymentService->handleCallback(
             gatewayName: $gateway,
             payload: $request->all()

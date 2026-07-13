@@ -108,6 +108,10 @@ class User extends Authenticatable
         return $this->hasMany(Message::class, 'sender_id');
     }
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 
 
 }

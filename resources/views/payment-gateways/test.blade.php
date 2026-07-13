@@ -60,7 +60,7 @@
     <hr>
 
     <form
-        method="GET"
+        method="POST"
         action="{{ route('payments.callback',['gateway'=>'test']) }}"
     >
 
@@ -83,7 +83,7 @@
     </form>
 
     <form
-        method="GET"
+        method="POST"
         action="{{ route('payments.callback',['gateway'=>'test']) }}"
     >
 

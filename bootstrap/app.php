@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('api/v1/user/auth')
                 ->group(base_path('routes/user/auth_v1.php'));
 
+            /* User Web Version 1 */
+            Route::middleware('web')
+                ->group(base_path('routes/user/web.php'));
+
             /* Provider Api Version 1 */
             Route::middleware([
                 'api',

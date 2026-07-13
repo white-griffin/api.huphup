@@ -6,6 +6,7 @@ interface EnumContractInterface {
     public static function labels(): array;
     public static function englishLabels(): array;
     public static function label(string $value): ?string;
+    public static function fromEnglishLabel(string $englishLabel): ?self;
     public static function fromValue(string $value): ?self;
     public static function toKeyValueItems(): ?array;
 }

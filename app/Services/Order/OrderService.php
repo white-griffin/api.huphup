@@ -81,9 +81,9 @@ class OrderService
             return $order;
         });
 
-        OrderExpiredJob::dispatch($order->id)
-            ->delay(now()->addMinutes(15))
-            ->afterCommit();
+//        OrderExpiredJob::dispatch($order->id)
+//            ->delay(now()->addMinutes(15))
+//            ->afterCommit();
 
         return $order->load('items');
     }

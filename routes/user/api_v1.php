@@ -17,9 +17,9 @@ use App\Http\Controllers\User\Api\V1\Products\ProductController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::controller(LocationController::class)->prefix('location')->group(function (){
-    Route::get('/provinces','provinces');
-    Route::get('/cities','cities');
+Route::controller(LocationController::class)->prefix('location')->group(function () {
+    Route::get('/provinces', 'provinces');
+    Route::get('/cities', 'cities');
 });
 
 Route::controller(ProfileController::class)->middleware('auth:sanctum')->group(function () {
@@ -113,20 +113,16 @@ Route::controller(RoutineTemplateController::class)
         Route::get('/{routine_template}', 'show');
     });
 
-Route::middleware('auth:sanctum')->group(function () {
-
-    Route::apiResource('orders', OrderController::class)
-        ->only(['index', 'store', 'show']);
-
-    Route::prefix('payments')->group(function () {
-
-        Route::post('/pay', [PaymentController::class, 'pay']);
-
+Route::controller(OrderController::class)->prefix('orders')->middleware('auth:sanctum')
+    ->group(function () {
+        Route::post('/', 'store');
+        Route::get('/', 'index');
+        Route::get('/{order}', 'show');
     });
 
-});
+Route::controller(PaymentController::class)->prefix('payments')
+    ->group(function () {
+        Route::post('/pay', 'pay')->middleware('auth:sanctum');
+        Route::post('/callback/{gateway}', 'callback')->name('payments.callback');
+    });
 
-Route::match(['GET', 'POST'], 'payments/callback/{gateway}', [
-    PaymentController::class,
-    'callback',
-])->name('payments.callback');

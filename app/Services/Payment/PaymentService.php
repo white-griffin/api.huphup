@@ -93,9 +93,10 @@ class PaymentService
      */
     public function handleCallback(string $gatewayName, array $payload): Payment
     {
+
         $payment = Payment::query()
             ->where('transaction_id', $payload['transaction_id'] ?? null)
-            ->where('gateway', $gatewayName)
+            ->where('gateway', PaymentGateways::fromEnglishLabel($gatewayName)->value)
             ->lockForUpdate()
             ->firstOrFail();
 
@@ -104,7 +105,7 @@ class PaymentService
             return $payment;
         }
 
-        $gateway = GatewayFactory::make($gatewayName);
+        $gateway = GatewayFactory::make(PaymentGateways::fromEnglishLabel($gatewayName)->value);
         $result = $gateway->verify($payload);
 
         return DB::transaction(function () use ($payment, $result) {

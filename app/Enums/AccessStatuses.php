@@ -30,6 +30,11 @@ enum AccessStatuses: string implements Contracts\EnumContractInterface
         return self::englishLabels()[$value] ?? null;
     }
 
+    public static function fromEnglishLabel(string $englishLabel): ?self
+    {
+        $key = array_search(strtolower($englishLabel), array_map('strtolower', self::englishLabels()));
+        return $key !== false ? self::tryFrom($key) : null;
+    }
     public static function label(string $value): ?string
     {
         return self::labels()[$value] ?? null;
@@ -48,4 +53,5 @@ enum AccessStatuses: string implements Contracts\EnumContractInterface
             array_keys(self::labels())
         );
     }
+
 }
