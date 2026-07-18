@@ -7,18 +7,22 @@ use App\Enums\Contracts\EnumContractInterface;
 enum OrderStatuses: string implements Contracts\EnumContractInterface
 {
 
-    case PENDING = '1';
-    case PAID = '2';
-    case CANCELLED = '3';
-    case FAILED = '4';
+    case PENDING   = '1';
+    case PAID      = '2';
+    case PROCESSING = '3';
+    case SHIPPED   = '4';
     case COMPLETED = '5';
+    case CANCELED  = '6';
+    case FAILED    = '7';
 
     public static function labels(): array
     {
         return [
             self::PENDING->value => 'در انتظار',
             self::PAID->value => 'پرداخت شده',
-            self::CANCELLED->value => 'لغو شده',
+            self::PROCESSING->value => 'درحال آماده سازی',
+            self::SHIPPED->value => 'ارسال شده',
+            self::CANCELED->value => 'لغو شده',
             self::FAILED->value => 'ناموفق',
             self::COMPLETED->value => 'تکمیل شده',
         ];
@@ -29,7 +33,9 @@ enum OrderStatuses: string implements Contracts\EnumContractInterface
         return [
             self::PENDING->value => 'pending',
             self::PAID->value => 'paid',
-            self::CANCELLED->value => 'cancelled',
+            self::PROCESSING->value => 'processing',
+            self::SHIPPED->value => 'shipped',
+            self::CANCELED->value => 'cancelled',
             self::FAILED->value => 'failed',
             self::COMPLETED->value => 'completed',
         ];

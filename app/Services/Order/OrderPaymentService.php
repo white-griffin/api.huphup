@@ -4,8 +4,10 @@ namespace App\Services\Order;
 
 use App\Enums\OrderStatuses;
 use App\Enums\PaymentStatuses;
+use App\Enums\WalletTransactionType;
 use App\Models\Order;
 use App\Notifications\User\V1\OrderCreatedNotification;
+use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 
 class OrderPaymentService
@@ -25,8 +27,18 @@ class OrderPaymentService
 
             $order->update([
                 'payment_status' => PaymentStatuses::PAID->value,
-                'order_status'   => OrderStatuses::PAID->value,
+                'order_status' => OrderStatuses::PAID->value,
             ]);
+
+            app(WalletService::class)
+                ->creditPending(
+                    wallet: $order->business->getWallet(),
+                    amount: $order->payable_amount,
+                    type: WalletTransactionType::PAYMENT,
+                    payment: $order->payment,
+                    description: "دریافت وجه سفارش #{$order->id}"
+                );
+
 
             $order->user->notify(
                 new OrderCreatedNotification($order)
