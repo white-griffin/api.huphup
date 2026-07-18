@@ -15,7 +15,8 @@ class PaymentController extends Controller
 {
     public function __construct(
         protected PaymentService $paymentService
-    ) {
+    )
+    {
     }
 
 
@@ -34,16 +35,12 @@ class PaymentController extends Controller
             ->findOrFail($data['order_id']);
 
 
-        $payment = $this->paymentService->createForOrder(
+        $result = $this->paymentService->pay(
             order: $order,
-            gateway: $data['gateway'],
+            gateway: $data['gateway']
         );
 
-        $result = $this->paymentService->initiate($payment);
-
-        return ApiResponse::Success([
-            'redirect_url' => $result['redirect_url'],
-        ]);
+        return ApiResponse::Success('عملیات موفق',$result);
     }
 
     /**

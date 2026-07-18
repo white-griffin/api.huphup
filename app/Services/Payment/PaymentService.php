@@ -5,10 +5,12 @@ namespace App\Services\Payment;
 use App\Contracts\HandlesPayment;
 use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
+use App\Enums\WalletTransactionType;
 use App\Exceptions\PaymentGatewayException;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Order\OrderPaymentService;
+use App\Services\Wallet\WalletService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use ValueError;
@@ -68,10 +70,24 @@ class PaymentService
         ]);
     }
 
+    public function pay(Order $order, PaymentGateways $gateway): array
+    {
+        $payment = $this->createForOrder(
+            order: $order,
+            gateway: $gateway,
+        );
+
+        if ($gateway == PaymentGateways::WALLET) {
+            return $this->payByWallet($payment);
+        }
+
+        return $this->payByGateway($payment);
+    }
+
     /**
      * پرداخت را نزد درگاه شروع می‌کند.
      */
-    public function initiate(Payment $payment): array
+    private function payByGateway(Payment $payment): array
     {
         if ($payment->payment_status != PaymentStatuses::UNPAID->value) {
             throw new PaymentGatewayException('این پرداخت قبلاً پردازش شده است.');
@@ -83,7 +99,35 @@ class PaymentService
             'transaction_id' => $result['transaction_id'],
         ]);
 
-        return $result;
+        return [
+            'redirect_url' => $result['redirect_url'],
+        ];
+    }
+
+    private function payByWallet(Payment $payment): array
+    {
+        $userWallet = $payment->user->getWallet();
+
+        $businessWallet = $payment->payable->business->getWallet();
+
+        app(WalletService::class)->transfer(
+            from: $userWallet,
+            to: $businessWallet,
+            amount: $payment->amount,
+            debitType: WalletTransactionType::PAYMENT,
+            creditType: WalletTransactionType::PAYMENT,
+            payment: $payment,
+            description: "پرداخت سفارش #{$payment->payable->id}",
+        );
+
+        $this->finalizePayment(
+            payment: $payment,
+            success: true,
+        );
+
+        return [
+            'redirect_url' => null,
+        ];
     }
 
     /**
@@ -108,27 +152,36 @@ class PaymentService
         $gateway = GatewayFactory::make(PaymentGateways::fromEnglishLabel($gatewayName)->value);
         $result = $gateway->verify($payload);
 
-        return DB::transaction(function () use ($payment, $result) {
+        return $this->finalizePayment(
+            payment: $payment,
+            success: $result['success'],
+            gatewayResponse: $result['raw'],
+        );
+    }
+
+    private function finalizePayment(
+        Payment $payment,
+        bool $success,
+        array $gatewayResponse = [],
+    ): Payment{
+        return DB::transaction(function () use ($payment, $success, $gatewayResponse) {
+
             $payment->update([
-                'payment_status' => $result['success']
+                'payment_status' => $success
                     ? PaymentStatuses::PAID->value
                     : PaymentStatuses::FAILED->value,
-                'gateway_response' => $result['raw'],
+                'gateway_response' => $gatewayResponse,
             ]);
 
-            // اطلاع‌رسانی به payable (Order, Wallet, Appointment) که پرداخت
-            // انجام شد؛ هر مدل payable باید متد onPaymentSucceeded/onPaymentFailed
-            // را پیاده‌سازی کند (یا از یک interface مشترک استفاده شود).
             $payable = $payment->payable()->lockForUpdate()->first();
 
             if ($payable instanceof HandlesPayment) {
 
-                if ($result['success']) {
+                if ($success) {
                     $payable->paymentSucceeded($payment);
                 } else {
                     $payable->paymentFailed($payment);
                 }
-
             }
 
             return $payment->fresh();

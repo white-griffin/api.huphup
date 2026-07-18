@@ -7,12 +7,15 @@ use App\Enums\Contracts\EnumContractInterface;
 enum PaymentGateways: string implements Contracts\EnumContractInterface
 {
 
-    case TEST = '1';
-    case ZARINPAL = '2';
+    case WALLET = '1';
+    case TEST = '2';
+    case ZARINPAL = '3';
+
 
     public static function labels(): array
     {
         return [
+            self::WALLET->value => 'کیف پول',
             self::TEST->value => 'تست',
             self::ZARINPAL->value => 'زرین پال'
         ];
@@ -21,6 +24,7 @@ enum PaymentGateways: string implements Contracts\EnumContractInterface
     public static function englishLabels(): array
     {
         return [
+            self::WALLET->value => 'wallet',
             self::TEST->value => 'test',
             self::ZARINPAL->value => 'zarinpal'
         ];
