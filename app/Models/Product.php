@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ActivityStatus;
 use App\Models\Traits\BelongsToBusiness;
+use App\Models\Traits\HasReactions;
 use App\Models\Traits\SearchableByTNT;
 use App\Support\SlugService;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
-    use BelongsToBusiness,SearchableByTNT;
+    use BelongsToBusiness,SearchableByTNT,HasReactions;
 
     protected $guarded = ['id'];
 

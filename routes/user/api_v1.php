@@ -15,6 +15,7 @@ use App\Http\Controllers\User\Api\V1\Pets\PetController;
 use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
 use App\Http\Controllers\User\Api\V1\Products\CategoryController;
 use App\Http\Controllers\User\Api\V1\Products\ProductController;
+use App\Http\Controllers\User\Api\V1\ReactionController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -135,3 +136,9 @@ Route::controller(NotificationController::class)
         Route::post('/{id}/read', 'markAsRead');
     });
 
+Route::controller(ReactionController::class)
+    ->prefix('reactions')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::post('/toggle', 'toggle');
+    });

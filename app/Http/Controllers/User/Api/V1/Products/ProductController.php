@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\Api\V1\Products;
 
 use App\Enums\PublicationStatus;
+use App\Enums\ReactionType;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\Products\ProductResource;
@@ -21,6 +22,21 @@ class ProductController extends Controller
     {
         try {
             abort_if($product->publication_status != PublicationStatus::PUBLISHED->value, Response::HTTP_NOT_FOUND);
+
+            $userId = request()->user()?->id;
+
+            $product->loadCount([
+                'reactions as likes_count' => fn ($q) =>
+                $q->where('type', ReactionType::LIKE->value),
+            ]);
+
+            if ($userId) {
+                $product->load([
+                    'reactions' => fn ($q) => $q
+                        ->where('user_id', $userId)
+                        ->select('id', 'user_id', 'reactable_id', 'reactable_type', 'type'),
+                ]);
+            }
 
             $product->loadMissing([
                 'images',
@@ -45,6 +61,8 @@ class ProductController extends Controller
         ProductFacetService $facetService
     ) {
 
+
+        $userId = $request->user()?->id;
 
         $search = rawurldecode(trim((string) $request->get('q', '')));
 
@@ -73,7 +91,19 @@ class ProductController extends Controller
 
         $filters = $facetService->build(clone $query);
 
-        $products = $query->paginate(15);
+        $products = $query
+            ->withCount([
+                'reactions as likes_count' => fn ($q) =>
+                $q->where('type', ReactionType::LIKE->value),
+            ])
+            ->when($userId, function ($query) use ($userId) {
+                $query->with([
+                    'reactions' => fn ($q) => $q
+                        ->where('user_id', $userId)
+                        ->select('id', 'user_id', 'reactable_id', 'reactable_type', 'type'),
+                ]);
+            })
+            ->paginate(15);
 
         return ApiResponse::Success('عملیات موفق', [
             'products' => ProductResource::collection($products),
