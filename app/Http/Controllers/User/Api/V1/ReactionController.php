@@ -22,7 +22,7 @@ class ReactionController extends Controller
             $data['reactable_id']
         );
 
-        $active = app(ReactionService::class)->toggle(
+        app(ReactionService::class)->toggle(
             user: $request->user(),
             model: $model,
             type: ReactionType::from($data['type']),

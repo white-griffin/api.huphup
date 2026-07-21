@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Appointment;
 
 use App\Enums\ActivityStatus;
 use App\Enums\AppointmentStatuses;
+use App\Jobs\ExpireAppointmentPaymentJob;
 use App\Models\Appointment;
 use App\Models\BusinessOffDay;
 use App\Models\BusinessSchedule;
@@ -163,7 +164,12 @@ class AppointmentService
         });
     }
 
-    public function canBook(int $businessId, string $startTime, int $serviceDuration): bool
+    public function canBook(
+        int $businessId,
+        string $startTime,
+        int $serviceDuration,
+        ?int $ignoreAppointmentId = null
+    ): bool
     {
         $start = Carbon::parse($startTime);
         $end = $start->copy()->addMinutes($serviceDuration);
@@ -200,15 +206,20 @@ class AppointmentService
             }
         }
 
-        $overlappingCount = Appointment::query()
+        $overlappingQuery = Appointment::query()
             ->where('business_id', $businessId)
             ->whereDate('date', $start)
             ->where('status', '!=', AppointmentStatuses::CANCELLED->value)
             ->where(function ($query) use ($start, $end) {
                 $query->where('start_time', '<', $end->format('H:i:s'))
                     ->where('end_time', '>', $start->format('H:i:s'));
-            })
-            ->count();
+            });
+
+        if ($ignoreAppointmentId) {
+            $overlappingQuery->where('id', '!=', $ignoreAppointmentId);
+        }
+
+        $overlappingCount = $overlappingQuery->count();
 
         return $overlappingCount < $schedule->capacity;
     }
@@ -234,7 +245,7 @@ class AppointmentService
             'زمان مورد نظر در دسترس نیست.'
         );
 
-        return Appointment::query()
+        $appointment = Appointment::query()
             ->create([
                 'business_id' => $businessId,
                 'service_id' => $service->id,
@@ -246,7 +257,13 @@ class AppointmentService
                 'service_duration' => $serviceDuration,
                 'service_price' => $servicePrice,
                 'notes' => $note,
-                'status' => AppointmentStatuses::PENDING->value,
+                'status' => AppointmentStatuses::PENDING_PAYMENT->value,
             ]);
+
+//        ExpireAppointmentPaymentJob::dispatch($appointment->id)
+//            ->delay(now()->addMinutes(15))
+//            ->afterCommit();
+
+        return $appointment;
     }
 }

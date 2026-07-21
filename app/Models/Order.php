@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\HandlesPayment;
+use App\Contracts\PayableEntity;
 use App\Enums\OrderStatuses;
 use App\Enums\PaymentStatuses;
 use App\Models\Traits\BelongsToBusiness;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 
-class Order extends Model implements HandlesPayment
+class Order extends Model implements PayableEntity,HandlesPayment
 {
     use BelongsToBusiness;
 
@@ -50,5 +51,20 @@ class Order extends Model implements HandlesPayment
     {
         app(OrderPaymentService::class)
             ->failed($this);
+    }
+
+    public function getPayableAmount(): int
+    {
+        return (int) $this->total_amount;
+    }
+
+    public function getPayableUserId(): int
+    {
+        return $this->user_id;
+    }
+
+    public function getReceiverWallet(): Wallet
+    {
+        return $this->business->getWallet();
     }
 }

@@ -7,28 +7,39 @@ use App\Enums\Contracts\EnumContractInterface;
 enum AppointmentStatuses: string implements Contracts\EnumContractInterface
 {
 
-    case PENDING = '1';
-    case CONFIRMED = '2';
-    case CANCELLED = '3';
+    case PENDING_PAYMENT = '1'; // رزرو ساخته شده، منتظر پرداخت
+
+    case PENDING_CONFIRMATION = '2'; // پرداخت موفق، منتظر تایید پرووایدر
+
+    case CONFIRMED = '3';
     case COMPLETED = '4';
+    case CANCELLED = '5';
+    case EXPIRED = '6';
+
 
     public static function labels(): array
     {
         return [
-            self::PENDING->value => 'در انتظار',
+            self::PENDING_PAYMENT->value => 'در انتظار پرداخت',
+            self::PENDING_CONFIRMATION->value => 'در انتظار تایید',
             self::CONFIRMED->value => 'قبول شده',
-            self::CANCELLED->value => 'کنسل شده',
             self::COMPLETED->value => 'انجام شده',
+            self::CANCELLED->value => 'کنسل شده',
+            self::EXPIRED->value => 'منقضی شده',
+
         ];
     }
 
     public static function englishLabels(): array
     {
         return [
-            self::PENDING->value => 'pending',
+            self::PENDING_PAYMENT->value => 'pending_payment',
+            self::PENDING_CONFIRMATION->value => 'pending_confirmation',
             self::CONFIRMED->value => 'confirmed',
-            self::CANCELLED->value => 'cancelled',
             self::COMPLETED->value => 'completed',
+            self::CANCELLED->value => 'cancelled',
+            self::EXPIRED->value => 'expired',
+
         ];
     }
 

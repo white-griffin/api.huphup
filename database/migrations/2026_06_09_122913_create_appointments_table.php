@@ -25,8 +25,10 @@ return new class extends Migration
             $table->unsignedInteger('service_price');   // تومان، snapshot
             $table->unsignedSmallInteger('service_duration'); // دقیقه، snapshot
             $table->tinyInteger('status')
-                ->default(AppointmentStatuses::PENDING->value)
-                ->comment('1=pending, 2=confirmed, 3=cancelled, 4=completed');
+                ->default(AppointmentStatuses::PENDING_PAYMENT->value)
+                ->comment(
+                    '1=pending_payment, 2=pending_confirmation, 3=confirmed, 4=completed,5=cancelled,6=expired'
+                );
             $table->text('notes')->nullable();
             $table->index(['business_id', 'date']);
             $table->timestamps();

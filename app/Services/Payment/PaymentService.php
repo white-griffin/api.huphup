@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Contracts\HandlesPayment;
+use App\Contracts\PayableEntity;
 use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
 use App\Enums\WalletTransactionType;
@@ -17,17 +18,17 @@ use ValueError;
 
 class PaymentService
 {
-    public function createForOrder(
-        Order $order,
-        $gateway,
+    public function createForPayable(
+        PayableEntity $payable,
+        PaymentGateways $gateway,
     ): Payment {
-        return DB::transaction(function () use ($order, $gateway) {
+        return DB::transaction(function () use ($payable, $gateway) {
 
-            $order = Order::query()
+            $payable = $payable::query()
                 ->lockForUpdate()
-                ->findOrFail($order->id);
+                ->findOrFail($payable->getKey());
 
-            $paidPayment = $order->payments()
+            $paidPayment = $payable->payments()
                 ->where('payment_status', PaymentStatuses::PAID->value)
                 ->exists();
 
@@ -35,7 +36,7 @@ class PaymentService
                 throw new PaymentGatewayException('این سفارش قبلاً پرداخت شده است.');
             }
 
-            $activePayment = $order->payments()
+            $activePayment = $payable->payments()
                 ->whereIn('payment_status', [
                     PaymentStatuses::UNPAID->value,
                     PaymentStatuses::PROCESSING->value,
@@ -48,10 +49,10 @@ class PaymentService
             }
 
             return $this->create(
-                payable: $order,
-                userId: $order->user_id,
-                amount: $order->total_amount,
-                gateway: $gateway,
+                payable: $payable,
+                userId: $payable->getPayableUserId(),
+                amount: $payable->getPayableAmount(),
+                gateway: $gateway->value,
             );
         });
     }
@@ -70,14 +71,14 @@ class PaymentService
         ]);
     }
 
-    public function pay(Order $order, PaymentGateways $gateway): array
+    public function pay(PayableEntity $payable, PaymentGateways $gateway): array
     {
-        $payment = $this->createForOrder(
-            order: $order,
+        $payment = $this->createForPayable(
+            payable: $payable,
             gateway: $gateway,
         );
 
-        if ($gateway == PaymentGateways::WALLET) {
+        if ($gateway === PaymentGateways::WALLET) {
             return $this->payByWallet($payment);
         }
 
@@ -108,7 +109,7 @@ class PaymentService
     {
         $userWallet = $payment->user->getWallet();
 
-        $businessWallet = $payment->payable->business->getWallet();
+        $businessWallet = $payment->payable->getReceiverWallet();
 
         app(WalletService::class)->transfer(
             from: $userWallet,

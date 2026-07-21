@@ -268,6 +268,86 @@ class WalletService
         );
     }
 
+    public function refundPending(
+        Wallet $from,
+        Wallet $to,
+        int $amount,
+        WalletTransactionType $debitType,
+        WalletTransactionType $creditType,
+        ?Payment $payment = null,
+        ?string $description = null,
+    ): void {
+        DB::transaction(function () use (
+            $from,
+            $to,
+            $amount,
+            $debitType,
+            $creditType,
+            $payment,
+            $description
+        ) {
+
+            if ($from->id < $to->id) {
+                $first = $this->lockWallet($from);
+                $second = $this->lockWallet($to);
+            } else {
+                $first = $this->lockWallet($to);
+                $second = $this->lockWallet($from);
+            }
+
+            $from = $first->id === $from->id ? $first : $second;
+            $to = $first->id === $to->id ? $first : $second;
+
+            $this->debitPendingInternal(
+                wallet: $from,
+                amount: $amount,
+                type: $debitType,
+                payment: $payment,
+                description: $description,
+            );
+
+            $this->creditAvailableInternal(
+                wallet: $to,
+                amount: $amount,
+                type: $creditType,
+                payment: $payment,
+                description: $description,
+            );
+        });
+    }
+
+    private function debitPendingInternal(
+        Wallet $wallet,
+        int $amount,
+        WalletTransactionType $type,
+        ?Payment $payment = null,
+        ?string $description = null,
+    ): void {
+        $availableBefore = $wallet->available_balance;
+        $pendingBefore = $wallet->pending_balance;
+
+        if ($pendingBefore < $amount) {
+            throw new WalletException('موجودی معلق کیف پول کافی نیست.');
+        }
+
+        $pendingAfter = $pendingBefore - $amount;
+
+        $wallet->update([
+            'pending_balance' => $pendingAfter,
+        ]);
+
+        $this->createTransaction(
+            wallet: $wallet,
+            type: $type,
+            amount: $amount,
+            availableBefore: $availableBefore,
+            availableAfter: $availableBefore,
+            pendingBefore: $pendingBefore,
+            pendingAfter: $pendingAfter,
+            payment: $payment,
+            description: $description,
+        );
+    }
     private function lockWallet(Wallet $wallet): Wallet
     {
         return Wallet::query()

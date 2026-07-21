@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\User\Api\V1;
 
+use App\Enums\PaymentGateways;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\AppointmentResource;
 use App\Models\Appointment;
 use App\Models\Service;
-use App\Services\AppointmentService;
+use App\Services\Appointment\AppointmentService;
+use App\Services\Payment\PaymentService;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
@@ -77,7 +79,15 @@ class AppointmentController extends Controller
                 note: $data['note'] ?? null
             );
 
-            return ApiResponse::Success('عملیات موفق',$appointment);
+            $paymentResult = app(PaymentService::class)->pay(
+                payable: $appointment,
+                gateway: PaymentGateways::from($data['gateway'])
+            );
+
+            return ApiResponse::Success('رزرو ثبت شد', [
+                'appointment' => $appointment,
+                'payment' => $paymentResult,
+            ]);
         }catch (\Exception $exception){
             report($exception);
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
