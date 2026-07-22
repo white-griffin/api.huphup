@@ -16,7 +16,10 @@ return new class extends Migration
             $table->id();
             $table->morphs('payable'); // payable_type, payable_id
             $table->foreignId('user_id')->constrained();
-            $table->decimal('amount', 15, 2);
+            $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();
+            $table->decimal('original_amount',15,2); // مبلغ قبل از کوپن
+            $table->decimal('coupon_discount_amount',15,2)->default(0);// مبلغ تخفیف کوپن
+            $table->decimal('amount',15,2); // مبلغ نهایی پرداخت
             $table->tinyInteger('gateway'); // نام درگاه
             $table->string('transaction_id')->nullable()->unique(); // reference بازگشتی از درگاه
             $table->tinyInteger('payment_status')

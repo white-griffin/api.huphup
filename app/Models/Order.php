@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\CouponEligible;
 use App\Contracts\HandlesPayment;
 use App\Contracts\PayableEntity;
 use App\Enums\OrderStatuses;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 
-class Order extends Model implements PayableEntity,HandlesPayment
+class Order extends Model implements PayableEntity,HandlesPayment,CouponEligible
 {
     use BelongsToBusiness;
 
@@ -58,6 +59,10 @@ class Order extends Model implements PayableEntity,HandlesPayment
         return (int) $this->total_amount;
     }
 
+    public function getPayableUser(): User
+    {
+        return $this->user;
+    }
     public function getPayableUserId(): int
     {
         return $this->user_id;
@@ -66,5 +71,16 @@ class Order extends Model implements PayableEntity,HandlesPayment
     public function getReceiverWallet(): Wallet
     {
         return $this->business->getWallet();
+    }
+
+
+    public function canUseCoupon(): bool
+    {
+        return $this->discount_amount == 0;
+    }
+
+    public function couponRestrictionMessage(): string
+    {
+        return 'برای سفارش‌های دارای محصول تخفیف‌دار امکان استفاده از کد تخفیف وجود ندارد.';
     }
 }

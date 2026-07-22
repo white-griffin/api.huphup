@@ -81,7 +81,8 @@ class AppointmentController extends Controller
 
             $paymentResult = app(PaymentService::class)->pay(
                 payable: $appointment,
-                gateway: PaymentGateways::from($data['gateway'])
+                gateway: PaymentGateways::from($data['gateway']),
+                couponCode: $data['coupon_code'] ?? null,
             );
 
             return ApiResponse::Success('رزرو ثبت شد', [
@@ -129,6 +130,7 @@ class AppointmentController extends Controller
             ],
             'starts_at'   => 'required|date|after_or_equal:now',
             'note'        => 'nullable|string',
+            'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
     }
 }

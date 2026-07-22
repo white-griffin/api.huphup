@@ -2,27 +2,41 @@
 
 namespace App\Services\Payment;
 
+use App\Contracts\CouponEligible;
 use App\Contracts\HandlesPayment;
 use App\Contracts\PayableEntity;
 use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
 use App\Enums\WalletTransactionType;
 use App\Exceptions\PaymentGatewayException;
-use App\Models\Order;
+use App\Models\Coupon;
+use App\Models\CouponUsage;
 use App\Models\Payment;
-use App\Services\Order\OrderPaymentService;
+use App\Services\Discount\DiscountService;
 use App\Services\Wallet\WalletService;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use ValueError;
 
 class PaymentService
 {
     public function createForPayable(
         PayableEntity $payable,
-        PaymentGateways $gateway,
-    ): Payment {
-        return DB::transaction(function () use ($payable, $gateway) {
+        string $gateway,
+        ?Coupon $coupon = null,
+        int $couponDiscountAmount = 0,
+        ?int $originalAmount = null,
+        ?int $finalAmount = null,
+    ): Payment
+    {
+        return DB::transaction(function () use (
+            $payable,
+            $gateway,
+            $coupon,
+            $couponDiscountAmount,
+            $originalAmount,
+            $finalAmount
+        ) {
 
             $payable = $payable::query()
                 ->lockForUpdate()
@@ -33,7 +47,7 @@ class PaymentService
                 ->exists();
 
             if ($paidPayment) {
-                throw new PaymentGatewayException('این سفارش قبلاً پرداخت شده است.');
+                throw new PaymentGatewayException('این مورد قبلاً پرداخت شده است.');
             }
 
             $activePayment = $payable->payments()
@@ -51,31 +65,100 @@ class PaymentService
             return $this->create(
                 payable: $payable,
                 userId: $payable->getPayableUserId(),
-                amount: $payable->getPayableAmount(),
-                gateway: $gateway->value,
+                amount: $finalAmount ?? $payable->getPayableAmount(),
+                gateway: $gateway,
+                coupon: $coupon,
+                couponDiscountAmount: $couponDiscountAmount,
+                originalAmount: $originalAmount ?? $payable->getPayableAmount(),
             );
         });
     }
     /**
      * یک رکورد Payment می‌سازد و متصل به payable (Order, Appointment, Wallet, ...)
      */
-    public function create(Model $payable, int $userId, int $amount, string $gateway): Payment
+    public function create(
+        PayableEntity $payable,
+        int $userId,
+        int $amount,
+        string $gateway,
+        ?Coupon $coupon = null,
+        int $couponDiscountAmount = 0,
+        ?int $originalAmount = null,
+    ): Payment
     {
         return Payment::create([
             'user_id' => $userId,
+
+            // موجودیت قابل پرداخت (Order / Appointment / ...)
             'payable_type' => $payable::class,
             'payable_id' => $payable->getKey(),
+
+            // مبلغ قبل از اعمال کوپن
+            'original_amount' => $originalAmount ?? $amount,
+
+            // مبلغ تخفیف کوپن
+            'coupon_discount_amount' => $couponDiscountAmount,
+
+            // مبلغ نهایی قابل پرداخت
             'amount' => $amount,
+
+            // کوپن اعمال‌شده
+            'coupon_id' => $coupon?->id,
+
+            // درگاه پرداخت
             'gateway' => $gateway,
+
+            // وضعیت اولیه پرداخت
             'payment_status' => PaymentStatuses::UNPAID->value,
         ]);
     }
 
-    public function pay(PayableEntity $payable, PaymentGateways $gateway): array
+    public function pay(
+        PayableEntity $payable,
+        PaymentGateways $gateway,
+        ?string $couponCode = null
+    ): array
     {
+        $baseAmount = $payable->getPayableAmount();
+
+        $coupon = null;
+        $couponDiscount = 0;
+
+        if ($couponCode) {
+
+            if ($payable instanceof CouponEligible &&
+                ! $payable->canUseCoupon()) {
+
+                throw ValidationException::withMessages([
+                    'coupon_code' => $payable->couponRestrictionMessage(),
+                ]);
+            }
+
+            $result = app(DiscountService::class)->validate(
+                code: $couponCode,
+                user: $payable->getPayableUser(),
+                amount: $baseAmount,
+            );
+
+            if (! $result->valid) {
+                throw ValidationException::withMessages([
+                    'coupon_code' => $result->message,
+                ]);
+            }
+
+            $coupon = $result->coupon;
+            $couponDiscount = $result->discountAmount;
+        }
+
+        $finalAmount = max(0, $baseAmount - $couponDiscount);
+
         $payment = $this->createForPayable(
             payable: $payable,
-            gateway: $gateway,
+            gateway: $gateway->value,
+            coupon: $coupon,
+            couponDiscountAmount: $couponDiscount,
+            originalAmount: $baseAmount,
+            finalAmount: $finalAmount,
         );
 
         if ($gateway === PaymentGateways::WALLET) {
@@ -174,6 +257,11 @@ class PaymentService
                 'gateway_response' => $gatewayResponse,
             ]);
 
+
+            if ($success && $payment->coupon_id) {
+                $this->registerCouponUsage($payment);
+            }
+
             $payable = $payment->payable()->lockForUpdate()->first();
 
             if ($payable instanceof HandlesPayment) {
@@ -187,5 +275,42 @@ class PaymentService
 
             return $payment->fresh();
         });
+    }
+
+    private function registerCouponUsage(Payment $payment): void
+    {
+        $alreadyUsed = CouponUsage::query()
+            ->where('coupon_id', $payment->coupon_id)
+            ->where('discountable_type', $payment->payable_type)
+            ->where('discountable_id', $payment->payable_id)
+            ->exists();
+
+        if ($alreadyUsed) {
+            return;
+        }
+
+        $coupon = $payment->coupon()
+            ->lockForUpdate()
+            ->first();
+
+        if ($coupon->usage_limit &&
+            $coupon->used_count >= $coupon->usage_limit) {
+
+            throw new PaymentGatewayException('ظرفیت استفاده از کد تخفیف تکمیل شده است.');
+        }
+
+        $coupon->increment('used_count');
+
+        CouponUsage::create([
+            'coupon_id' => $coupon->id,
+            'user_id' => $payment->user_id,
+
+            'discountable_type' => $payment->payable_type,
+            'discountable_id' => $payment->payable_id,
+
+            'discount_amount' => $payment->coupon_discount_amount,
+
+            'used_at' => now(),
+        ]);
     }
 }

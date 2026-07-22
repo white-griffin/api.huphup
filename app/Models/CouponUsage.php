@@ -6,13 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class Payment extends Model
+class CouponUsage extends Model
 {
     protected $guarded = ['id'];
 
-    public function payable(): MorphTo
+    protected $casts = [
+        'used_at' => 'datetime',
+    ];
+
+    public function coupon(): BelongsTo
     {
-        return $this->morphTo();
+        return $this->belongsTo(Coupon::class);
     }
 
     public function user(): BelongsTo
@@ -20,8 +24,8 @@ class Payment extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function coupon(): BelongsTo
+    public function discountable(): MorphTo
     {
-        return $this->belongsTo(Coupon::class);
+        return $this->morphTo();
     }
 }

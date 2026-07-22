@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\CouponEligible;
 use App\Contracts\HandlesPayment;
 use App\Contracts\PayableEntity;
 use App\Models\Traits\BelongsToBusiness;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Appointment extends Model implements PayableEntity, HandlesPayment
+class Appointment extends Model implements PayableEntity, HandlesPayment,CouponEligible
 {
     use BelongsToBusiness;
 
@@ -62,6 +63,10 @@ class Appointment extends Model implements PayableEntity, HandlesPayment
         return (int) $this->service_price;
     }
 
+    public function getPayableUser(): User
+    {
+        return $this->user;
+    }
     public function getPayableUserId(): int
     {
         return $this->user_id;
@@ -70,5 +75,16 @@ class Appointment extends Model implements PayableEntity, HandlesPayment
     public function getReceiverWallet(): Wallet
     {
         return $this->business->getWallet();
+    }
+
+
+    public function canUseCoupon(): bool
+    {
+        return true;
+    }
+
+    public function couponRestrictionMessage(): string
+    {
+        return '';
     }
 }

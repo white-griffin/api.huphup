@@ -28,6 +28,7 @@ class PaymentController extends Controller
         $data = $request->validate([
             'order_id' => ['required', 'integer'],
             'gateway' => ['required', Rule::enum(PaymentGateways::class)],
+            'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
         $order = $request->user()
@@ -36,8 +37,9 @@ class PaymentController extends Controller
 
 
         $result = $this->paymentService->pay(
-            order: $order,
-            gateway: $data['gateway']
+            payable: $order,
+            gateway: PaymentGateways::from($data['gateway']),
+            couponCode: $data['coupon_code'] ?? null,
         );
 
         return ApiResponse::Success('عملیات موفق',$result);
