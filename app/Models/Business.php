@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\ActivityStatus;
 use App\Models\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
@@ -53,12 +56,10 @@ class Business extends Model
         return $this->belongsTo(Provider::class);
     }
 
-    public function services(): BelongsToMany
+    public function services(): HasMany
     {
-        return $this->belongsToMany(Service::class, 'business_services')
-            ->using(BusinessService::class)
-            ->withPivot(['price', 'duration', 'settings', 'activity_status'])
-            ->withTimestamps();
+        return $this->hasMany(BusinessService::class)
+            ->where('activity_status', ActivityStatus::ACTIVE->value);
     }
 
 
@@ -67,4 +68,21 @@ class Business extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function reviewMessages(): MorphMany
+    {
+        return $this->morphMany(
+            ReviewMessage::class,
+            'author'
+        );
+    }
+
+    public function reputation(): HasOne
+    {
+        return $this->hasOne(BusinessReputation::class);
+    }
 }

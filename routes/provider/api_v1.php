@@ -5,6 +5,7 @@ use App\Http\Controllers\Provider\Api\V1\BusinessOffDayController;
 use App\Http\Controllers\Provider\Api\V1\CategoryController;
 use App\Http\Controllers\Provider\Api\V1\ProductAttributeController;
 use App\Http\Controllers\Provider\Api\V1\ProductController;
+use App\Http\Controllers\Provider\Api\V1\ReviewController;
 use App\Http\Controllers\Provider\Api\V1\ScheduleBreakController;
 use App\Http\Controllers\Provider\Api\V1\ScheduleController;
 
@@ -51,3 +52,10 @@ Route::controller(BusinessOffDayController::class)->prefix('off-days')->group(fu
     Route::post('/', 'store');
     Route::delete('/{offDay}', 'destroy');
 });
+
+Route::controller(ReviewController::class)
+    ->prefix('reviews')
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::post('/{review}/reply', 'reply');
+    });

@@ -5,6 +5,7 @@ namespace App\Http\Resources\V1\User\Products;
 
 use App\Enums\ReactionType;
 use App\Http\Resources\V1\User\CategoryResource;
+use App\Http\Resources\V1\User\ReviewResource;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -56,6 +57,10 @@ class ProductResource extends JsonResource
                     'bookmarked' => $reactionTypes->contains('bookmark'),
                 ],
             ],
+
+            'reviews' => ReviewResource::collection(
+                $this->whenLoaded('reviews')
+            ),
         ];
     }
 }

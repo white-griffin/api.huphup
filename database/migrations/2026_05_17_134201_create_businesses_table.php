@@ -26,6 +26,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('logo')->nullable();
             $table->string('cover_image')->nullable();
+            $table->decimal('default_commission_rate',5,2)->default(0);
 
             //Call Data
             $table->string('phone', 11);

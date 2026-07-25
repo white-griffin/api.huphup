@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\Storage;
 
 class Service extends Model
@@ -31,5 +32,10 @@ class Service extends Model
     {
         return $this->belongsToMany(Business::class, 'business_services')
             ->withPivot(['price', 'duration', 'settings', 'activity_status']);
+    }
+
+    public function reviews(): MorphMany
+    {
+        return $this->morphMany(Review::class, 'reviewable');
     }
 }

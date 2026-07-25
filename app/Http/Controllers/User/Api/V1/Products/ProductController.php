@@ -6,14 +6,19 @@ use App\Enums\PublicationStatus;
 use App\Enums\ReactionType;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\Api\V1\Review\StoreReviewRequest;
 use App\Http\Resources\V1\User\Products\ProductResource;
+use App\Http\Resources\V1\User\ReviewResource;
 use App\Models\Product;
 use App\Services\Product\ProductFacetService;
 use App\Services\Product\ProductFilterService;
 use App\Services\Product\ProductQueryService;
+use App\Services\Review\ReviewService;
 use App\Services\Search\FuzzySearchService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -44,6 +49,15 @@ class ProductController extends Controller
                 'brand',
                 'activeVariations.variationAttributes.attribute',
                 'activeVariations.variationAttributes.option',
+                'reviews' => fn ($query) => $query
+                    ->approved()
+                    ->latest()
+                    ->take(5)
+                    ->with([
+                        'user',
+                        'messages.author',
+                        'messages.business',
+                    ]),
             ]);
 
             return ApiResponse::Success('عملیات موفق', ProductResource::make($product));
@@ -103,6 +117,22 @@ class ProductController extends Controller
                         ->select('id', 'user_id', 'reactable_id', 'reactable_type', 'type'),
                 ]);
             })
+            ->with([
+                'images',
+                'categories',
+                'brand',
+                'activeVariations.variationAttributes.attribute',
+                'activeVariations.variationAttributes.option',
+                'reviews' => fn ($query) => $query
+                    ->approved()
+                    ->latest()
+                    ->take(5)
+                    ->with([
+                        'user',
+                        'messages.author',
+                        'messages.business',
+                    ]),
+            ])
             ->paginate(15);
 
         return ApiResponse::Success('عملیات موفق', [
@@ -117,5 +147,51 @@ class ProductController extends Controller
         ]);
     }
 
+
+    public function review(
+        StoreReviewRequest $request,
+        Product $product,
+        ReviewService $reviewService,
+    ): JsonResponse
+    {
+        return DB::transaction(function ()use (
+            $reviewService,
+            $request,
+            $product
+        ){
+
+            $review = $reviewService->create(
+                user: $request->user(),
+                reviewable: $product,
+                attributes: $request->validated(),
+            );
+
+            $review->load([
+                'user',
+                'messages',
+            ]);
+
+            return ApiResponse::Success('نظر شما ثبت شد');
+        });
+    }
+
+    public function reviews(
+        Product $product,
+    )
+    {
+        return ReviewResource::collection(
+            $product->reviews()
+                ->approved()
+                ->with([
+                    'user',
+                    'messages.author',
+                    'messages.business',
+                    'messages.replies.author',
+                    'messages.replies.business',
+                ])
+                ->latest()
+                ->paginate()
+        );
+    }
 
 }

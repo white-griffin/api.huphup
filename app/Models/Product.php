@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\Reviewable;
 use App\Enums\ActivityStatus;
 use App\Models\Traits\BelongsToBusiness;
 use App\Models\Traits\HasReactions;
@@ -12,8 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-class Product extends Model
+class Product extends Model implements Reviewable
 {
     use BelongsToBusiness,SearchableByTNT,HasReactions;
 
@@ -98,4 +100,31 @@ class Product extends Model
         return$this->variations()->where('activity_status', ActivityStatus::ACTIVE->value)->sum('stock');
     }
 
+    public function reviews(): MorphMany
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    public function getBusiness(): Business
+    {
+        return $this->business;
+    }
+
+    public function canBeRated(): bool
+    {
+        return true;
+    }
+
+    public function canUserReview(User $user): bool
+    {
+        // فعلاً true
+        // بعداً از Order بررسی می‌کنیم
+        return true;
+    }
+
+    public function isVerifiedPurchase(User $user): bool
+    {
+        // بعداً از سفارش بررسی می‌شود
+        return false;
+    }
 }

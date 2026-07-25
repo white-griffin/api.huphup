@@ -29,10 +29,8 @@ class BusinessResource extends JsonResource
             ],
             'latitude' => (float)$this->latitude,
             'longitude' => (float)$this->longitude,
-            'services' => ServiceResource::collection(
-                $this->services()
-                    ->where('business_services.activity_status',ActivityStatus::ACTIVE->value)
-                    ->get()
+            'services' => BusinessServiceResource::collection(
+                $this->whenLoaded('services')
             )
         ];
     }

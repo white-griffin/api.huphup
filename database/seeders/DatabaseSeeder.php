@@ -733,7 +733,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedAppointments($now): void
     {
-        $statuses = [AppointmentStatuses::PENDING->value, AppointmentStatuses::CONFIRMED->value, AppointmentStatuses::COMPLETED->value, AppointmentStatuses::CANCELLED->value];
+        $statuses = [AppointmentStatuses::PENDING_PAYMENT->value, AppointmentStatuses::CONFIRMED->value, AppointmentStatuses::COMPLETED->value, AppointmentStatuses::CANCELLED->value];
         $rows = [];
         for ($i = 1; $i <= 10; $i++) {
             $rows[] = [

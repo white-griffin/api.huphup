@@ -17,6 +17,7 @@ use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
 use App\Http\Controllers\User\Api\V1\Products\CategoryController;
 use App\Http\Controllers\User\Api\V1\Products\ProductController;
 use App\Http\Controllers\User\Api\V1\ReactionController;
+use App\Http\Controllers\User\Api\V1\Review\ReviewController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -62,7 +63,13 @@ Route::controller(AppointmentController::class)->prefix('appointments')
 
 Route::controller(BusinessController::class)->prefix('businesses')->group(function () {
     Route::get('/', 'index');
+
     Route::get('/{business}', 'show');
+
+    Route::post(
+        '/{business}/services/{businessService}/reviews',
+        'reviewService'
+    );
 });
 
 Route::controller(CategoryController::class)->prefix('categories')->group(function () {
@@ -73,6 +80,8 @@ Route::controller(CategoryController::class)->prefix('categories')->group(functi
 Route::controller(ProductController::class)->prefix('products')->group(function () {
     Route::get('/', 'search');
     Route::get('/{product}', 'show');
+    Route::get('/{product}', 'reviews');
+    Route::post('/{product}', 'review');
 });
 
 Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
@@ -150,4 +159,12 @@ Route::controller(ReactionController::class)
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::post('/toggle', 'toggle');
+    });
+
+Route::controller(ReviewController::class)->prefix('reviews')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::put('/{review}','update');
+
+        Route::delete('/{review}','destroy');
     });
