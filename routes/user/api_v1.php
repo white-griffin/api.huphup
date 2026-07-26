@@ -80,8 +80,8 @@ Route::controller(CategoryController::class)->prefix('categories')->group(functi
 Route::controller(ProductController::class)->prefix('products')->group(function () {
     Route::get('/', 'search');
     Route::get('/{product}', 'show');
-    Route::get('/{product}', 'reviews');
-    Route::post('/{product}', 'review');
+    Route::get('/{product}/reviews', 'reviews');
+    Route::post('/{product}/reviews', 'review');
 });
 
 Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
