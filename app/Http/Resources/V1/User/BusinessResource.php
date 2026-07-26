@@ -31,7 +31,12 @@ class BusinessResource extends JsonResource
             'longitude' => (float)$this->longitude,
             'services' => BusinessServiceResource::collection(
                 $this->whenLoaded('services')
-            )
+            ),
+            'rating' => $this->reputation?->rating_avg,
+
+            'rating_count' => $this->reputation?->rating_count,
+
+            'review_count' => $this->reputation?->review_count,
         ];
     }
 }

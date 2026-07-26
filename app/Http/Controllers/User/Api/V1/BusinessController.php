@@ -29,7 +29,9 @@ class BusinessController extends Controller
                         $q->where('business_type', $request->type);
                     })
                     ->with([
+                        'reputation',
                         'services.service',
+                        'services.reviewSummary',
                         'services.reviews' => fn ($query) => $query
                             ->approved()
                             ->latest()
@@ -62,7 +64,9 @@ class BusinessController extends Controller
             $business->load([
                 'province',
                 'city',
+                'reputation',
                 'services.service',
+                'services.reviewSummary',
                 'services.reviews' => fn ($query) => $query
                     ->approved()
                     ->latest()

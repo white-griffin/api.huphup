@@ -25,6 +25,11 @@ class BusinessServiceResource extends JsonResource
             'reviews' => ReviewResource::collection(
                 $this->whenLoaded('reviews')
             ),
+            'rating' => $this->reviewSummary?->rating_avg,
+
+            'rating_count' => $this->reviewSummary?->rating_count,
+
+            'review_count' => $this->reviewSummary?->review_count,
         ];
     }
 }

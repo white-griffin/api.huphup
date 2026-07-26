@@ -46,6 +46,11 @@ class ReviewSummaryService
 
             'last_review_at' => $approvedReviews->max('created_at'),
         ]);
+
+        app(BusinessReputationService::class)
+            ->refresh(
+                $reviewable->getBusiness()
+            );
     }
 
 }
