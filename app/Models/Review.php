@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReviewStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,6 +22,21 @@ class Review extends Model
             'edited_at' => 'datetime',
         ];
     }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', ReviewStatus::APPROVED->value);
+    }
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', ReviewStatus::PENDING->value);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', ReviewStatus::REJECTED->value);
+    }
+
 
     public function reviewable(): MorphTo
     {
