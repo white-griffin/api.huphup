@@ -57,6 +57,7 @@ class ProductController extends Controller
                         'user',
                         'messages.author',
                         'messages.business',
+                        'reviewSummary'
                     ]),
             ]);
 
@@ -131,6 +132,7 @@ class ProductController extends Controller
                         'user',
                         'messages.author',
                         'messages.business',
+                        'reviewSummary'
                     ]),
             ])
             ->paginate(15);

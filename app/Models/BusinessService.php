@@ -7,6 +7,7 @@ use Highlight\Mode;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class BusinessService extends Model implements Reviewable
@@ -48,5 +49,13 @@ class BusinessService extends Model implements Reviewable
     public function isVerifiedPurchase(User $user): bool
     {
         return false;
+    }
+
+    public function reviewSummary(): MorphOne
+    {
+        return $this->morphOne(
+            ReviewSummary::class,
+            'reviewable'
+        );
     }
 }

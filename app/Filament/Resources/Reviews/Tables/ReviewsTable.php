@@ -5,8 +5,6 @@ namespace App\Filament\Resources\Reviews\Tables;
 use App\Enums\ReviewStatus;
 use App\Models\Review;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -51,25 +49,16 @@ class ReviewsTable
                     ->label('تایید')
                     ->color('success')
                     ->action(fn(Review $record) =>
-                        $record->update([
-                            'status' => ReviewStatus::APPROVED->value,
-                        ])
+                        $record->approve()
                 ),
 
                 Action::make('reject')
                     ->label('رد')
                     ->color('danger')
                     ->action(fn(Review $record) =>
-                        $record->update([
-                            'status' => ReviewStatus::REJECTED->value,
-                        ])
+                        $record->reject()
                     ),
 
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }

@@ -48,9 +48,7 @@ class MessagesRelationManager extends RelationManager
                     ->requiresConfirmation()
                     ->action(
                         fn(Review $record) =>
-                        $record->update([
-                            'status' => ReviewStatus::APPROVED->value,
-                        ])
+                        $record->approve()
                     ),
 
                 Action::make('reject')
@@ -59,9 +57,7 @@ class MessagesRelationManager extends RelationManager
                     ->requiresConfirmation()
                     ->action(
                         fn(Review $record) =>
-                        $record->update([
-                            'status' => ReviewStatus::REJECTED->value,
-                        ])
+                        $record->reject()
                     ),
             ]);
     }

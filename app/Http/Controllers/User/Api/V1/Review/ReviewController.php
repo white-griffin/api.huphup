@@ -25,6 +25,7 @@ class ReviewController extends Controller
             $review->update(
                 $request->validated()
             );
+            $review->refreshSummary();
 
             return ApiResponse::Success('عملیات موفق');
         });
@@ -38,6 +39,8 @@ class ReviewController extends Controller
             $this->authorize('delete', $review);
 
             $review->delete();
+
+            $review->refreshSummary();
 
             return ApiResponse::success(
                 'عملیات موفق'

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Product extends Model implements Reviewable
 {
@@ -126,5 +127,13 @@ class Product extends Model implements Reviewable
     {
         // بعداً از سفارش بررسی می‌شود
         return false;
+    }
+
+    public function reviewSummary(): MorphOne
+    {
+        return $this->morphOne(
+            ReviewSummary::class,
+            'reviewable'
+        );
     }
 }

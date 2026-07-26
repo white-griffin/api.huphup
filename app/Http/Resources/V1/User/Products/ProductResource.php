@@ -61,6 +61,12 @@ class ProductResource extends JsonResource
             'reviews' => ReviewResource::collection(
                 $this->whenLoaded('reviews')
             ),
+
+            'rating' => $this->reviewSummary?->average_rating,
+
+            'ratings_count' => $this->reviewSummary?->ratings_count,
+
+            'reviews_count' => $this->reviewSummary?->reviews_count,
         ];
     }
 }

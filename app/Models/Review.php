@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enums\ReviewStatus;
+use App\Services\Review\ReviewSummaryService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Review extends Model
@@ -61,5 +63,36 @@ class Review extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ReviewMessage::class);
+    }
+
+    public function summary(): MorphOne
+    {
+        return $this->morphOne(
+            ReviewSummary::class,
+            'reviewable'
+        );
+    }
+
+    public function refreshSummary(): void
+    {
+        app(ReviewSummaryService::class)->refresh($this);
+    }
+
+    public function approve(): void
+    {
+        $this->update([
+            'status' => ReviewStatus::APPROVED->value,
+        ]);
+
+        $this->refreshSummary();
+    }
+
+    public function reject(): void
+    {
+        $this->update([
+            'status' => ReviewStatus::REJECTED->value,
+        ]);
+
+        $this->refreshSummary();
     }
 }
