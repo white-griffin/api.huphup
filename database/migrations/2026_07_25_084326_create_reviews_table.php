@@ -25,6 +25,8 @@ return new class extends Migration
 
             $table->nullableMorphs('reviewable');
 
+            $table->nullableMorphs('source');
+
             $table->unsignedTinyInteger('rating')
                 ->nullable();
 

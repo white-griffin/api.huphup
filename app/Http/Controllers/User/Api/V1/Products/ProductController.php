@@ -149,34 +149,6 @@ class ProductController extends Controller
         ]);
     }
 
-
-    public function review(
-        StoreReviewRequest $request,
-        Product $product,
-        ReviewService $reviewService,
-    ): JsonResponse
-    {
-        return DB::transaction(function ()use (
-            $reviewService,
-            $request,
-            $product
-        ){
-
-            $review = $reviewService->create(
-                user: $request->user(),
-                reviewable: $product,
-                attributes: $request->validated(),
-            );
-
-            $review->load([
-                'user',
-                'messages',
-            ]);
-
-            return ApiResponse::Success('نظر شما ثبت شد');
-        });
-    }
-
     public function reviews(
         Product $product,
     )

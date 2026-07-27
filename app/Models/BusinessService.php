@@ -3,12 +3,11 @@
 namespace App\Models;
 
 use App\Contracts\Reviewable;
-use Highlight\Mode;
+use App\Enums\AppointmentStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
-use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class BusinessService extends Model implements Reviewable
 {
@@ -38,7 +37,12 @@ class BusinessService extends Model implements Reviewable
 
     public function canUserReview(User $user): bool
     {
-        return true;
+        return Appointment::query()
+            ->where('business_id', $this->business_id)
+            ->where('business_service_id', $this->id)
+            ->where('user_id', $user->id)
+            ->where('status', AppointmentStatuses::COMPLETED->value)
+            ->exists();
     }
 
     public function canBeRated(): bool

@@ -18,7 +18,9 @@ class AppointmentPaymentHandler
 
             $appointment->refresh();
 
-            if ($appointment->status === AppointmentStatuses::CONFIRMED->value) {
+            if (
+                $appointment->status !== AppointmentStatuses::PENDING_PAYMENT->value
+            ) {
                 return;
             }
 
@@ -59,7 +61,7 @@ class AppointmentPaymentHandler
 
             $appointment->update([
                 'status' => AppointmentStatuses::PENDING_CONFIRMATION->value,
-                'notes' => 'بازه زمانی انتخاب‌شده دیگر در دسترس نبود و مبلغ به کیف پول شما بازگشت داده شد.'
+                'notes' => 'رزرو ثبت شد و در انتظار تأیید ارائه‌دهنده است.'
             ]);
         });
     }

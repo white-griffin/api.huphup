@@ -45,6 +45,11 @@ class Review extends Model
         return $this->morphTo();
     }
 
+    public function source(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -85,6 +90,7 @@ class Review extends Model
         ]);
 
         $this->refreshSummary();
+
     }
 
     public function reject(): void

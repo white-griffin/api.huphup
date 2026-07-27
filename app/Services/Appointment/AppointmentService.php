@@ -8,6 +8,7 @@ use App\Jobs\ExpireAppointmentPaymentJob;
 use App\Models\Appointment;
 use App\Models\BusinessOffDay;
 use App\Models\BusinessSchedule;
+use App\Models\BusinessService;
 use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -224,14 +225,15 @@ class AppointmentService
         return $overlappingCount < $schedule->capacity;
     }
 
-    public function book(int $businessId, Service $service, int $petId, int $userId, string $startsAt, ?string $note = null): Appointment
+    public function book(
+        BusinessService $businessService,
+        int $petId,
+        int $userId,
+        string $startsAt,
+        ?string $note = null,
+    ): Appointment
     {
         $startsAt = Carbon::parse($startsAt);
-        $businessService = $service->businesses()
-            ->where('business_id', $businessId)
-            ->firstOrFail()
-            ->pivot;
-
         $serviceDuration = (int) $businessService->duration;
         $servicePrice = (int) $businessService->price;
 
@@ -240,15 +242,15 @@ class AppointmentService
         $endsAt = $startsAt->copy()->addMinutes($serviceDuration);
 
         abort_unless(
-            $this->canBook($businessId, $startsAt->toDateTimeString(), $serviceDuration),
+            $this->canBook($businessService->business_id, $startsAt->toDateTimeString(), $serviceDuration),
             422,
             'زمان مورد نظر در دسترس نیست.'
         );
 
         $appointment = Appointment::query()
             ->create([
-                'business_id' => $businessId,
-                'service_id' => $service->id,
+                'business_id' => $businessService->business_id,
+                'business_service_id' => $businessService->id,
                 'user_id' => $userId,
                 'pet_id' => $petId,
                 'date' => $startsAt->toDateString(),

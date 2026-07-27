@@ -3,6 +3,7 @@
 namespace App\Services\Review\Guards;
 
 use App\Contracts\Reviewable;
+use App\Contracts\ReviewSource;
 use App\Exceptions\Review\AlreadyReviewedException;
 use App\Exceptions\Review\RatingNotAllowedException;
 use App\Exceptions\Review\ReviewNotAllowedException;
@@ -48,5 +49,16 @@ class ReviewGuard
         Reviewable $reviewable,
     ): bool {
         return $reviewable->isVerifiedPurchase($user);
+    }
+
+    public function ensureCanCreate(ReviewSource $source): void
+    {
+        if (! $source->canCreateReview()) {
+            throw new ReviewNotAllowedException();
+        }
+
+        if ($source->review()->exists()) {
+            throw new AlreadyReviewedException();
+        }
     }
 }

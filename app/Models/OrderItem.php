@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Contracts\Reviewable;
+use App\Contracts\ReviewSource;
+use App\Enums\OrderStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OrderItem extends Model
+class OrderItem extends Model implements ReviewSource
 {
     protected $guarded = ['id'];
 
@@ -25,4 +28,18 @@ class OrderItem extends Model
         return $this->belongsTo(ProductVariation::class, 'product_variation_id');
     }
 
+    public function getReviewable(): Reviewable
+    {
+        return $this->product;
+    }
+
+    public function getReviewAuthor(): User
+    {
+        return $this->order->user;
+    }
+
+    public function canCreateReview(): bool
+    {
+        return $this->order->order_status === OrderStatuses::COMPLETED->value;
+    }
 }

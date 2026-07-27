@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\User\Api\V1;
 
+use App\Enums\AppointmentStatuses;
 use App\Enums\PaymentGateways;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\Api\V1\Review\StoreReviewRequest;
 use App\Http\Resources\V1\User\AppointmentResource;
+use App\Http\Resources\V1\User\ReviewResource;
 use App\Models\Appointment;
-use App\Models\Service;
+use App\Models\BusinessService;
 use App\Services\Appointment\AppointmentService;
 use App\Services\Payment\PaymentService;
+use App\Services\Review\ReviewService;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
@@ -24,7 +28,7 @@ class AppointmentController extends Controller
             $appointments = AppointmentResource::collection(
                 Appointment::query()
                     ->where('user_id', auth()->id())
-                    ->with(['service', 'pet', 'business'])
+                    ->with(['businessService', 'pet', 'business'])
                     ->orderByDesc('date')
                     ->orderByDesc('start_time')
                     ->get()
@@ -39,18 +43,15 @@ class AppointmentController extends Controller
     public function availableSlots(int $businessId)
     {
         request()->validate([
-            'service_id' => 'required|exists:services,id',
+            'business_service_id' => 'required|exists:business_services,id',
             'date'       => 'required|date|after_or_equal:today',
         ]);
 
         try {
-            $service = Service::query()
-                ->findOrFail(request()->service_id);
 
-            $businessService = $service->businesses()
-                ->where('business_id', $businessId)
-                ->firstOrFail()
-                ->pivot;
+            $businessService = BusinessService::query()
+                ->where('id', request()->business_service_id)
+                ->firstOrFail();
 
             $slots = $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration);
 
@@ -67,12 +68,11 @@ class AppointmentController extends Controller
     {
         $data = $this->validateAppointmentData();
         try {
-            $service = Service::query()
-                ->findOrFail($data['service_id']);
+            $businessService = BusinessService::query()
+                ->findOrFail($data['business_service_id']);
 
             $appointment = $this->service->book(
-                businessId: $data['business_id'],
-                service:    $service,
+                $businessService,
                 petId:      $data['pet_id'],
                 userId:     auth()->id(),
                 startsAt:   $data['starts_at'],
@@ -95,7 +95,6 @@ class AppointmentController extends Controller
         }
     }
 
-
     public function cancel(Appointment $appointment)
     {
         try {
@@ -109,7 +108,7 @@ class AppointmentController extends Controller
                 return ApiResponse::Fail(Response::HTTP_UNPROCESSABLE_ENTITY,'تاریخ رزرو گذشته است');
             }
 
-            $appointment->update(['status' => \App\Enums\AppointmentStatuses::CANCELLED->value]);
+            $appointment->update(['status' => AppointmentStatuses::CANCELLED->value]);
             return ApiResponse::Success('عملیات موفق');
 
         }catch (\Exception $exception){
@@ -123,7 +122,7 @@ class AppointmentController extends Controller
     {
         return request()->validate([
             'business_id' => 'required|exists:businesses,id',
-            'service_id'  => 'required|exists:services,id',
+            'business_service_id'  => 'required|exists:business_service,id',
             'pet_id'      => [
                 'required',
                 Rule::exists('pets', 'id')->where('user_id', auth()->id()),
@@ -132,5 +131,39 @@ class AppointmentController extends Controller
             'note'        => 'nullable|string',
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
+    }
+
+    public function review(
+        StoreReviewRequest $request,
+        Appointment $appointment,
+        ReviewService $reviewService,
+    ) {
+        try {
+            abort_unless(
+                $appointment->user_id === $request->user()->id,
+                Response::HTTP_FORBIDDEN
+            );
+
+            $review = $reviewService->create(
+                source: $appointment,
+                attributes: $request->validated(),
+            );
+
+            return ApiResponse::success(
+                'نظر با موفقیت ثبت شد.',
+                ReviewResource::make(
+                    $review->load([
+                        'user',
+                        'messages.author',
+                        'messages.business',
+                    ])
+                )
+            );
+        } catch (\Throwable $e) {
+            return ApiResponse::fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                $e->getMessage()
+            );
+        }
     }
 }

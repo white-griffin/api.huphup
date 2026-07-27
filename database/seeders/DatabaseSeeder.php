@@ -740,7 +740,7 @@ class DatabaseSeeder extends Seeder
                 'id' => $i,
                 'business_id' => $i,
                 'user_id' => $i,
-                'service_id' => $i,
+                'business_service_id' => $i,
                 'pet_id' => $i,
                 'date' => now()->addDays($i)->toDateString(),
                 'start_time' => '10:00:00',

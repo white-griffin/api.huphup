@@ -4,8 +4,12 @@ namespace App\Http\Controllers\User\Api\V1\Order;
 
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\Api\V1\Review\StoreReviewRequest;
+use App\Http\Resources\V1\User\ReviewResource;
+use App\Models\OrderItem;
 use App\Services\Order\OrderService;
 use App\Services\Payment\PaymentService;
+use App\Services\Review\ReviewService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -83,5 +87,39 @@ class OrderController extends Controller
             ->findOrFail($id);
 
         return ApiResponse::Success('عملیات موفق',$order);
+    }
+
+    public function review(
+        StoreReviewRequest $request,
+        OrderItem $orderItem,
+        ReviewService $reviewService,
+    ) {
+        try {
+            abort_unless(
+                $orderItem->order->user_id === $request->user()->id,
+                Response::HTTP_FORBIDDEN
+            );
+
+            $review = $reviewService->create(
+                source: $orderItem,
+                attributes: $request->validated(),
+            );
+
+            return ApiResponse::success(
+                'نظر با موفقیت ثبت شد.',
+                ReviewResource::make(
+                    $review->load([
+                        'user',
+                        'messages.author',
+                        'messages.business',
+                    ])
+                )
+            );
+        } catch (\Throwable $exception) {
+            return ApiResponse::fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                $exception->getMessage()
+            );
+        }
     }
 }

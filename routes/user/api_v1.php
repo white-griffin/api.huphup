@@ -59,6 +59,7 @@ Route::controller(AppointmentController::class)->prefix('appointments')
         Route::get('/', 'index');
         Route::post('/', 'store');
         Route::get('/cancel/{appointment}', 'cancel');
+        Route::post('/{appointment}/reviews', 'review');
     });
 
 Route::controller(BusinessController::class)->prefix('businesses')->group(function () {
@@ -81,7 +82,6 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
     Route::get('/', 'search');
     Route::get('/{product}', 'show');
     Route::get('/{product}/reviews', 'reviews');
-    Route::post('/{product}/reviews', 'review');
 });
 
 Route::prefix('chat')->middleware('auth:sanctum')->group(function () {
@@ -130,6 +130,7 @@ Route::controller(OrderController::class)->prefix('orders')->middleware('auth:sa
         Route::post('/', 'store');
         Route::get('/', 'index');
         Route::get('/{order}', 'show');
+        Route::post('/order-items/{orderItem}/review','review');
     });
 
 Route::controller(PaymentController::class)->prefix('payments')
@@ -165,6 +166,5 @@ Route::controller(ReviewController::class)->prefix('reviews')
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::put('/{review}','update');
-
         Route::delete('/{review}','destroy');
     });

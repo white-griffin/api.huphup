@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('business_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('service_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('business_service_id')->constrained()->cascadeOnDelete();
             $table->foreignId('pet_id')->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->time('start_time');
