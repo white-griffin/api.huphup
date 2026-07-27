@@ -221,20 +221,18 @@ class PaymentService
      */
     public function handleCallback(string $gatewayName, array $payload): Payment
     {
-
         $payment = Payment::query()
             ->where('transaction_id', $payload['transaction_id'] ?? null)
             ->where('gateway', PaymentGateways::fromEnglishLabel($gatewayName)->value)
-            ->lockForUpdate()
             ->firstOrFail();
 
-        // idempotency: اگر قبلاً پردازش شده، دوباره پردازش نکن
-        if ($payment->payment_status != PaymentStatuses::UNPAID->value) {
-            return $payment;
-        }
 
-        $gateway = GatewayFactory::make(PaymentGateways::fromEnglishLabel($gatewayName)->value);
+        $gateway = GatewayFactory::make(
+            PaymentGateways::fromEnglishLabel($gatewayName)->value
+        );
+
         $result = $gateway->verify($payload);
+
 
         return $this->finalizePayment(
             payment: $payment,
@@ -247,13 +245,29 @@ class PaymentService
         Payment $payment,
         bool $success,
         array $gatewayResponse = [],
-    ): Payment{
-        return DB::transaction(function () use ($payment, $success, $gatewayResponse) {
+    ): Payment {
+        return DB::transaction(function () use (
+            $payment,
+            $success,
+            $gatewayResponse
+        ) {
+
+            $payment = Payment::query()
+                ->lockForUpdate()
+                ->findOrFail($payment->id);
+
+
+            // idempotency
+            if ($payment->payment_status != PaymentStatuses::UNPAID->value) {
+                return $payment;
+            }
+
 
             $payment->update([
                 'payment_status' => $success
                     ? PaymentStatuses::PAID->value
                     : PaymentStatuses::FAILED->value,
+
                 'gateway_response' => $gatewayResponse,
             ]);
 
@@ -262,7 +276,11 @@ class PaymentService
                 $this->registerCouponUsage($payment);
             }
 
-            $payable = $payment->payable()->lockForUpdate()->first();
+
+            $payable = $payment->payable()
+                ->lockForUpdate()
+                ->first();
+
 
             if ($payable instanceof HandlesPayment) {
 
@@ -272,6 +290,7 @@ class PaymentService
                     $payable->paymentFailed($payment);
                 }
             }
+
 
             return $payment->fresh();
         });

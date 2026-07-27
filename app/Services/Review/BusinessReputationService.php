@@ -5,6 +5,7 @@ namespace App\Services\Review;
 
 use App\Models\Business;
 use App\Models\BusinessReputation;
+use App\Services\Commission\CommissionService;
 
 class BusinessReputationService
 {
@@ -28,11 +29,18 @@ class BusinessReputationService
             ? round($ratingSum / $ratingCount, 2)
             : 0;
 
+
         $reputationScore = $this->calculateScore(
             $ratingAvg,
             $ratingCount,
             $reviewCount,
         );
+
+        $commissionRate = app(CommissionService::class)
+            ->resolveRate(
+                $business,
+                $reputationScore
+            );
 
         BusinessReputation::query()->updateOrCreate(
             [
@@ -42,8 +50,9 @@ class BusinessReputationService
                 'rating_avg' => $ratingAvg,
                 'rating_count' => $ratingCount,
                 'review_count' => $reviewCount,
-                'last_calculated_at' => now(),
                 'reputation_score' => $reputationScore,
+                'current_commission_rate' => $commissionRate,
+                'last_calculated_at' => now(),
             ]
         );
     }

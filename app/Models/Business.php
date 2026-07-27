@@ -85,4 +85,9 @@ class Business extends Model
     {
         return $this->hasOne(BusinessReputation::class);
     }
+
+    public function commissions(): HasMany
+    {
+        return $this->hasMany(Commission::class);
+    }
 }

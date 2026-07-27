@@ -7,6 +7,7 @@ use App\Enums\PaymentStatuses;
 use App\Enums\WalletTransactionType;
 use App\Models\Order;
 use App\Notifications\User\V1\OrderCreatedNotification;
+use App\Services\Payment\SettlementService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 
@@ -20,7 +21,7 @@ class OrderPaymentService
         DB::transaction(function () use ($order) {
 
             $order->refresh();
-
+            $order->load('payment');
             if ($order->payment_status == PaymentStatuses::PAID->value) {
                 return;
             }
@@ -30,15 +31,10 @@ class OrderPaymentService
                 'order_status' => OrderStatuses::PAID->value,
             ]);
 
-            app(WalletService::class)
-                ->creditPending(
-                    wallet: $order->business->getWallet(),
-                    amount: $order->payable_amount,
-                    type: WalletTransactionType::PAYMENT,
-                    payment: $order->payment,
-                    description: "دریافت وجه سفارش #{$order->id}"
+            app(SettlementService::class)
+                ->settle(
+                    $order->payment
                 );
-
 
             $order->user->notify(
                 new OrderCreatedNotification($order)

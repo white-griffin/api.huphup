@@ -7,16 +7,24 @@ use App\Enums\WalletTransactionType;
 use App\Models\Appointment;
 use App\Models\Payment;
 use App\Notifications\User\V1\Appointment\AppointmentCancelledNotification;
+use App\Services\Payment\SettlementService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 
 class AppointmentPaymentHandler
 {
-    public function succeeded(Appointment $appointment, Payment $payment): void
-    {
-        DB::transaction(function () use ($payment, $appointment) {
+    public function succeeded(
+        Appointment $appointment,
+        Payment $payment
+    ): void {
+
+        DB::transaction(function () use (
+            $appointment,
+            $payment
+        ) {
 
             $appointment->refresh();
+
 
             if (
                 $appointment->status !== AppointmentStatuses::PENDING_PAYMENT->value
@@ -24,36 +32,40 @@ class AppointmentPaymentHandler
                 return;
             }
 
-            $available = app(AppointmentService::class)->canBook(
-                businessId: $appointment->business_id,
-                startTime: $appointment->start_time->toDateTimeString(),
-                serviceDuration: $appointment->service_duration,
-                ignoreAppointmentId: $appointment->id,
-            );
+
+            $available = app(AppointmentService::class)
+                ->canBook(
+                    businessId: $appointment->business_id,
+                    startTime: $appointment->start_time->toDateTimeString(),
+                    serviceDuration: $appointment->service_duration,
+                    ignoreAppointmentId: $appointment->id,
+                );
+
 
             if (! $available) {
 
                 $appointment->update([
                     'status' => AppointmentStatuses::CANCELLED->value,
+                    'notes' => 'به دلیل تکمیل ظرفیت، رزرو لغو شد.',
                 ]);
 
-                // ثبت درخواست بازگشت وجه یا انتقال به کیف پول
-                app(WalletService::class)->refundPending(
-                    from: $appointment->business->getWallet(),
-                    to: $appointment->user->getWallet(),
-                    amount: $payment->amount,
-                    debitType: WalletTransactionType::REFUND,
-                    creditType: WalletTransactionType::REFUND,
-                    payment: $payment,
-                    description: "بازگشت وجه رزرو #{$appointment->id} به دلیل تکمیل ظرفیت"
-                );
 
-                // TODO: نوتیفیکیشن / پیامک
+                app(WalletService::class)
+                    ->creditAvailable(
+                        wallet: $appointment->user->getWallet(),
+                        amount: $payment->amount,
+                        type: WalletTransactionType::REFUND,
+                        payment: $payment,
+                        description: "بازگشت وجه رزرو #{$appointment->id}"
+                    );
+
+
                 $appointment->user->notify(
                     new AppointmentCancelledNotification(
                         $appointment
                     )
                 );
+
 
                 return;
             }
@@ -61,25 +73,38 @@ class AppointmentPaymentHandler
 
             $appointment->update([
                 'status' => AppointmentStatuses::PENDING_CONFIRMATION->value,
-                'notes' => 'رزرو ثبت شد و در انتظار تأیید ارائه‌دهنده است.'
             ]);
+
+
+            app(SettlementService::class)
+                ->settle($payment);
+
         });
     }
 
-    public function failed(Appointment $appointment, Payment $payment): void
-    {
+
+    public function failed(
+        Appointment $appointment,
+        Payment $payment
+    ): void {
+
         DB::transaction(function () use ($appointment) {
 
             $appointment->refresh();
 
-            if ($appointment->status !== AppointmentStatuses::PENDING_PAYMENT->value) {
+
+            if (
+                $appointment->status !== AppointmentStatuses::PENDING_PAYMENT->value
+            ) {
                 return;
             }
 
+
             $appointment->update([
                 'status' => AppointmentStatuses::EXPIRED->value,
-                'notes' => 'پرداخت ناموفق'
+                'notes' => 'پرداخت ناموفق',
             ]);
+
         });
     }
 }

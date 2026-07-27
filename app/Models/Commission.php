@@ -2,24 +2,30 @@
 
 namespace App\Models;
 
-use App\Enums\WalletTransactionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class WalletTransaction extends Model
+class Commission extends Model
 {
     protected $guarded = ['id'];
 
     protected $casts = [
-        'type' => WalletTransactionType::class,
+        'rate' => 'decimal:2',
     ];
-    public function wallet(): BelongsTo
+
+    public function business(): BelongsTo
     {
-        return $this->belongsTo(Wallet::class);
+        return $this->belongsTo(Business::class);
     }
 
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    public function payable(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
