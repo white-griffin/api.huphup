@@ -7,6 +7,7 @@ use App\Contracts\ReviewSource;
 use App\Enums\OrderStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class OrderItem extends Model implements ReviewSource
 {
@@ -41,5 +42,10 @@ class OrderItem extends Model implements ReviewSource
     public function canCreateReview(): bool
     {
         return $this->order->order_status === OrderStatuses::COMPLETED->value;
+    }
+
+    public function review(): MorphOne
+    {
+        return $this->morphOne(Review::class, 'source');
     }
 }

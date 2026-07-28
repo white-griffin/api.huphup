@@ -86,8 +86,7 @@ class Product extends Model implements Reviewable
     public function activeVariations(): HasMany
     {
         return $this->hasMany(ProductVariation::class)
-            ->where('activity_status',ActivityStatus::ACTIVE->value)
-            ->where('is_default', true);
+            ->where('activity_status',ActivityStatus::ACTIVE->value);
     }
 
 
