@@ -7,14 +7,14 @@ use App\Enums\Contracts\EnumContractInterface;
 enum ShipmentProvider: string implements Contracts\EnumContractInterface
 {
 
-    case FAKE = '1';
+    case SANDBOX = '1';
     case ALOPEYK = '2';
     case SNAPP = '3';
     case TIPAX = '4';
     public static function labels(): array
     {
         return [
-            self::FAKE->value => 'درایور فیک',
+            self::SANDBOX->value => 'درایور تست',
             self::ALOPEYK->value => 'الو پیک',
             self::SNAPP->value => 'اسنپ',
             self::TIPAX->value => 'تیپاکس',
@@ -24,7 +24,7 @@ enum ShipmentProvider: string implements Contracts\EnumContractInterface
     public static function englishLabels(): array
     {
         return [
-            self::FAKE->value => 'fake',
+            self::SANDBOX->value => 'sandbox',
             self::ALOPEYK->value => 'alopeyk',
             self::SNAPP->value => 'snapp',
             self::TIPAX->value => 'tipax',

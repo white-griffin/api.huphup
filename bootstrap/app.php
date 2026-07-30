@@ -35,6 +35,12 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('api')
                 ->prefix('api/v1/provider/auth')
                 ->group(base_path('routes/provider/auth_v1.php'));
+
+            /* Webhook Web Version 1 */
+            Route::middleware('web')
+                ->prefix('v1/webhooks')
+                ->group(base_path('routes/webhook/web_v1.php'));
+
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {

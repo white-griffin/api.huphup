@@ -5,7 +5,7 @@ namespace App\Contracts;
 use App\Models\Shipment;
 use App\Services\Logistics\DTO\CreateShipmentData;
 use App\Services\Logistics\DTO\CreateShipmentResult;
-use App\Services\Logistics\DTO\ShipmentStatusResult;
+use App\Services\Logistics\DTO\ShipmentUpdateData;
 
 interface ShippingProvider
 {
@@ -13,6 +13,6 @@ interface ShippingProvider
 
     public function cancelShipment(Shipment $shipment): bool;
 
-    public function track(Shipment $shipment): ShipmentStatusResult;
+    public function track(Shipment $shipment): ShipmentUpdateData;
 
 }

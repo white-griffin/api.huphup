@@ -4,12 +4,12 @@ namespace App\Services\Logistics;
 
 use App\Contracts\ShippingProvider;
 use App\Enums\ShipmentProvider;
-use App\Services\Logistics\Drivers\FakeDriver;
+use App\Services\Logistics\Drivers\SandboxDriver;
 
 class LogisticsManager
 {
     protected array $drivers = [
-        ShipmentProvider::FAKE->value => FakeDriver::class,
+        ShipmentProvider::SANDBOX->value => SandboxDriver::class,
 //        ShipmentProvider::ALOPEYK->value => AlopeykDriver::class,
     ];
 

@@ -4,6 +4,7 @@ namespace App\Services\Logistics;
 
 use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
+use App\Jobs\TrackShipmentJob;
 use App\Models\Order;
 use App\Models\Shipment;
 use App\Services\Logistics\DTO\AddressData;
@@ -20,7 +21,7 @@ class ShippingService
 
     public function create(Order $order): Shipment
     {
-        $provider = ShipmentProvider::FAKE;
+        $provider = ShipmentProvider::SANDBOX;
 
         $shipment = Shipment::create([
             'order_id' => $order->id,
@@ -63,6 +64,27 @@ class ShippingService
             'payload' => $result->providerData,
         ]);
 
+        TrackShipmentJob::dispatch($shipment)
+            ->delay(now()->addMinute());
+
         return $shipment->fresh();
+    }
+
+    public function cancel(Shipment $shipment): void
+    {
+        if (in_array($shipment->status, [
+            ShipmentStatuses::DELIVERED,
+            ShipmentStatuses::CANCELLED,
+        ])) {
+            return;
+        }
+
+        $driver = $this->manager->driver($shipment->provider);
+
+        $driver->cancelShipment($shipment);
+
+        $shipment->updateStatus(
+            ShipmentStatuses::CANCELLED
+        );
     }
 }
