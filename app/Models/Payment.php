@@ -11,6 +11,9 @@ class Payment extends Model
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'settled_at' => 'datetime',
+    ];
     public function payable(): MorphTo
     {
         return $this->morphTo();

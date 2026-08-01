@@ -26,6 +26,7 @@ return new class extends Migration
                 ->default(PaymentStatuses::UNPAID->value)
                 ->comment('1=unpaid,2=Processing,3=Failed,4=Cancelled,5=Refunded,6=Expired,7=Paid');
             $table->json('gateway_response')->nullable();
+            $table->timestamp('settled_at')->nullable();
             $table->timestamps();
         });
     }

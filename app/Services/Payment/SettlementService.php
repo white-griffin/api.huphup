@@ -5,9 +5,9 @@ namespace App\Services\Payment;
 use App\Enums\WalletTransactionType;
 use App\Models\Commission;
 use App\Models\Payment;
-use App\Models\WalletTransaction;
 use App\Services\Commission\CommissionService;
 use App\Services\Wallet\WalletService;
+use Illuminate\Support\Facades\DB;
 
 class SettlementService
 {
@@ -20,36 +20,28 @@ class SettlementService
 
     public function settle(Payment $payment): void
     {
-        $exists = WalletTransaction::query()
-            ->where('payment_id', $payment->id)
-            ->where('type', WalletTransactionType::PAYMENT->value)
-            ->exists();
+        DB::transaction(function () use ($payment) {
 
+            $payment = Payment::query()
+                ->lockForUpdate()
+                ->findOrFail($payment->id);
 
-        if ($exists) {
-            return;
-        }
+            if ($payment->settled_at !== null) {
+                return;
+            }
 
+            $payable = $payment->payable;
 
-        $payable = $payment->payable;
+            $business = $payable->business;
 
-        $business = $payable->business;
+            $amount = (int) $payment->amount;
 
+            $rate = $business->reputation?->current_commission_rate ?? 0;
 
-        $amount = (int) $payment->amount;
-
-
-        $rate = $business->reputation?->current_commission_rate ?? 0;
-
-
-        $commissionAmount = $this->commissionService
-            ->calculateAmount(
+            $commissionAmount = $this->commissionService->calculateAmount(
                 amount: $amount,
-                rate: $rate
+                rate: $rate,
             );
-
-
-        if ($commissionAmount > 0) {
 
             Commission::firstOrCreate(
                 [
@@ -63,16 +55,19 @@ class SettlementService
                     'rate' => $rate,
                 ]
             );
-        }
 
-
-        $this->walletService
-            ->creditPending(
+            $this->walletService->settlePending(
                 wallet: $business->getWallet(),
-                amount: $amount - $commissionAmount,
+                amount: $amount,
+                commissionAmount: $commissionAmount,
                 type: WalletTransactionType::PAYMENT,
                 payment: $payment,
-                description: "تسویه پرداخت #{$payment->id}"
+                description: "تسویه پرداخت #{$payment->id}",
             );
+
+            $payment->update([
+                'settled_at' => now(),
+            ]);
+        });
     }
 }

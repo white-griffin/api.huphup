@@ -348,6 +348,61 @@ class WalletService
             description: $description,
         );
     }
+
+    public function settlePending(
+        Wallet $wallet,
+        int $amount,
+        int $commissionAmount,
+        WalletTransactionType $type,
+        ?Payment $payment = null,
+        ?string $description = null,
+    ): void {
+        DB::transaction(function () use (
+            $wallet,
+            $amount,
+            $commissionAmount,
+            $type,
+            $payment,
+            $description
+        ) {
+            $wallet = $this->lockWallet($wallet);
+
+            $availableBefore = $wallet->available_balance;
+            $pendingBefore = $wallet->pending_balance;
+
+            if ($pendingBefore < $amount) {
+                throw new WalletException(
+                    'موجودی معلق کیف پول کافی نیست.'
+                );
+            }
+
+            if ($commissionAmount > $amount) {
+                throw new WalletException(
+                    'مبلغ کمیسیون نمی‌تواند بیشتر از مبلغ پرداخت باشد.'
+                );
+            }
+
+            $availableAfter = $availableBefore + ($amount - $commissionAmount);
+            $pendingAfter = $pendingBefore - $amount;
+
+            $wallet->update([
+                'available_balance' => $availableAfter,
+                'pending_balance' => $pendingAfter,
+            ]);
+
+            $this->createTransaction(
+                wallet: $wallet,
+                type: $type,
+                amount: $amount - $commissionAmount,
+                availableBefore: $availableBefore,
+                availableAfter: $availableAfter,
+                pendingBefore: $pendingBefore,
+                pendingAfter: $pendingAfter,
+                payment: $payment,
+                description: $description,
+            );
+        });
+    }
     private function lockWallet(Wallet $wallet): Wallet
     {
         return Wallet::query()

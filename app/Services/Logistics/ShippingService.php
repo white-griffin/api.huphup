@@ -10,6 +10,7 @@ use App\Models\Shipment;
 use App\Services\Logistics\DTO\AddressData;
 use App\Services\Logistics\DTO\CreateShipmentData;
 use App\Services\Logistics\DTO\CustomerData;
+use App\Services\Payment\SettlementService;
 
 class ShippingService
 {
@@ -64,8 +65,15 @@ class ShippingService
             'payload' => $result->providerData,
         ]);
 
-        TrackShipmentJob::dispatch($shipment)
-            ->delay(now()->addMinute());
+        if ($result->status == ShipmentStatuses::DELIVERED->value) {
+            $shipment->loadMissing('order.payment');
+
+            app(SettlementService::class)
+                ->settle($shipment->order->payment);
+        } else {
+            TrackShipmentJob::dispatch($shipment)
+                ->delay(now()->addMinute());
+        }
 
         return $shipment->fresh();
     }

@@ -31,10 +31,6 @@ class OrderPaymentService
                 'order_status' => OrderStatuses::PAID->value,
             ]);
 
-            app(SettlementService::class)
-                ->settle(
-                    $order->payment
-                );
 
             $order->user->notify(
                 new OrderCreatedNotification($order)
