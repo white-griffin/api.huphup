@@ -16,9 +16,10 @@ use Illuminate\Http\Response;
 class OrderController extends Controller
 {
     public function __construct(
-        protected OrderService $orderService,
+        protected OrderService   $orderService,
         protected PaymentService $paymentService,
-    ) {
+    )
+    {
     }
 
     /**
@@ -36,7 +37,7 @@ class OrderController extends Controller
             ->latest()
             ->paginate();
 
-        return ApiResponse::Success('عملیات موفق',$orders);
+        return ApiResponse::Success('عملیات موفق', $orders);
     }
 
     /**
@@ -67,8 +68,8 @@ class OrderController extends Controller
             notes: $data['notes'] ?? null,
         );
 
-        return ApiResponse::Success( 'عملیات موفق',[
-            'order'   => $order,
+        return ApiResponse::Success('عملیات موفق', [
+            'order' => $order,
         ]);
     }
 
@@ -86,14 +87,41 @@ class OrderController extends Controller
             ])
             ->findOrFail($id);
 
-        return ApiResponse::Success('عملیات موفق',$order);
+        return ApiResponse::Success('عملیات موفق', $order);
     }
+
+
+    public function cancel(Request $request, int $orderId)
+    {
+        $order = $request->user()
+            ->orders()
+            ->findOrFail($orderId);
+
+        try {
+            $order = $this->orderService->cancel($order);
+
+            return ApiResponse::Success(
+                'سفارش با موفقیت لغو شد.',
+                [
+                    'order' => $order,
+                ]
+            );
+
+        } catch (\DomainException $e) {
+            return ApiResponse::Fail(
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                $e->getMessage()
+            );
+        }
+    }
+
 
     public function review(
         StoreReviewRequest $request,
-        OrderItem $orderItem,
-        ReviewService $reviewService,
-    ) {
+        OrderItem          $orderItem,
+        ReviewService      $reviewService,
+    )
+    {
         try {
             abort_unless(
                 $orderItem->order->user_id === $request->user()->id,

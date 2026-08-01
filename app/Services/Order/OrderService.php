@@ -4,10 +4,12 @@ namespace App\Services\Order;
 
 use App\Enums\OrderStatuses;
 use App\Enums\PaymentStatuses;
+use App\Enums\WalletTransactionType;
 use App\Helpers\Api\ApiResponse;
 use App\Jobs\OrderExpiredJob;
 use App\Models\Order;
 use App\Models\ProductVariation;
+use App\Services\Wallet\WalletService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -86,6 +88,74 @@ class OrderService
 //            ->afterCommit();
 
         return $order->load('items');
+    }
+
+
+    public function cancel(Order $order): Order
+    {
+        return DB::transaction(function () use ($order) {
+
+            $order = Order::query()
+                ->lockForUpdate()
+                ->with('items')
+                ->findOrFail($order->id);
+
+            if (!in_array($order->order_status, [
+                OrderStatuses::PENDING->value,
+                OrderStatuses::PAID->value,
+            ], true)) {
+                throw new \DomainException(
+                    'این سفارش قابل لغو نیست.'
+                );
+            }
+
+            if ($order->shipment()->exists()) {
+                throw new \DomainException(
+                    'برای این سفارش درخواست ارسال ثبت شده و امکان لغو وجود ندارد.'
+                );
+            }
+
+            // اگر پرداخت شده، ابتدا Refund
+            if ($order->order_status === OrderStatuses::PAID->value) {
+
+                $payment = $order->payment;
+
+                if (!$payment || $payment->payment_status !== PaymentStatuses::PAID->value) {
+                    throw new \DomainException(
+                        'وضعیت پرداخت سفارش معتبر نیست.'
+                    );
+                }
+
+                $businessWallet = $order->business->getWallet();
+                $userWallet = $order->user->getWallet();
+
+                app(WalletService::class)->refundPending(
+                    from: $businessWallet,
+                    to: $userWallet,
+                    amount: $payment->amount,
+                    debitType: WalletTransactionType::REFUND,
+                    creditType: WalletTransactionType::REFUND,
+                    payment: $payment,
+                    description: "بازگشت وجه سفارش #{$order->id}",
+                );
+            }
+
+            // برگرداندن موجودی
+            foreach ($order->items as $item) {
+                ProductVariation::query()
+                    ->whereKey($item->product_variation_id)
+                    ->increment('stock', $item->quantity);
+            }
+
+            $order->update([
+                'order_status' => OrderStatuses::CANCELED->value,
+            ]);
+
+            return $order->fresh([
+                'items',
+                'payment',
+            ]);
+        });
     }
 
 

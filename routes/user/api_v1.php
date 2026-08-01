@@ -130,6 +130,7 @@ Route::controller(OrderController::class)->prefix('orders')->middleware('auth:sa
         Route::post('/', 'store');
         Route::get('/', 'index');
         Route::get('/{order}', 'show');
+        Route::post('/{order}/cancel','cancel');
         Route::post('/order-items/{orderItem}/review','review');
     });
 
