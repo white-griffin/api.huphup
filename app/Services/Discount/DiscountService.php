@@ -4,7 +4,9 @@ namespace App\Services\Discount;
 
 use App\Models\Coupon;
 use App\Models\CouponUsage;
+use App\Models\Payment;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class DiscountService
 {
@@ -91,6 +93,37 @@ class DiscountService
             discountAmount: $discount,
             coupon: $coupon,
         );
+    }
+
+    public function releaseUsage(Payment $payment): void
+    {
+        if (! $payment->coupon_id) {
+            return;
+        }
+
+        DB::transaction(function () use ($payment) {
+
+            $usage = CouponUsage::query()
+                ->where('coupon_id', $payment->coupon_id)
+                ->where('discountable_type', $payment->payable_type)
+                ->where('discountable_id', $payment->payable_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $usage) {
+                return;
+            }
+
+            $coupon = Coupon::query()
+                ->lockForUpdate()
+                ->find($usage->coupon_id);
+
+            if ($coupon?->used_count > 0) {
+                $coupon->decrement('used_count');
+            }
+
+            $usage->delete();
+        });
     }
 
 }

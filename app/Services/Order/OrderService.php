@@ -9,6 +9,7 @@ use App\Helpers\Api\ApiResponse;
 use App\Jobs\OrderExpiredJob;
 use App\Models\Order;
 use App\Models\ProductVariation;
+use App\Services\Discount\DiscountService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -138,6 +139,10 @@ class OrderService
                     payment: $payment,
                     description: "بازگشت وجه سفارش #{$order->id}",
                 );
+
+                if ($payment->coupon_id) {
+                    app(DiscountService::class)->releaseUsage($payment);
+                }
             }
 
             // برگرداندن موجودی
