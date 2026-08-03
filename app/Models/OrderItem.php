@@ -19,6 +19,11 @@ class OrderItem extends Model implements ReviewSource
         return $this->belongsTo(Order::class);
     }
 
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(OrderVendor::class, 'order_vendor_id');
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Shipment extends Model
 {
@@ -16,6 +17,11 @@ class Shipment extends Model
             'provider' => ShipmentProvider::class,
             'status' => ShipmentStatuses::class,
         ];
+    }
+
+    public function orderVendor(): BelongsTo
+    {
+        return $this->belongsTo(OrderVendor::class);
     }
 
     public function events()

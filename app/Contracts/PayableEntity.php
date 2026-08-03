@@ -16,7 +16,4 @@ interface PayableEntity
 
     public function getPayableUserId(): int;
 
-    public function getReceiverWallet(): Wallet;
-
-
 }

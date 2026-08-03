@@ -6,6 +6,7 @@ use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\OrderVendor;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -26,23 +27,32 @@ class PaymentController extends Controller
     public function pay(Request $request)
     {
         $data = $request->validate([
-            'order_id' => ['required', 'integer'],
+            'order_vendor_id' => ['required', 'integer'],
             'gateway' => ['required', Rule::enum(PaymentGateways::class)],
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $order = $request->user()
-            ->orders()
-            ->findOrFail($data['order_id']);
-
+        $orderVendor = OrderVendor::query()
+            ->whereKey($data['order_vendor_id'])
+            ->whereHas('order', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            })
+            ->firstOrFail();
 
         $result = $this->paymentService->pay(
-            payable: $order,
+            payable: $orderVendor,
             gateway: PaymentGateways::from($data['gateway']),
             couponCode: $data['coupon_code'] ?? null,
         );
 
-        return ApiResponse::Success('عملیات موفق',$result);
+        return ApiResponse::Success('عملیات موفق', [
+            'order_vendor' => $orderVendor->fresh([
+                'order',
+                'business',
+                'payments',
+            ]),
+            'payment' => $result,
+        ]);
     }
 
     /**

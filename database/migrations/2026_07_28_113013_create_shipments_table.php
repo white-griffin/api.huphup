@@ -15,7 +15,9 @@ return new class extends Migration
     {
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('order_vendor_id')
+                ->constrained('order_vendors')
+                ->cascadeOnDelete();
             $table->tinyInteger('provider')
                 ->default(ShipmentProvider::ALOPEYK->value); //Alopeyk,Snapp...
             $table->string('provider_order_id')->nullable();

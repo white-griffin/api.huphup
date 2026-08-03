@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Provider\Api\V1;
+namespace App\Http\Controllers\Provider\Api\V1\Product;
 
 use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
+use App\Http\Controllers\Provider\Api\V1\BaseController;
 use App\Http\Resources\V1\Provider\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\Response;

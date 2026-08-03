@@ -52,6 +52,10 @@ class SandboxDriver implements ShippingProvider
             true
         );
 
+        if ($currentIndex === false) {
+            $currentIndex = 0;
+        }
+
         $nextStatus = self::STATUS_FLOW[
         min($currentIndex + 1, count(self::STATUS_FLOW) - 1)
         ];

@@ -2,8 +2,10 @@
 
 namespace App\Services\Payment;
 
+use App\Enums\PaymentStatuses;
 use App\Enums\WalletTransactionType;
 use App\Models\Commission;
+use App\Models\OrderVendor;
 use App\Models\Payment;
 use App\Services\Commission\CommissionService;
 use App\Services\Wallet\WalletService;
@@ -11,12 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class SettlementService
 {
-
     public function __construct(
         private readonly WalletService $walletService,
         private readonly CommissionService $commissionService,
-    ) {
-    }
+    ) {}
 
     public function settle(Payment $payment): void
     {
@@ -30,9 +30,30 @@ class SettlementService
                 return;
             }
 
-            $payable = $payment->payable;
+            if ($payment->payment_status !== PaymentStatuses::PAID->value) {
+                throw new \DomainException(
+                    'فقط پرداخت موفق قابل تسویه است.'
+                );
+            }
 
-            $business = $payable->business;
+            if ($payment->payable_type !== OrderVendor::class) {
+                throw new \DomainException(
+                    'فقط پرداخت سفارش فروشنده قابل تسویه است.'
+                );
+            }
+
+            /** @var OrderVendor $orderVendor */
+            $orderVendor = $payment->payable;
+
+            $orderVendor->loadMissing('business');
+
+            $business = $orderVendor->business;
+
+            if (!$business) {
+                throw new \DomainException(
+                    'فروشنده سفارش یافت نشد.'
+                );
+            }
 
             $amount = (int) $payment->amount;
 
@@ -43,12 +64,13 @@ class SettlementService
                 rate: $rate,
             );
 
-            Commission::firstOrCreate(
+            $commission = Commission::firstOrCreate(
                 [
                     'payment_id' => $payment->id,
                 ],
                 [
                     'business_id' => $business->id,
+                    'order_vendor_id' => $orderVendor->id,
                     'payable_type' => $payment->payable_type,
                     'payable_id' => $payment->payable_id,
                     'amount' => $commissionAmount,
@@ -59,7 +81,7 @@ class SettlementService
             $this->walletService->settlePending(
                 wallet: $business->getWallet(),
                 amount: $amount,
-                commissionAmount: $commissionAmount,
+                commissionAmount: (int) $commission->amount,
                 type: WalletTransactionType::PAYMENT,
                 payment: $payment,
                 description: "تسویه پرداخت #{$payment->id}",

@@ -1,13 +1,13 @@
 <?php
 
-use App\Http\Controllers\Provider\Api\V1\BrandController;
-use App\Http\Controllers\Provider\Api\V1\BusinessOffDayController;
-use App\Http\Controllers\Provider\Api\V1\CategoryController;
-use App\Http\Controllers\Provider\Api\V1\ProductAttributeController;
-use App\Http\Controllers\Provider\Api\V1\ProductController;
+use App\Http\Controllers\Provider\Api\V1\Appointment\BusinessOffDayController;
+use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleBreakController;
+use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleController;
+use App\Http\Controllers\Provider\Api\V1\Product\BrandController;
+use App\Http\Controllers\Provider\Api\V1\Product\CategoryController;
+use App\Http\Controllers\Provider\Api\V1\Product\ProductAttributeController;
+use App\Http\Controllers\Provider\Api\V1\Product\ProductController;
 use App\Http\Controllers\Provider\Api\V1\ReviewController;
-use App\Http\Controllers\Provider\Api\V1\ScheduleBreakController;
-use App\Http\Controllers\Provider\Api\V1\ScheduleController;
 
 Route::controller(CategoryController::class)->prefix('categories')->group(function () {
     Route::get('/', 'index');

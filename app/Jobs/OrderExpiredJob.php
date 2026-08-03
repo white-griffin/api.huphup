@@ -48,7 +48,7 @@ class OrderExpiredJob implements ShouldQueue
             }
 
             $order->update([
-                'order_status' => OrderStatuses::CANCELLED->value,
+                'order_status' => OrderStatuses::CANCELED->value,
                 'payment_status' => PaymentStatuses::EXPIRED->value,
             ]);
         });

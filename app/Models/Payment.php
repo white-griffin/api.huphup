@@ -33,4 +33,9 @@ class Payment extends Model
     {
         return $this->hasOne(Commission::class);
     }
+
+    public function orderVendor(): BelongsTo
+    {
+        return $this->belongsTo(OrderVendor::class);
+    }
 }

@@ -12,26 +12,18 @@ class TrackShipmentJob implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(
         public Shipment $shipment,
-    ) {
-    }
-
-    /**
-     * Execute the job.
-     */
-
+    ) {}
 
     public function handle(LogisticsManager $manager): void
     {
         $this->shipment->refresh();
+
         if (in_array($this->shipment->status, [
             ShipmentStatuses::DELIVERED,
             ShipmentStatuses::CANCELLED,
-        ])) {
+        ], true)) {
             return;
         }
 
@@ -47,8 +39,9 @@ class TrackShipmentJob implements ShouldQueue
         if (! in_array($result->status, [
             ShipmentStatuses::DELIVERED,
             ShipmentStatuses::CANCELLED,
-        ])) {
-            TrackShipmentJob::dispatch($this->shipment);
+        ], true)) {
+            TrackShipmentJob::dispatch($this->shipment)
+                ->delay(now()->addMinute());
         }
     }
 }

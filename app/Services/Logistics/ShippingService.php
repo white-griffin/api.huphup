@@ -2,10 +2,13 @@
 
 namespace App\Services\Logistics;
 
+use App\Enums\PaymentStatuses;
 use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
 use App\Jobs\TrackShipmentJob;
 use App\Models\Order;
+use App\Models\OrderVendor;
+use App\Models\Payment;
 use App\Models\Shipment;
 use App\Services\Logistics\DTO\AddressData;
 use App\Services\Logistics\DTO\CreateShipmentData;
@@ -20,20 +23,21 @@ class ShippingService
     ) {}
 
 
-    public function create(Order $order): Shipment
+    public function create(OrderVendor $orderVendor): Shipment
     {
         $provider = ShipmentProvider::SANDBOX;
 
         $shipment = Shipment::create([
-            'order_id' => $order->id,
+            'order_vendor_id' => $orderVendor->id,
             'provider' => $provider,
             'status' => ShipmentStatuses::PENDING,
+            'provider_data' => [],
         ]);
 
         $driver = $this->manager->driver($provider);
 
         $data = new CreateShipmentData(
-            reference: (string) $order->id,
+            reference: (string) $orderVendor->id,
             origin: new AddressData(
                 address: '',
                 latitude: 0,
@@ -48,7 +52,7 @@ class ShippingService
                 name: '',
                 phone: '',
             ),
-            price: 0,
+            price: $orderVendor->total_amount,
         );
 
         $result = $driver->createShipment($data);
@@ -66,10 +70,17 @@ class ShippingService
         ]);
 
         if ($result->status == ShipmentStatuses::DELIVERED->value) {
-            $shipment->loadMissing('order.payment');
+            $shipment->loadMissing('orderVendor.payments');
 
-            app(SettlementService::class)
-                ->settle($shipment->order->payment);
+            $payment = $shipment->orderVendor
+                ->payments()
+                ->where('payment_status', PaymentStatuses::PAID->value)
+                ->latest()
+                ->first();
+
+            if ($payment) {
+                app(SettlementService::class)->settle($payment);
+            }
         } else {
             TrackShipmentJob::dispatch($shipment)
                 ->delay(now()->addMinute());

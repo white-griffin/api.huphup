@@ -68,6 +68,11 @@ class Business extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function orderVendors(): HasMany
+    {
+        return $this->hasMany(OrderVendor::class);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
