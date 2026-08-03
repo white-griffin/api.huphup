@@ -80,7 +80,6 @@ class ProductController extends Controller
         $userId = $request->user()?->id;
 
         $search = rawurldecode(trim((string) $request->get('q', '')));
-        $sort = (string) $request->get('sort', '');
         $query = $queryService->make()
             ->where('publication_status', PublicationStatus::PUBLISHED->value);
 
@@ -100,17 +99,8 @@ class ProductController extends Controller
 
             $query->whereIn('id', $matchedIds);
 
-            if ($sort === '') {
-                $query->orderByRaw(
-                    'FIELD(id,' . implode(',', array_map('intval', $matchedIds)) . ')'
-                );
-            }
         }
 
-        $query = $queryService->applySort(
-            $query,
-            $sort ?: 'newest'
-        );
 
         $filters = $facetService->build(clone $query);
 
