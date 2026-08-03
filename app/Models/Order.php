@@ -21,6 +21,10 @@ class Order extends Model implements CouponEligible
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'shipping_latitude' => 'float',
+        'shipping_longitude' => 'float',
+    ];
 
     public function user(): BelongsTo
     {

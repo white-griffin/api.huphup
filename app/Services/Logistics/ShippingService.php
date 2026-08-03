@@ -2,108 +2,157 @@
 
 namespace App\Services\Logistics;
 
-use App\Enums\PaymentStatuses;
 use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
 use App\Jobs\TrackShipmentJob;
-use App\Models\Order;
 use App\Models\OrderVendor;
-use App\Models\Payment;
 use App\Models\Shipment;
 use App\Services\Logistics\DTO\AddressData;
 use App\Services\Logistics\DTO\CreateShipmentData;
 use App\Services\Logistics\DTO\CustomerData;
-use App\Services\Payment\SettlementService;
+use Illuminate\Support\Facades\DB;
 
 class ShippingService
 {
-
     public function __construct(
         private readonly LogisticsManager $manager,
     ) {}
 
-
     public function create(OrderVendor $orderVendor): Shipment
     {
-        $provider = ShipmentProvider::SANDBOX;
+        return DB::transaction(function () use ($orderVendor) {
 
-        $shipment = Shipment::create([
-            'order_vendor_id' => $orderVendor->id,
-            'provider' => $provider,
-            'status' => ShipmentStatuses::PENDING,
-            'provider_data' => [],
-        ]);
+            $orderVendor = OrderVendor::query()
+                ->lockForUpdate()
+                ->with([
+                    'order.user',
+                    'business',
+                ])
+                ->findOrFail($orderVendor->id);
 
-        $driver = $this->manager->driver($provider);
-
-        $data = new CreateShipmentData(
-            reference: (string) $orderVendor->id,
-            origin: new AddressData(
-                address: '',
-                latitude: 0,
-                longitude: 0,
-            ),
-            destination: new AddressData(
-                address: '',
-                latitude: 0,
-                longitude: 0,
-            ),
-            customer: new CustomerData(
-                name: '',
-                phone: '',
-            ),
-            price: $orderVendor->total_amount,
-        );
-
-        $result = $driver->createShipment($data);
-
-        $shipment->update([
-            'provider_order_id' => $result->providerOrderId,
-            'tracking_code' => $result->trackingCode,
-            'status' => $result->status,
-            'provider_data' => $result->providerData,
-        ]);
-
-        $shipment->events()->create([
-            'status' => $result->status,
-            'payload' => $result->providerData,
-        ]);
-
-        if ($result->status == ShipmentStatuses::DELIVERED->value) {
-            $shipment->loadMissing('orderVendor.payments');
-
-            $payment = $shipment->orderVendor
-                ->payments()
-                ->where('payment_status', PaymentStatuses::PAID->value)
-                ->latest()
+            $existingShipment = $orderVendor->shipments()
+                ->latest('id')
                 ->first();
 
-            if ($payment) {
-                app(SettlementService::class)->settle($payment);
+            if ($existingShipment) {
+                return $existingShipment;
             }
-        } else {
-            TrackShipmentJob::dispatch($shipment)
-                ->delay(now()->addMinute());
-        }
 
-        return $shipment->fresh();
+            $user = $orderVendor->order->user;
+            $business = $orderVendor->business;
+
+            $shippingAddress = $user->addresses()
+                ->latest('id')
+                ->first();
+
+            if (! $shippingAddress) {
+                throw new \DomainException(
+                    'آدرس ارسال برای کاربر ثبت نشده است.'
+                );
+            }
+
+            if (
+                $business->latitude === null ||
+                $business->longitude === null
+            ) {
+                throw new \DomainException(
+                    'مختصات آدرس فروشگاه ثبت نشده است.'
+                );
+            }
+
+            if (
+                $shippingAddress->latitude === null ||
+                $shippingAddress->longitude === null
+            ) {
+                throw new \DomainException(
+                    'مختصات آدرس ارسال ثبت نشده است.'
+                );
+            }
+
+            $provider = ShipmentProvider::SANDBOX;
+
+            $data = new CreateShipmentData(
+                reference: $orderVendor->order->order_number,
+
+                origin: new AddressData(
+                    address: $business->address,
+                    latitude: (float) $business->latitude,
+                    longitude: (float) $business->longitude,
+                ),
+
+                destination: new AddressData(
+                    address: $shippingAddress->address,
+                    latitude: (float) $shippingAddress->latitude,
+                    longitude: (float) $shippingAddress->longitude,
+                ),
+
+                customer: new CustomerData(
+                    name: $user->name,
+                    phone: $user->phone,
+                ),
+
+                price: (int) $orderVendor->total_amount,
+            );
+
+            $driver = $this->manager->driver($provider);
+
+            $result = $driver->createShipment($data);
+
+            $shipment = $orderVendor->shipments()->create([
+                'provider' => $provider->value,
+                'provider_order_id' => $result->providerOrderId,
+                'tracking_code' => $result->trackingCode,
+                'status' => $result->status->value,
+                'provider_data' => $result->providerData,
+            ]);
+
+            $shipment->events()->create([
+                'status' => $result->status->value,
+                'payload' => $result->providerData,
+            ]);
+
+            if (
+                ! in_array($result->status, [
+                    ShipmentStatuses::DELIVERED,
+                    ShipmentStatuses::CANCELLED,
+                ], true)
+            ) {
+                TrackShipmentJob::dispatch($shipment)
+                    ->delay(now()->addMinute())
+                    ->afterCommit();
+            }
+
+            return $shipment->fresh([
+                'orderVendor',
+                'events',
+            ]);
+        });
     }
 
     public function cancel(Shipment $shipment): void
     {
+        $shipment->refresh();
+
         if (in_array($shipment->status, [
             ShipmentStatuses::DELIVERED,
             ShipmentStatuses::CANCELLED,
-        ])) {
+        ], true)) {
             return;
         }
 
         $driver = $this->manager->driver($shipment->provider);
 
-        $driver->cancelShipment($shipment);
+        $success = $driver->cancelShipment($shipment);
+
+        if (! $success) {
+            throw new \DomainException(
+                'لغو درخواست ارسال توسط سرویس لجستیک انجام نشد.'
+            );
+        }
 
         $shipment->updateStatus(
             ShipmentStatuses::CANCELLED
         );
     }
 }
+

@@ -26,6 +26,12 @@ return new class extends Migration
                 ->default(PaymentStatuses::UNPAID->value)
                 ->comment('1=unpaid,2=Processing,3=Failed,4=Cancelled,5=Refunded,6=Expired,7=Paid');
             $table->text('notes')->nullable();
+
+            $table->text('shipping_address')->nullable();
+            $table->string('shipping_postal_code', 10)->nullable();
+            $table->decimal('shipping_latitude', 10, 7)->nullable();
+            $table->decimal('shipping_longitude', 10, 7)->nullable();
+
             $table->timestamps();
         });
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Provider\Api\V1\Appointment\BusinessOffDayController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleBreakController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleController;
+use App\Http\Controllers\Provider\Api\V1\Order\OrderController;
 use App\Http\Controllers\Provider\Api\V1\Product\BrandController;
 use App\Http\Controllers\Provider\Api\V1\Product\CategoryController;
 use App\Http\Controllers\Provider\Api\V1\Product\ProductAttributeController;
@@ -58,4 +59,13 @@ Route::controller(ReviewController::class)
     ->group(function () {
         Route::get('/', 'index');
         Route::post('/{review}/reply', 'reply');
+    });
+
+Route::controller(OrderController::class)
+    ->prefix('orders')
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{orderVendorId}', 'show');
+        Route::post('/{orderVendorId}/accept', 'accept');
+        Route::post('/{orderVendorId}/reject', 'reject');
     });

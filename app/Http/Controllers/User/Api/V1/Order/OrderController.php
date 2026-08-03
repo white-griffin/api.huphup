@@ -48,6 +48,12 @@ class OrderController extends Controller
         $data = $request->validate([
             'notes' => ['nullable', 'string'],
 
+            'shipping_address_id' => [
+                'required',
+                'integer',
+                'exists:user_addresses,id',
+            ],
+
             'items' => ['required', 'array', 'min:1'],
 
             'items.*.product_variation_id' => [
@@ -65,6 +71,7 @@ class OrderController extends Controller
         $order = $this->orderService->create(
             userId: $request->user()->id,
             items: $data['items'],
+            shippingAddressId: $data['shipping_address_id'],
             notes: $data['notes'] ?? null,
         );
 

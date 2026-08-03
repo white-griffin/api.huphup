@@ -9,7 +9,9 @@ use App\Enums\WalletTransactionType;
 use App\Helpers\Api\ApiResponse;
 use App\Jobs\OrderExpiredJob;
 use App\Models\Order;
+use App\Models\OrderVendor;
 use App\Models\ProductVariation;
+use App\Models\UserAddress;
 use App\Services\Discount\DiscountService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\Response;
@@ -22,18 +24,35 @@ class OrderService
     /**
      * $items: [['product_variation_id' => int, 'quantity' => int], ...]
      */
+
     public function create(
-        int $userId,
-        array $items,
-        ?string $notes = null
-    ): Order {
+        int     $userId,
+        array   $items,
+        int     $shippingAddressId,
+        ?string $notes = null,
+    ): Order
+    {
         $order = DB::transaction(function () use (
             $userId,
             $items,
-            $notes
+            $notes,
+            $shippingAddressId,
         ) {
+            /*
+             * دریافت آدرس متعلق به خود کاربر
+             */
+            $shippingAddress = UserAddress::query()
+                ->whereKey($shippingAddressId)
+                ->where('user_id', $userId)
+                ->firstOrFail();
+
+            /*
+             * دریافت و Lock کردن Variationها
+             * برای جلوگیری از Overselling
+             */
             $variationIds = collect($items)
                 ->pluck('product_variation_id')
+                ->unique()
                 ->sort()
                 ->values();
 
@@ -44,19 +63,32 @@ class OrderService
                 ->get()
                 ->keyBy('id');
 
-            if ($variations->count() !== $variationIds->unique()->count()) {
+            if ($variations->count() !== $variationIds->count()) {
                 throw new \DomainException(
                     'یکی از تنوع‌های درخواستی در دسترس نیست.'
                 );
             }
 
+            /*
+             * ایجاد Order
+             *
+             * اطلاعات آدرس به‌صورت Snapshot ذخیره می‌شوند.
+             */
             $order = Order::query()->create([
                 'user_id' => $userId,
                 'order_number' => $this->generateOrderNumber(),
+
                 'total_amount' => 0,
                 'discount_amount' => 0,
+
                 'order_status' => OrderStatuses::PENDING->value,
                 'payment_status' => PaymentStatuses::UNPAID->value,
+
+                'shipping_address' => $shippingAddress->address,
+                'shipping_postal_code' => $shippingAddress->postal_code,
+                'shipping_latitude' => $shippingAddress->latitude,
+                'shipping_longitude' => $shippingAddress->longitude,
+
                 'notes' => $notes,
             ]);
 
@@ -67,80 +99,127 @@ class OrderService
                     $item['product_variation_id']
                 );
 
-                if ($variation->stock < $item['quantity']) {
+                $quantity = (int)$item['quantity'];
+
+                if ($quantity <= 0) {
                     throw new \DomainException(
-                        'مقداری درخواستی از موجودی بیشتر است.'
+                        'تعداد محصول باید بیشتر از صفر باشد.'
+                    );
+                }
+
+                if ($variation->stock < $quantity) {
+                    throw new \DomainException(
+                        'موجودی محصول برای تعداد درخواستی کافی نیست.'
                     );
                 }
 
                 $businessId = $variation->product->business_id;
 
-                if (! isset($vendors[$businessId])) {
+                /*
+                 * هر Business در یک Order فقط یک OrderVendor دارد.
+                 */
+                if (!isset($vendors[$businessId])) {
                     $vendors[$businessId] = $order->vendors()->create([
                         'business_id' => $businessId,
+
                         'subtotal_amount' => 0,
                         'discount_amount' => 0,
                         'total_amount' => 0,
+
                         'status' => OrderVendorStatuses::PENDING->value,
                     ]);
                 }
 
+                /** @var OrderVendor $vendor */
                 $vendor = $vendors[$businessId];
 
-                $unitPrice = (int) $variation->price;
+                $unitPrice = (int)$variation->price;
 
                 $discountPrice = $variation->discount_price !== null
-                    ? (int) $variation->discount_price
-                    : $unitPrice;
+                    ? (int)$variation->discount_price
+                    : null;
 
-                $lineTotal = $discountPrice * $item['quantity'];
+                $effectivePrice = $discountPrice ?? $unitPrice;
 
+                $lineSubtotal = $unitPrice * $quantity;
+
+                $lineDiscount = $discountPrice !== null
+                    ? ($unitPrice - $discountPrice) * $quantity
+                    : 0;
+
+                $lineTotal = $effectivePrice * $quantity;
+
+                /*
+                 * Snapshot اطلاعات محصول در زمان خرید
+                 */
                 $vendor->items()->create([
                     'order_id' => $order->id,
                     'product_id' => $variation->product_id,
                     'product_variation_id' => $variation->id,
-                    'quantity' => $item['quantity'],
+
+                    'quantity' => $quantity,
+
                     'unit_price' => $unitPrice,
-                    'discount_price' => $variation->discount_price,
+                    'discount_price' => $discountPrice,
                     'total_price' => $lineTotal,
                 ]);
 
+                /*
+                 * subtotal = قیمت قبل از تخفیف
+                 */
                 $vendor->increment(
                     'subtotal_amount',
-                    $unitPrice * $item['quantity']
+                    $lineSubtotal
                 );
 
+                /*
+                 * discount = مقدار تخفیف
+                 */
+                if ($lineDiscount > 0) {
+                    $vendor->increment(
+                        'discount_amount',
+                        $lineDiscount
+                    );
+                }
+
+                /*
+                 * total = مبلغ نهایی Vendor
+                 */
                 $vendor->increment(
                     'total_amount',
                     $lineTotal
                 );
 
-                if ($variation->discount_price !== null) {
-                    $vendor->increment(
-                        'discount_amount',
-                        ($unitPrice - $discountPrice) * $item['quantity']
-                    );
-                }
-
+                /*
+                 * رزرو موجودی
+                 */
                 $variation->decrement(
                     'stock',
-                    $item['quantity']
+                    $quantity
                 );
             }
 
+            /*
+             * محاسبه Total نهایی Order
+             */
             $order->update([
                 'total_amount' => $order->vendors()->sum('total_amount'),
-                'discount_amount' => $order->vendors()->sum('discount_amount'),
+
+                'discount_amount' => $order->vendors()->sum(
+                    'discount_amount'
+                ),
             ]);
 
             return $order;
         });
 
         return $order->load([
-            'vendors.items',
+            'vendors.items.product',
+            'vendors.items.variation',
             'vendors.business',
         ]);
     }
+
 
     public function cancel(Order $order): Order
     {
@@ -149,18 +228,18 @@ class OrderService
             $order = Order::query()
                 ->lockForUpdate()
                 ->with([
+                    'items',
                     'vendors.shipments',
-                    'vendors.payments' => fn ($query) => $query
+                    'vendors.payments' => fn($query) => $query
                         ->where(
                             'payment_status',
                             PaymentStatuses::PAID->value
                         )
                         ->latest(),
-                    'items',
                 ])
                 ->findOrFail($order->id);
 
-            if (! in_array($order->order_status, [
+            if (!in_array($order->order_status, [
                 OrderStatuses::PENDING->value,
                 OrderStatuses::PAID->value,
             ], true)) {
@@ -170,32 +249,32 @@ class OrderService
             }
 
             foreach ($order->vendors as $vendor) {
-                if ($vendor->shipments->contains(
-                    fn (Shipment $shipment) =>
-                    ! in_array($shipment->status, [
-                        ShipmentStatuses::CANCELLED,
-                        ShipmentStatuses::DELIVERED,
-                    ], true)
-                )) {
+
+                if ($vendor->shipments->isNotEmpty()) {
                     throw new \DomainException(
-                        'برای یکی از فروشندگان درخواست ارسال ثبت شده و امکان لغو وجود ندارد.'
+                        'برای یکی از فروشندگان این سفارش درخواست ارسال ثبت شده و امکان لغو وجود ندارد.'
                     );
                 }
             }
 
-            if ($order->order_status === OrderStatuses::PAID->value) {
-                foreach ($order->vendors as $vendor) {
+            foreach ($order->vendors as $vendor) {
+
+                if ($vendor->status === OrderVendorStatuses::PAID->value) {
+
                     $payment = $vendor->payments->first();
 
-                    if (! $payment) {
+                    if (!$payment) {
                         throw new \DomainException(
-                            "پرداخت موفقی برای فروشنده سفارش #{$vendor->id} پیدا نشد."
+                            'پرداخت موفقی برای یکی از فروشندگان سفارش پیدا نشد.'
                         );
                     }
 
-                    if ($payment->payment_status !== PaymentStatuses::PAID->value) {
+                    if (
+                        $payment->payment_status !==
+                        PaymentStatuses::PAID->value
+                    ) {
                         throw new \DomainException(
-                            'وضعیت پرداخت سفارش معتبر نیست.'
+                            'وضعیت پرداخت یکی از فروشندگان سفارش معتبر نیست.'
                         );
                     }
 
@@ -213,34 +292,47 @@ class OrderService
                     );
 
                     $payment->update([
-                        'payment_status' => PaymentStatuses::REFUNDED->value,
+                        'payment_status' =>
+                            PaymentStatuses::REFUNDED->value,
                     ]);
 
                     if ($payment->coupon_id) {
                         app(DiscountService::class)
                             ->releaseUsage($payment);
                     }
+
+                    $vendor->update([
+                        'status' =>
+                            OrderVendorStatuses::CANCELED->value,
+                    ]);
                 }
             }
 
             foreach ($order->items as $item) {
                 ProductVariation::query()
                     ->whereKey($item->product_variation_id)
-                    ->increment('stock', $item->quantity);
+                    ->increment(
+                        'stock',
+                        $item->quantity
+                    );
             }
 
             $order->update([
-                'order_status' => OrderStatuses::CANCELED->value,
+                'order_status' =>
+                    OrderStatuses::CANCELED->value,
+
+                'payment_status' =>
+                    PaymentStatuses::CANCELLED->value,
             ]);
 
             return $order->fresh([
                 'items',
-                'vendors.business',
-                'vendors.payments',
                 'vendors.shipments',
+                'vendors.payments',
             ]);
         });
     }
+
 
     private function generateOrderNumber(): string
     {
