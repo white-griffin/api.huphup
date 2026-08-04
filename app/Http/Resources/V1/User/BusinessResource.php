@@ -30,7 +30,7 @@ class BusinessResource extends JsonResource
             'latitude' => (float)$this->latitude,
             'longitude' => (float)$this->longitude,
             'phone' => $this->phone,
-            'work_time' => $this->settings['work_time'],
+            'work_time' => $this->settings['work_time'] ?? null,
             'services' => BusinessServiceResource::collection(
                 $this->whenLoaded('services')
             ),
