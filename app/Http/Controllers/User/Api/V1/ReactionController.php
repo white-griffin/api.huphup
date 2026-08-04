@@ -5,7 +5,7 @@ namespace App\Http\Controllers\User\Api\V1;
 use App\Enums\ReactionType;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\V1\User\ToggleReactionRequest;
+use App\Http\Requests\ToggleReactionRequest;
 use App\Models\Product;
 use App\Services\Reaction\ReactionService;
 use Illuminate\Database\Eloquent\Model;

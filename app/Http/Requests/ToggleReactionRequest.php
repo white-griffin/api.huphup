@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\V1\User;
+namespace App\Http\Requests;
 
 use App\Enums\ReactionType;
 use Illuminate\Foundation\Http\FormRequest;
