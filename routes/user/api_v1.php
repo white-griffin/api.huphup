@@ -14,6 +14,7 @@ use App\Http\Controllers\User\Api\V1\PetRoutine\RoutineTemplateController;
 use App\Http\Controllers\User\Api\V1\Pets\BreedsController;
 use App\Http\Controllers\User\Api\V1\Pets\PetController;
 use App\Http\Controllers\User\Api\V1\Pets\SpeciesController;
+use App\Http\Controllers\User\Api\V1\Products\BrandController;
 use App\Http\Controllers\User\Api\V1\Products\CategoryController;
 use App\Http\Controllers\User\Api\V1\Products\ProductController;
 use App\Http\Controllers\User\Api\V1\ReactionController;
@@ -71,6 +72,10 @@ Route::controller(BusinessController::class)->prefix('businesses')->group(functi
         '/{business}/services/{businessService}/reviews',
         'reviewService'
     );
+});
+
+Route::controller(BrandController::class)->prefix('brands')->group(function () {
+    Route::get('/', 'index');
 });
 
 Route::controller(CategoryController::class)->prefix('categories')->group(function () {

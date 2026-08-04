@@ -80,8 +80,7 @@ class ProductController extends Controller
         $userId = $request->user()?->id;
 
         $search = rawurldecode(trim((string) $request->get('q', '')));
-        $query = $queryService->make()
-            ->where('publication_status', PublicationStatus::PUBLISHED->value);
+        $query = $queryService->make();
 
         $query = $filterService->apply($query, $request);
 

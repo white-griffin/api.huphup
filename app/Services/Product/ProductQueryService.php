@@ -2,6 +2,7 @@
 
 namespace App\Services\Product;
 
+use App\Enums\PublicationStatus;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -17,6 +18,6 @@ class ProductQueryService
                 'activeVariations.variationAttributes.attribute',
                 'activeVariations.variationAttributes.option',
             ])
-            ->where('publication_status', 1);
+            ->where('publication_status', PublicationStatus::PUBLISHED->value);
     }
 }

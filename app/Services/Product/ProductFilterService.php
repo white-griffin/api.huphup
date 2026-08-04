@@ -12,7 +12,9 @@ class ProductFilterService
     {
         return $query
             ->when($request->filled('brand'), function (Builder $query) use ($request) {
-                $query->where('brand_id', $request->brand);
+                $query->whereHas('brand', function (Builder $query) use ($request) {
+                    $query->where('slug', $request->brand);
+                });
             })
             ->when($request->filled('category'), function (Builder $query) use ($request) {
                 $query->whereHas('categories', function (Builder $query) use ($request) {
