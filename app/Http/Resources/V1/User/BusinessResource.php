@@ -38,11 +38,11 @@ class BusinessResource extends JsonResource
             'services' => BusinessServiceResource::collection(
                 $this->whenLoaded('services')
             ),
-            'rating' => $this->reputation?->rating_avg,
+            'rating' => $this->reputation?->rating_avg ?? 0,
 
-            'rating_count' => $this->reputation?->rating_count,
+            'rating_count' => $this->reputation?->rating_count ?? 0,
 
-            'review_count' => $this->reputation?->review_count,
+            'review_count' => $this->reputation?->review_count ?? 0,
         ];
     }
 }
