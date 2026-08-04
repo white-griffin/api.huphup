@@ -29,7 +29,10 @@ class BusinessResource extends JsonResource
             ],
             'latitude' => (float)$this->latitude,
             'longitude' => (float)$this->longitude,
-            'street' => preg_split('/\s*[،,]\s*/u', $this->address)[0] ?? null,
+            'street' => preg_split(
+                    '/\s*(?:،|,|\bپلاک\b|\bشماره\b)\s*/u',
+                    $this->address
+                )[0] ?? null,
             'phone' => $this->phone,
             'work_time' => $this->settings['work_time'] ?? null,
             'services' => BusinessServiceResource::collection(
