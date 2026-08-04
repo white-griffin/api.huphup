@@ -28,6 +28,17 @@ class BusinessController extends Controller
                     ->when($request->type, function ($q) use ($request) {
                         $q->where('business_type', $request->type);
                     })
+                    ->when($request->filled('search'), function ($q) use ($request) {
+                        $search = $request->search;
+
+                        $q->where(function ($query) use ($search) {
+                            $query
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhereHas('services.service', function ($query) use ($search) {
+                                    $query->where('name', 'like', "%{$search}%");
+                                });
+                        });
+                    })
                     ->with([
                         'reputation',
                         'services.service',
@@ -98,33 +109,5 @@ class BusinessController extends Controller
         }
     }
 
-    public function reviewService(
-        StoreReviewRequest $request,
-        Business $business,
-        BusinessService $businessService,
-        ReviewService $reviewService,
-    ) {
-        return DB::transaction(function () use (
-            $request,
-            $business,
-            $businessService,
-            $reviewService
-        ) {
-            abort_unless(
-                $businessService->business_id === $business->id,
-                404
-            );
 
-            $review = $reviewService->create(
-                user: $request->user(),
-                reviewable: $businessService,
-                attributes: $request->validated(),
-            );
-
-            return ApiResponse::success(
-                'عملیات موفق',
-                ReviewResource::make($review)
-            );
-        });
-    }
 }
