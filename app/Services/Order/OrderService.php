@@ -229,17 +229,18 @@ class OrderService
                 ->lockForUpdate()
                 ->with([
                     'items',
+                    'vendors.business',
                     'vendors.shipments',
-                    'vendors.payments' => fn($query) => $query
+                    'payments' => fn ($query) => $query
                         ->where(
                             'payment_status',
                             PaymentStatuses::PAID->value
                         )
-                        ->latest(),
+                        ->latest('id'),
                 ])
                 ->findOrFail($order->id);
 
-            if (!in_array($order->order_status, [
+            if (! in_array($order->order_status, [
                 OrderStatuses::PENDING->value,
                 OrderStatuses::PAID->value,
             ], true)) {
@@ -249,7 +250,6 @@ class OrderService
             }
 
             foreach ($order->vendors as $vendor) {
-
                 if ($vendor->shipments->isNotEmpty()) {
                     throw new \DomainException(
                         'برای یکی از فروشندگان این سفارش درخواست ارسال ثبت شده و امکان لغو وجود ندارد.'
@@ -257,50 +257,64 @@ class OrderService
                 }
             }
 
-            foreach ($order->vendors as $vendor) {
+            $payment = $order->payments->first();
 
-                if ($vendor->status === OrderVendorStatuses::PAID->value) {
+            if ($payment) {
 
-                    $payment = $vendor->payments->first();
+                if (
+                    $payment->payment_status !==
+                    PaymentStatuses::PAID->value
+                ) {
+                    throw new \DomainException(
+                        'وضعیت پرداخت سفارش معتبر نیست.'
+                    );
+                }
 
-                    if (!$payment) {
-                        throw new \DomainException(
-                            'پرداخت موفقی برای یکی از فروشندگان سفارش پیدا نشد.'
-                        );
-                    }
+                foreach ($order->vendors as $vendor) {
 
                     if (
-                        $payment->payment_status !==
-                        PaymentStatuses::PAID->value
+                        $vendor->status !==
+                        OrderVendorStatuses::PAID->value
                     ) {
-                        throw new \DomainException(
-                            'وضعیت پرداخت یکی از فروشندگان سفارش معتبر نیست.'
+                        continue;
+                    }
+
+                    $refundAmount = (int) $vendor->paid_amount;
+
+                    if ($refundAmount > 0) {
+                        app(WalletService::class)->refundPending(
+                            from: $vendor->business->getWallet(),
+                            to: $order->user->getWallet(),
+                            amount: $refundAmount,
+                            debitType: WalletTransactionType::REFUND,
+                            creditType: WalletTransactionType::REFUND,
+                            payment: $payment,
+                            description: "بازگشت وجه سفارش #{$order->id}",
                         );
                     }
 
-                    $businessWallet = $vendor->business->getWallet();
-                    $userWallet = $order->user->getWallet();
-
-                    app(WalletService::class)->refundPending(
-                        from: $businessWallet,
-                        to: $userWallet,
-                        amount: $payment->amount,
-                        debitType: WalletTransactionType::REFUND,
-                        creditType: WalletTransactionType::REFUND,
-                        payment: $payment,
-                        description: "بازگشت وجه سفارش #{$order->id}",
-                    );
-
-                    $payment->update([
-                        'payment_status' =>
-                            PaymentStatuses::REFUNDED->value,
+                    $vendor->update([
+                        'status' =>
+                            OrderVendorStatuses::CANCELED->value,
                     ]);
+                }
 
-                    if ($payment->coupon_id) {
-                        app(DiscountService::class)
-                            ->releaseUsage($payment);
-                    }
+                $payment->update([
+                    'payment_status' =>
+                        PaymentStatuses::REFUNDED->value,
+                ]);
 
+                if ($payment->coupon_id) {
+                    app(DiscountService::class)
+                        ->releaseUsage($payment);
+                }
+            }
+
+            foreach ($order->vendors as $vendor) {
+                if (
+                    $vendor->status !==
+                    OrderVendorStatuses::CANCELED->value
+                ) {
                     $vendor->update([
                         'status' =>
                             OrderVendorStatuses::CANCELED->value,
@@ -321,14 +335,16 @@ class OrderService
                 'order_status' =>
                     OrderStatuses::CANCELED->value,
 
-                'payment_status' =>
-                    PaymentStatuses::CANCELLED->value,
+                'payment_status' => $payment
+                    ? PaymentStatuses::REFUNDED->value
+                    : PaymentStatuses::CANCELLED->value,
             ]);
 
             return $order->fresh([
                 'items',
+                'vendors.business',
                 'vendors.shipments',
-                'vendors.payments',
+                'payments',
             ]);
         });
     }

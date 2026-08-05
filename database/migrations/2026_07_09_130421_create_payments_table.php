@@ -15,10 +15,6 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->morphs('payable'); // payable_type, payable_id
-            $table->foreignId('order_vendor_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
             $table->foreignId('user_id')->constrained();
 
             $table->foreignId('coupon_id')->nullable()->constrained()->nullOnDelete();

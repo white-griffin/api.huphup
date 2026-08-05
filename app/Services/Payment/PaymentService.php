@@ -131,7 +131,24 @@ class PaymentService
             ->first();
 
         if ($activePayment) {
-            return $activePayment;
+            if (
+                $activePayment->payment_status ===
+                PaymentStatuses::PROCESSING->value
+            ) {
+                return $activePayment;
+            }
+
+            $activePayment->update([
+                'gateway' => $gateway,
+                'coupon_id' => $coupon?->id,
+                'original_amount' =>
+                    $originalAmount ?? $payable->getPayableAmount(),
+                'coupon_discount_amount' => $couponDiscountAmount,
+                'amount' =>
+                    $finalAmount ?? $payable->getPayableAmount(),
+            ]);
+
+            return $activePayment->fresh();
         }
 
         $amount = $finalAmount ?? $payable->getPayableAmount();
@@ -192,23 +209,23 @@ class PaymentService
                 ->lockForUpdate()
                 ->findOrFail($payment->id);
 
-            if ($payment->payment_status !== PaymentStatuses::UNPAID->value) {
+            if (
+                $payment->payment_status !==
+                PaymentStatuses::UNPAID->value
+            ) {
                 throw new PaymentGatewayException(
                     'این پرداخت قبلاً پردازش شده است.'
                 );
             }
 
             $userWallet = $payment->user->getWallet();
-            $receiverWallet = $payment->payable->getReceiverWallet();
 
-            $this->walletService->transfer(
-                from: $userWallet,
-                to: $receiverWallet,
-                amount: $payment->amount,
-                debitType: WalletTransactionType::PAYMENT,
-                creditType: WalletTransactionType::PAYMENT,
+            $this->walletService->debitAvailable(
+                wallet: $userWallet,
+                amount: (int) $payment->amount,
+                type: WalletTransactionType::PAYMENT,
                 payment: $payment,
-                description: "پرداخت #{$payment->id}",
+                description: "پرداخت سفارش #{$payment->payable_id}",
             );
 
             $this->registerCouponUsage($payment);
@@ -219,7 +236,7 @@ class PaymentService
 
             $payable = $payment->payable()
                 ->lockForUpdate()
-                ->first();
+                ->firstOrFail();
 
             if ($payable instanceof HandlesPayment) {
                 $payable->paymentSucceeded($payment);

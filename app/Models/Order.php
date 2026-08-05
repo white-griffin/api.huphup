@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 
-class Order extends Model implements CouponEligible
+class Order extends Model implements PayableEntity,CouponEligible,HandlesPayment
 {
 
     protected $guarded = ['id'];
@@ -58,4 +58,30 @@ class Order extends Model implements CouponEligible
     }
 
 
+    public function getPayableAmount(): int
+    {
+        return (int)$this->total_amount;
+    }
+
+    public function getPayableUser(): User
+    {
+        return $this->user;
+    }
+
+    public function getPayableUserId(): int
+    {
+        return (int)$this->user_id;
+    }
+
+    public function paymentSucceeded(Payment $payment): void
+    {
+        app(OrderPaymentService::class)
+            ->succeeded($this, $payment);
+    }
+
+    public function paymentFailed(Payment $payment): void
+    {
+        app(OrderPaymentService::class)
+            ->failed($this, $payment);
+    }
 }

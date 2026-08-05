@@ -27,28 +27,25 @@ class PaymentController extends Controller
     public function pay(Request $request)
     {
         $data = $request->validate([
-            'order_vendor_id' => ['required', 'integer'],
+            'order_id' => ['required', 'integer', 'exists:orders,id'],
             'gateway' => ['required', Rule::enum(PaymentGateways::class)],
             'coupon_code' => ['nullable', 'string', 'max:50'],
         ]);
 
-        $orderVendor = OrderVendor::query()
-            ->whereKey($data['order_vendor_id'])
-            ->whereHas('order', function ($query) use ($request) {
-                $query->where('user_id', $request->user()->id);
-            })
-            ->firstOrFail();
+        $order = $request->user()
+            ->orders()
+            ->findOrFail($data['order_id']);
 
         $result = $this->paymentService->pay(
-            payable: $orderVendor,
+            payable: $order,
             gateway: PaymentGateways::from($data['gateway']),
             couponCode: $data['coupon_code'] ?? null,
         );
 
         return ApiResponse::Success('عملیات موفق', [
-            'order_vendor' => $orderVendor->fresh([
-                'order',
-                'business',
+            'order' => $order->fresh([
+                'vendors.business',
+                'vendors.items',
                 'payments',
             ]),
             'payment' => $result,

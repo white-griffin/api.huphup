@@ -7,6 +7,7 @@ use App\Enums\OrderVendorStatuses;
 use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
 use App\Enums\WalletTransactionType;
+use App\Models\Order;
 use App\Models\OrderVendor;
 use App\Models\Payment;
 use App\Services\Wallet\WalletService;
@@ -14,139 +15,114 @@ use Illuminate\Support\Facades\DB;
 
 class OrderPaymentService
 {
-    public function vendorSucceeded(
-        OrderVendor $orderVendor,
+    public function succeeded(
+        Order $order,
         Payment $payment,
     ): void {
-        DB::transaction(function () use ($orderVendor, $payment) {
+        DB::transaction(function () use ($order, $payment) {
 
-            $orderVendor = OrderVendor::query()
+            $order = Order::query()
                 ->lockForUpdate()
-                ->with('business')
-                ->findOrFail($orderVendor->id);
+                ->with('vendors.business')
+                ->findOrFail($order->id);
 
-            /*
-             * Idempotency
-             */
             if (
-                $orderVendor->status ===
-                OrderVendorStatuses::PAID->value
+                $order->payment_status ===
+                PaymentStatuses::PAID->value
             ) {
                 return;
             }
 
-            /*
-             * پرداخت‌های غیر Wallet:
-             * مبلغ ابتدا وارد pending_balance بیزنس می‌شود.
-             *
-             * پرداخت Wallet قبلاً توسط PaymentService
-             * به pending_balance منتقل شده است.
-             */
-            if (
-                $payment->gateway !==
-                PaymentGateways::WALLET->value
-            ) {
-                app(WalletService::class)->creditPending(
-                    wallet: $orderVendor->business->getWallet(),
-                    amount: (int) $payment->amount,
-                    type: WalletTransactionType::PAYMENT,
-                    payment: $payment,
-                    description: "ایجاد موجودی معلق پرداخت #{$payment->id}",
+            $vendors = $order->vendors
+                ->filter(
+                    fn (OrderVendor $vendor) =>
+                        $vendor->status ===
+                        OrderVendorStatuses::PENDING->value
+                )
+                ->values();
+
+            if ($vendors->isEmpty()) {
+                throw new \DomainException(
+                    'هیچ فروشنده‌ای در وضعیت قابل پرداخت نیست.'
                 );
             }
 
-            /*
-             * Vendor پرداخت شده است.
-             *
-             * نکته مهم:
-             * اینجا هنوز Settlement انجام نمی‌شود.
-             *
-             * Settlement بعد از تحویل موفق Shipment انجام می‌شود.
-             */
-            $orderVendor->update([
-                'status' => OrderVendorStatuses::PAID->value,
-            ]);
+            $totalAmount = (int) $vendors->sum('total_amount');
 
-            /*
-             * وضعیت Order اصلی را Sync می‌کنیم.
-             */
-            $this->syncOrderStatus($orderVendor);
+            if ($totalAmount <= 0) {
+                throw new \DomainException(
+                    'مبلغ قابل پرداخت سفارش معتبر نیست.'
+                );
+            }
+
+            $remainingAmount = (int) $payment->amount;
+
+            foreach ($vendors as $index => $vendor) {
+
+                if ($index === $vendors->count() - 1) {
+                    $paidAmount = $remainingAmount;
+                } else {
+                    $paidAmount = (int) round(
+                        $payment->amount
+                        * ($vendor->total_amount / $totalAmount)
+                    );
+
+                    $remainingAmount -= $paidAmount;
+                }
+
+                $vendor->update([
+                    'paid_amount' => $paidAmount,
+                    'status' => OrderVendorStatuses::PAID->value,
+                ]);
+
+                if ($paidAmount > 0) {
+                    app(WalletService::class)->creditPending(
+                        wallet: $vendor->business->getWallet(),
+                        amount: $paidAmount,
+                        type: WalletTransactionType::PAYMENT,
+                        payment: $payment,
+                        description: "ایجاد موجودی معلق سفارش #{$order->id}",
+                    );
+                }
+            }
+
+            if ($remainingAmount !== 0) {
+                throw new \DomainException(
+                    'تخصیص مبلغ پرداخت بین فروشندگان با مبلغ پرداختی مطابقت ندارد.'
+                );
+            }
+
+            $order->update([
+                'payment_status' => PaymentStatuses::PAID->value,
+                'order_status' => OrderStatuses::PAID->value,
+            ]);
         });
     }
 
-    public function vendorFailed(
-        OrderVendor $orderVendor,
+    public function failed(
+        Order $order,
         Payment $payment,
     ): void {
-        DB::transaction(function () use ($orderVendor) {
+        DB::transaction(function () use ($order) {
 
-            $orderVendor = OrderVendor::query()
+            $order = Order::query()
                 ->lockForUpdate()
-                ->findOrFail($orderVendor->id);
+                ->findOrFail($order->id);
 
-            /*
-             * اگر قبلاً موفق شده، Failed نباید آن را تغییر دهد.
-             */
             if (
-                $orderVendor->status ===
-                OrderVendorStatuses::PAID->value
+                $order->payment_status ===
+                PaymentStatuses::PAID->value
             ) {
                 return;
             }
 
-            $orderVendor->update([
+            $order->update([
+                'payment_status' => PaymentStatuses::FAILED->value,
+            ]);
+
+            $order->vendors()->update([
                 'status' => OrderVendorStatuses::FAILED->value,
             ]);
-
-            $this->syncOrderStatus($orderVendor);
         });
-    }
-
-    private function syncOrderStatus(
-        OrderVendor $orderVendor
-    ): void {
-        $order = $orderVendor->order()
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        $vendors = $order->vendors()->get();
-
-        /*
-         * همه Vendorها پرداخت شده‌اند.
-         */
-        if (
-            $vendors->isNotEmpty()
-            && $vendors->every(
-                fn (OrderVendor $vendor) =>
-                    $vendor->status ===
-                    OrderVendorStatuses::PAID->value
-            )
-        ) {
-            $order->update([
-                'payment_status' =>
-                    PaymentStatuses::PAID->value,
-
-                'order_status' =>
-                    OrderStatuses::PAID->value,
-            ]);
-
-            return;
-        }
-
-        /*
-         * حداقل یک Vendor پرداخت ناموفق داشته است.
-         */
-        if (
-            $vendors->contains(
-                fn (OrderVendor $vendor) =>
-                    $vendor->status ===
-                    OrderVendorStatuses::FAILED->value
-            )
-        ) {
-            $order->update([
-                'payment_status' =>
-                    PaymentStatuses::FAILED->value,
-            ]);
-        }
     }
 }
