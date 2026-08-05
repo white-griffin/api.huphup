@@ -36,7 +36,7 @@ class OrderPaymentService
             $vendors = $order->vendors
                 ->filter(
                     fn (OrderVendor $vendor) =>
-                        $vendor->status ===
+                        $vendor->status ==
                         OrderVendorStatuses::PENDING->value
                 )
                 ->values();
@@ -48,6 +48,7 @@ class OrderPaymentService
             }
 
             $totalAmount = (int) $vendors->sum('total_amount');
+            $paymentAmount = (int) $payment->amount;
 
             if ($totalAmount <= 0) {
                 throw new \DomainException(
@@ -55,19 +56,38 @@ class OrderPaymentService
                 );
             }
 
-            $remainingAmount = (int) $payment->amount;
+            if ($paymentAmount <= 0) {
+                throw new \DomainException(
+                    'مبلغ پرداخت معتبر نیست.'
+                );
+            }
+
+            if ($paymentAmount > $totalAmount) {
+                throw new \DomainException(
+                    'مبلغ پرداخت بیشتر از مبلغ سفارش است.'
+                );
+            }
+
+            $allocatedAmount = 0;
 
             foreach ($vendors as $index => $vendor) {
 
                 if ($index === $vendors->count() - 1) {
-                    $paidAmount = $remainingAmount;
+                    $paidAmount = $paymentAmount - $allocatedAmount;
                 } else {
-                    $paidAmount = (int) round(
-                        $payment->amount
-                        * ($vendor->total_amount / $totalAmount)
+                    $paidAmount = (int) floor(
+                        $paymentAmount
+                        * $vendor->total_amount
+                        / $totalAmount
                     );
 
-                    $remainingAmount -= $paidAmount;
+                    $allocatedAmount += $paidAmount;
+                }
+
+                if ($paidAmount < 0) {
+                    throw new \DomainException(
+                        'تخصیص مبلغ پرداخت به فروشندگان معتبر نیست.'
+                    );
                 }
 
                 $vendor->update([
@@ -86,7 +106,9 @@ class OrderPaymentService
                 }
             }
 
-            if ($remainingAmount !== 0) {
+            $allocatedTotal = (int) $vendors->sum('paid_amount');
+
+            if ($allocatedTotal !== $paymentAmount) {
                 throw new \DomainException(
                     'تخصیص مبلغ پرداخت بین فروشندگان با مبلغ پرداختی مطابقت ندارد.'
                 );

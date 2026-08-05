@@ -22,7 +22,6 @@ class OrderVendor extends Model implements CouponEligible
         'discount_amount' => 'integer',
         'total_amount' => 'integer',
         'paid_amount' => 'integer',
-        'status' => OrderVendorStatuses::class,
 
     ];
 

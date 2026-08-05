@@ -8,6 +8,7 @@ enum OrderVendorStatuses: string implements Contracts\EnumContractInterface
 {
 
     case PENDING    = '1';
+
     case PAID       = '2';
     case PROCESSING = '3';
     case SHIPPED    = '4';
