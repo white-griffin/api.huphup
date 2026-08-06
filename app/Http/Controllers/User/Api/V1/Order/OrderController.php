@@ -97,13 +97,13 @@ class OrderController extends Controller
         $order = $request->user()
             ->orders()
             ->with([
-                'items.product',
-                'items.variation',
+                'vendors',
+                'vendors.items',
                 'payments',
             ])
             ->findOrFail($id);
 
-        return ApiResponse::Success('عملیات موفق', $order);
+        return ApiResponse::Success('عملیات موفق', OrderResource::make($order));
     }
 
 
