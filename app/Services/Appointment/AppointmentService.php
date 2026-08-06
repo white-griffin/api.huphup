@@ -262,9 +262,9 @@ class AppointmentService
                 'status' => AppointmentStatuses::PENDING_PAYMENT->value,
             ]);
 
-//        ExpireAppointmentPaymentJob::dispatch($appointment->id)
-//            ->delay(now()->addMinutes(15))
-//            ->afterCommit();
+        ExpireAppointmentPaymentJob::dispatch($appointment->id)
+            ->delay(now()->addMinutes(15))
+            ->afterCommit();
 
         return $appointment;
     }

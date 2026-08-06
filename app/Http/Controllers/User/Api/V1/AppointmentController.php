@@ -121,7 +121,7 @@ class AppointmentController extends Controller
     {
         return request()->validate([
             'business_id' => 'required|exists:businesses,id',
-            'business_service_id'  => 'required|exists:business_service,id',
+            'business_service_id'  => 'required|exists:business_services,id',
             'pet_id'      => [
                 'required',
                 Rule::exists('pets', 'id')->where('user_id', auth()->id()),
