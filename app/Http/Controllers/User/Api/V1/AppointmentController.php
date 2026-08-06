@@ -85,7 +85,7 @@ class AppointmentController extends Controller
             );
 
             return ApiResponse::Success('رزرو ثبت شد', [
-                'appointment' => $appointment,
+                'appointment' => AppointmentResource::make($appointment),
                 'payment' => $paymentResult,
             ]);
         }catch (\Exception $exception){
