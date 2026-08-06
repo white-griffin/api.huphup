@@ -18,6 +18,6 @@ class BusinessSchedule extends Model
 
     public function breaks()
     {
-        return $this->hasMany(ScheduleBreak::class);
+        return $this->hasMany(ScheduleBreak::class,'schedule_id');
     }
 }

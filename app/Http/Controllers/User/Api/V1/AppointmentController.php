@@ -59,7 +59,6 @@ class AppointmentController extends Controller
 
         }catch (\Exception $exception){
             report($exception);
-
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
         }
     }
