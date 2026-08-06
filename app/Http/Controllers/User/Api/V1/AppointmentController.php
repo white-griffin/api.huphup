@@ -129,6 +129,7 @@ class AppointmentController extends Controller
             'starts_at'   => 'required|date|after_or_equal:now',
             'note'        => 'nullable|string',
             'coupon_code' => ['nullable', 'string', 'max:50'],
+            'gateway' => ['required', Rule::enum(PaymentGateways::class)],
         ]);
     }
 
