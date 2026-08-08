@@ -23,10 +23,7 @@ return new class extends Migration
                 ->unique()
                 ->constrained()
                 ->cascadeOnDelete();
-            $table->foreignId('order_vendor_id')
-                ->nullable()
-                ->constrained()
-                ->nullOnDelete();
+
             $table->unsignedInteger('amount');
 
             $table->decimal('rate', 5, 2);

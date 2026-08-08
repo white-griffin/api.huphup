@@ -29,8 +29,4 @@ class Commission extends Model
         return $this->morphTo();
     }
 
-    public function orderVendor(): BelongsTo
-    {
-        return $this->belongsTo(OrderVendor::class);
-    }
 }

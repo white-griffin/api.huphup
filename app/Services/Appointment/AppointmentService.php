@@ -187,6 +187,7 @@ class AppointmentService
             ->where('activity_status', ActivityStatus::ACTIVE->value)
             ->first();
 
+
         if (!$schedule) {
             return false;
         }
