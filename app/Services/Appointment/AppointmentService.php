@@ -4,14 +4,19 @@ namespace App\Services\Appointment;
 
 use App\Enums\ActivityStatus;
 use App\Enums\AppointmentStatuses;
+use App\Enums\PaymentStatuses;
+use App\Enums\WalletTransactionType;
 use App\Jobs\ExpireAppointmentPaymentJob;
 use App\Models\Appointment;
 use App\Models\BusinessOffDay;
 use App\Models\BusinessSchedule;
 use App\Models\BusinessService;
 use App\Models\Service;
+use App\Notifications\User\V1\Appointment\AppointmentCancelledNotification;
+use App\Services\Wallet\WalletService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentService
 {
@@ -268,5 +273,115 @@ class AppointmentService
             ->afterCommit();
 
         return $appointment;
+    }
+
+    public function cancel(Appointment $appointment): Appointment
+    {
+        return DB::transaction(function () use ($appointment) {
+
+            $appointment = Appointment::query()
+                ->lockForUpdate()
+                ->with([
+                    'business',
+                    'user',
+                    'payments' => fn ($query) => $query
+                        ->where(
+                            'payment_status',
+                            PaymentStatuses::PAID->value
+                        )
+                        ->latest('id'),
+                ])
+                ->findOrFail($appointment->id);
+
+            if (! in_array($appointment->status, [
+                AppointmentStatuses::PENDING_CONFIRMATION->value,
+                AppointmentStatuses::CONFIRMED->value,
+            ], true)) {
+                throw new \DomainException(
+                    'این رزرو قابل لغو نیست.'
+                );
+            }
+
+            $payment = $appointment->payments->first();
+
+            if (! $payment) {
+                throw new \DomainException(
+                    'پرداختی برای این رزرو یافت نشد.'
+                );
+            }
+
+            $refundPercentage = $this->calculateRefundPercentage(
+                $appointment
+            );
+
+            $refundAmount = (int) round(
+                $payment->amount * ($refundPercentage / 100)
+            );
+
+            if ($refundAmount > 0) {
+                app(WalletService::class)->refundPending(
+                    from: $appointment->business->getWallet(),
+                    to: $appointment->user->getWallet(),
+                    amount: $refundAmount,
+                    debitType: WalletTransactionType::REFUND,
+                    creditType: WalletTransactionType::REFUND,
+                    payment: $payment,
+                    description: "بازگشت وجه رزرو #{$appointment->id}",
+                );
+            }
+
+            if ($refundAmount == (int) $payment->amount) {
+                $payment->update([
+                    'payment_status' =>
+                        PaymentStatuses::REFUNDED->value,
+                ]);
+            }
+
+            $appointment->update([
+                'status' =>
+                    AppointmentStatuses::CANCELLED->value,
+
+                'cancelled_at' => now(),
+
+                'refund_percentage' =>
+                    $refundPercentage,
+
+                'refund_amount' =>
+                    $refundAmount,
+            ]);
+
+            $appointment->user->notify(
+                new AppointmentCancelledNotification($appointment)
+            );
+
+            return $appointment->fresh([
+                'business',
+                'user',
+                'payments',
+            ]);
+        });
+    }
+
+    private function calculateRefundPercentage(
+        Appointment $appointment
+    ): int {
+        $startsAt = Carbon::parse(
+            $appointment->date . ' ' . $appointment->start_time
+        );
+
+        $minutesRemaining = now()->diffInMinutes(
+            $startsAt,
+            false
+        );
+
+        if ($minutesRemaining >= 10 * 60) {
+            return 100;
+        }
+
+        if ($minutesRemaining >= 5 * 60) {
+            return 80;
+        }
+
+        return 0;
     }
 }

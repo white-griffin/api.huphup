@@ -97,26 +97,43 @@ class AppointmentController extends Controller
     public function cancel(Appointment $appointment)
     {
         try {
-            abort_if($appointment->user_id !== auth()->id(), Response::HTTP_FORBIDDEN);
-
-            $appointmentStartsAt = Carbon::parse(
-                $appointment->date->toDateString() . ' ' . $appointment->start_time->format('H:i:s')
+            abort_if(
+                $appointment->user_id != auth()->id(),
+                Response::HTTP_FORBIDDEN
             );
 
-            if ($appointmentStartsAt->isPast()){
-                return ApiResponse::Fail(Response::HTTP_UNPROCESSABLE_ENTITY,'تاریخ رزرو گذشته است');
+            $appointmentStartsAt = Carbon::parse(
+                $appointment->date->toDateString()
+                . ' '
+                . $appointment->start_time->format('H:i:s')
+            );
+
+            if ($appointmentStartsAt->isPast()) {
+                return ApiResponse::Fail(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'تاریخ رزرو گذشته است'
+                );
             }
 
-            $appointment->update(['status' => AppointmentStatuses::CANCELLED->value]);
+            app(AppointmentService::class)->cancel($appointment);
+
             return ApiResponse::Success('عملیات موفق');
 
-        }catch (\Exception $exception){
+        } catch (\DomainException $exception) {
+            return ApiResponse::Fail(
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                $exception->getMessage()
+            );
+
+        } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در عملیات'
+            );
         }
-
     }
-
     private function validateAppointmentData(): array
     {
         return request()->validate([

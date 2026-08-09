@@ -273,7 +273,7 @@ class OrderService
                 foreach ($order->vendors as $vendor) {
 
                     if (
-                        $vendor->status !==
+                        $vendor->status !=
                         OrderVendorStatuses::PAID->value
                     ) {
                         continue;

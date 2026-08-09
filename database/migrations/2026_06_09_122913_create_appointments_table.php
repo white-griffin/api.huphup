@@ -30,6 +30,10 @@ return new class extends Migration
                     '1=pending_payment, 2=pending_confirmation, 3=confirmed, 4=completed,5=cancelled,6=expired'
                 );
             $table->text('notes')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->unsignedTinyInteger('refund_percentage')->nullable();
+            $table->unsignedInteger('refund_amount')->nullable();
+            $table->string('cancellation_reason')->nullable();
             $table->index(['business_id', 'date']);
             $table->timestamps();
         });

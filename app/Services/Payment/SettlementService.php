@@ -168,7 +168,10 @@ class SettlementService
             );
         }
 
-        $amount = (int) $payment->amount;
+        $amount = max(
+            0,
+            (int) $payment->amount - (int) $appointment->refund_amount
+        );
 
         if ($amount <= 0) {
             return;
