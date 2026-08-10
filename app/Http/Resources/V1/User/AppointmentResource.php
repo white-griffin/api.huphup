@@ -20,7 +20,9 @@ class AppointmentResource extends JsonResource
             'duration'       => $this->service_duration,
             'pet' => [
                 'id'   => $this->pet->id,
+                'avatar' => $this->pet->avatar_url,
                 'name' => $this->pet->name,
+                'breed' => $this->pet->breed->name_en
             ],
             'business_service' => [
                 'id'   => $this->businessService->id,
@@ -28,6 +30,7 @@ class AppointmentResource extends JsonResource
             ],
 
             'business' => [
+                'logo' => $this->business->logo_url,
                 'id'   => $this->business->id,
                 'name' => $this->business->name,
             ],
