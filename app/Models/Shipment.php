@@ -19,6 +19,7 @@ class Shipment extends Model
         return [
             'provider' => ShipmentProvider::class,
             'status' => ShipmentStatuses::class,
+            'provider_data' => 'array',
         ];
     }
 

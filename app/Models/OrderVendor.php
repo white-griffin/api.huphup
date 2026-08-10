@@ -6,6 +6,7 @@ use App\Contracts\CouponEligible;
 use App\Contracts\HandlesPayment;
 use App\Contracts\PayableEntity;
 use App\Enums\OrderVendorStatuses;
+use App\Models\Traits\BelongsToBusiness;
 use App\Services\Order\OrderPaymentService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class OrderVendor extends Model implements CouponEligible
 {
+    use BelongsToBusiness;
+
     protected $guarded = ['id'];
 
     protected $casts = [

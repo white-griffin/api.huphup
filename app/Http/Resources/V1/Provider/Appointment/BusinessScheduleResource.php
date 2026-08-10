@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Resources\V1\Provider;
+namespace App\Http\Resources\V1\Provider\Appointment;
 
-use App\Enums\ActivityStatus;
 use App\Models\BusinessSchedule;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

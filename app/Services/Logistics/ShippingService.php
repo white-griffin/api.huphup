@@ -87,8 +87,8 @@ class ShippingService
                 ),
 
                 customer: new CustomerData(
-                    name: $user->name,
-                    phone: $user->phone,
+                    name: $user->fullName,
+                    phone: $user->mobile,
                 ),
 
                 price: (int) $orderVendor->total_amount,

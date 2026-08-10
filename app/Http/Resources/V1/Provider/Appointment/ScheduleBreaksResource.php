@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\V1\Provider;
+namespace App\Http\Resources\V1\Provider\Appointment;
 
 use App\Models\ScheduleBreak;
 use Illuminate\Http\Request;

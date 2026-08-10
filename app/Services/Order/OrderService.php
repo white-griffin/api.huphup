@@ -262,7 +262,7 @@ class OrderService
             if ($payment) {
 
                 if (
-                    $payment->payment_status !==
+                    $payment->payment_status !=
                     PaymentStatuses::PAID->value
                 ) {
                     throw new \DomainException(
@@ -312,7 +312,7 @@ class OrderService
 
             foreach ($order->vendors as $vendor) {
                 if (
-                    $vendor->status !==
+                    $vendor->status !=
                     OrderVendorStatuses::CANCELED->value
                 ) {
                     $vendor->update([

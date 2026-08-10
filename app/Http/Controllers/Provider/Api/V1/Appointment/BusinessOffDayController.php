@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Provider\Api\V1\Appointment;
 
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\V1\Provider\BusinessOffDayResource;
+use App\Http\Resources\V1\Provider\Appointment\BusinessOffDayResource;
 use App\Models\BusinessOffDay;
 use Illuminate\Http\Response;
 
