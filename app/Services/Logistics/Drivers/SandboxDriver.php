@@ -13,14 +13,6 @@ use Illuminate\Support\Str;
 class SandboxDriver implements ShippingProvider
 {
 
-    private const STATUS_FLOW = [
-        ShipmentStatuses::PENDING,
-        ShipmentStatuses::ACCEPTED,
-        ShipmentStatuses::PICKED,
-        ShipmentStatuses::DELIVERING,
-        ShipmentStatuses::DELIVERED,
-    ];
-
     public function createShipment(CreateShipmentData $data): CreateShipmentResult
     {
         return new CreateShipmentResult(
@@ -46,23 +38,9 @@ class SandboxDriver implements ShippingProvider
 
     public function track(Shipment $shipment): ShipmentUpdateData
     {
-        $currentIndex = array_search(
-            $shipment->status,
-            self::STATUS_FLOW,
-            true
-        );
-
-        if ($currentIndex === false) {
-            $currentIndex = 0;
-        }
-
-        $nextStatus = self::STATUS_FLOW[
-        min($currentIndex + 1, count(self::STATUS_FLOW) - 1)
-        ];
-
         return new ShipmentUpdateData(
             providerOrderId: $shipment->provider_order_id,
-            status: $nextStatus,
+            status: $shipment->status,
             providerData: $shipment->provider_data ?? [],
         );
     }
