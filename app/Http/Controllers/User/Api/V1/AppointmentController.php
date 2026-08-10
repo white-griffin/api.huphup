@@ -67,7 +67,6 @@ class AppointmentController extends Controller
 
     public function availableSlots(
         int $businessId,
-        int $serviceDuration,
         int $days = 7
     ): JsonResponse
     {
@@ -77,24 +76,24 @@ class AppointmentController extends Controller
 
         $startDate = today();
 
+        $businessService = BusinessService::query()
+            ->where('id', request()->business_service_id)
+            ->firstOrFail();
+
         $slots =  collect(range(0, $days - 1))
             ->map(function (int $day) use (
                 $businessId,
-                $serviceDuration,
+                $businessService,
                 $startDate
             ) {
                 $date = $startDate->copy()->addDays($day);
 
-                $businessService = BusinessService::query()
-                    ->where('id', request()->business_service_id)
-                    ->firstOrFail();
-
                 return [
                     'date' => $date->toDateString(),
-                    'slots' => $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration)(
+                    'slots' => $this->service->getAvailableSlots(
                         businessId: $businessId,
                         date: $date->toDateString(),
-                        serviceDuration: $serviceDuration,
+                        serviceDuration: $businessService->duration,
                     )->values()->all(),
                 ];
             });
