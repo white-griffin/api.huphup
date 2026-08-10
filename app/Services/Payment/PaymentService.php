@@ -90,7 +90,7 @@ class PaymentService
             );
         }
 
-        if ($gateway === PaymentGateways::WALLET) {
+        if ($gateway == PaymentGateways::WALLET) {
             return $this->payByWallet($payment);
         }
 

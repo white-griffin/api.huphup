@@ -61,6 +61,7 @@ Route::controller(AppointmentController::class)->prefix('appointments')
         Route::post('/', 'store');
         Route::get('/cancel/{appointment}', 'cancel');
         Route::post('/{appointment}/reviews', 'review');
+        Route::post('/{appointment}/pay', 'pay');
     });
 
 Route::controller(BusinessController::class)->prefix('businesses')->group(function () {

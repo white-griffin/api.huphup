@@ -42,28 +42,6 @@ class AppointmentController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
         }
     }
-//    public function availableSlots(int $businessId)
-//    {
-//        request()->validate([
-//            'business_service_id' => 'required|exists:business_services,id',
-//            'date'       => 'required|date|after_or_equal:today',
-//        ]);
-//
-//        try {
-//
-//            $businessService = BusinessService::query()
-//                ->where('id', request()->business_service_id)
-//                ->firstOrFail();
-//
-//            $slots = $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration);
-//
-//            return ApiResponse::success('عملیات موفق',$slots);
-//
-//        }catch (\Exception $exception){
-//            report($exception);
-//            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
-//        }
-//    }
 
     public function availableSlots(
         int $businessId,
@@ -123,6 +101,33 @@ class AppointmentController extends Controller
             );
 
             return ApiResponse::Success('رزرو ثبت شد', [
+                'appointment' => AppointmentResource::make($appointment),
+                'payment' => $paymentResult,
+            ]);
+        }catch (\Exception $exception){
+            report($exception);
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
+        }
+    }
+
+    public function pay($appointment)
+    {
+        $data =  request()->validate([
+            'gateway' => ['required', Rule::enum(PaymentGateways::class)],
+        ]);
+
+        try {
+            if ($appointment->status != AppointmentStatuses::PENDING_PAYMENT->value){
+                return ApiResponse::Fail(Response::HTTP_BAD_REQUEST,'رزرو قابل پرداخت نیست');
+            }
+
+            $paymentResult = app(PaymentService::class)->pay(
+                payable: $appointment,
+                gateway: PaymentGateways::from($data['gateway']),
+                couponCode: $data['coupon_code'] ?? null,
+            );
+
+            return ApiResponse::Success('در انتظار پرداخت', [
                 'appointment' => AppointmentResource::make($appointment),
                 'payment' => $paymentResult,
             ]);
