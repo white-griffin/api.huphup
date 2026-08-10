@@ -30,9 +30,14 @@ Route::controller(LocationController::class)->prefix('location')->group(function
 Route::controller(ProfileController::class)->middleware('auth:sanctum')->group(function () {
     Route::get('profile', 'getProfile');
     Route::post('profile', 'updateProfile');
-    Route::post('address', 'addAddress');
-    Route::post('address/{address}', 'updateAddress');
-    Route::delete('address/{address}', 'deleteAddress');
+
+    Route::prefix('addresses')->group(function () {
+        Route::get('/', 'getAddresses');
+        Route::post('/', 'addAddress');
+        Route::post('/{address}', 'updateAddress');
+        Route::delete('/{address}', 'deleteAddress');
+    });
+
 });
 
 Route::controller(SpeciesController::class)->prefix('species')->group(function () {

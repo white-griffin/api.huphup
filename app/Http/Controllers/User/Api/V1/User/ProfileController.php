@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\Api\V1\User;
 use App\Enums\GenderType;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\User\Api\V1\BaseController;
+use App\Http\Resources\V1\User\AddressResource;
 use App\Http\Resources\V1\User\ProfileResource;
 use App\Models\UserAddress;
 use App\Services\MediaService;
@@ -55,6 +56,17 @@ class ProfileController extends BaseController
         }
     }
 
+    public function getAddresses()
+    {
+        try {
+            $addresses = AddressResource::collection(
+                auth()->user()->addresses
+            );
+            return ApiResponse::Success('عملیات موفق', $addresses);
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+        }
+    }
     /** add Address for user
      * auth token needed
      * @return JsonResponse
