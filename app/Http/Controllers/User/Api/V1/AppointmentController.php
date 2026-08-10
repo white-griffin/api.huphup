@@ -15,6 +15,8 @@ use App\Services\Appointment\AppointmentService;
 use App\Services\Payment\PaymentService;
 use App\Services\Review\ReviewService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 
@@ -40,27 +42,64 @@ class AppointmentController extends Controller
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در عملیات');
         }
     }
-    public function availableSlots(int $businessId)
+//    public function availableSlots(int $businessId)
+//    {
+//        request()->validate([
+//            'business_service_id' => 'required|exists:business_services,id',
+//            'date'       => 'required|date|after_or_equal:today',
+//        ]);
+//
+//        try {
+//
+//            $businessService = BusinessService::query()
+//                ->where('id', request()->business_service_id)
+//                ->firstOrFail();
+//
+//            $slots = $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration);
+//
+//            return ApiResponse::success('عملیات موفق',$slots);
+//
+//        }catch (\Exception $exception){
+//            report($exception);
+//            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
+//        }
+//    }
+
+    public function availableSlots(
+        int $businessId,
+        int $serviceDuration,
+        int $days = 7
+    ): JsonResponse
     {
         request()->validate([
             'business_service_id' => 'required|exists:business_services,id',
-            'date'       => 'required|date|after_or_equal:today',
         ]);
 
-        try {
+        $startDate = today();
 
-            $businessService = BusinessService::query()
-                ->where('id', request()->business_service_id)
-                ->firstOrFail();
+        $slots =  collect(range(0, $days - 1))
+            ->map(function (int $day) use (
+                $businessId,
+                $serviceDuration,
+                $startDate
+            ) {
+                $date = $startDate->copy()->addDays($day);
 
-            $slots = $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration);
+                $businessService = BusinessService::query()
+                    ->where('id', request()->business_service_id)
+                    ->firstOrFail();
 
-            return ApiResponse::success('عملیات موفق',$slots);
+                return [
+                    'date' => $date->toDateString(),
+                    'slots' => $this->service->getAvailableSlots($businessId, request()->date, $businessService->duration)(
+                        businessId: $businessId,
+                        date: $date->toDateString(),
+                        serviceDuration: $serviceDuration,
+                    )->values()->all(),
+                ];
+            });
 
-        }catch (\Exception $exception){
-            report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در دریافت اطلاعات');
-        }
+        return ApiResponse::success('عملیات موفق',$slots);
     }
 
     public function store()

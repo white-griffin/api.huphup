@@ -56,6 +56,15 @@ class AppointmentService
         }
 
         $slots = $this->generateBaseSlots($date, $schedule);
+
+        // حذف ساعت‌های گذشته در صورتی که تاریخ امروز باشد
+        if ($date->isToday()) {
+            $now = now();
+            $slots = $slots->filter(
+                fn (Carbon $slot) => $slot->gt($now)
+            );
+        }
+
         $slots = $this->removeBreakSlots($slots, $schedule);
         $slots = $this->removeBookedSlots($slots, $businessId, $date, $schedule->capacity);
 
