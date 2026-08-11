@@ -36,6 +36,7 @@ class PaymentController extends Controller
             ->orders()
             ->findOrFail($data['order_id']);
 
+
         $result = $this->paymentService->pay(
             payable: $order,
             gateway: PaymentGateways::from($data['gateway']),
@@ -43,11 +44,6 @@ class PaymentController extends Controller
         );
 
         return ApiResponse::Success('عملیات موفق', [
-            'order' => $order->fresh([
-                'vendors.business',
-                'vendors.items',
-                'payments',
-            ]),
             'payment' => $result,
         ]);
     }

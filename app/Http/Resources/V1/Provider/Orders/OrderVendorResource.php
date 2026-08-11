@@ -12,6 +12,7 @@ class OrderVendorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'vendor_id' => $this->id,
             'order_number' => $this->order->order_number,
             'order_status' => $this->order->order_status,
             'payment_status' => $this->order->payment_status,
@@ -26,6 +27,7 @@ class OrderVendorResource extends JsonResource
             'total_amount' => $this->total_amount,
             'status' => $this->status,
             'items' => OrderItemsResource::collection($this->whenLoaded('items')),
+            'shipments' => ShipmentResource::collection($this->whenLoaded('shipments')),
         ];
     }
 }

@@ -47,14 +47,17 @@ class PaymentService
             $couponDiscount = 0;
 
             if ($couponCode) {
+
                 if (
                     $payable instanceof CouponEligible
                     && ! $payable->canUseCoupon()
                 ) {
+
                     throw ValidationException::withMessages([
                         'coupon_code' => $payable->couponRestrictionMessage(),
                     ]);
                 }
+
 
                 $result = $this->discountService->validate(
                     code: $couponCode,

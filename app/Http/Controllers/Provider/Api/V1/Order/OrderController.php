@@ -24,6 +24,7 @@ class OrderController extends Controller
                 'items.product',
                 'items.variation',
                 'shipments',
+                'shipments.events',
             ])
             ->latest()
             ->paginate();
@@ -50,6 +51,7 @@ class OrderController extends Controller
                     'items.product',
                     'items.variation',
                     'shipments',
+                    'shipments.events',
                     'payments',
                 ])
                 ->findOrFail($orderVendorId)
@@ -75,7 +77,7 @@ class OrderController extends Controller
             return ApiResponse::success(
                 'سفارش با موفقیت تأیید شد.',
                 [
-                    'order_vendor' => ORderVendorResource::make($orderVendor),
+                    'order_vendor' => OrderVendorResource::make($orderVendor),
                 ]
             );
 
