@@ -20,6 +20,7 @@ class AddressResource extends JsonResource
             'id' => $this->id,
             'province' => Province::query()->find($this->province_id)->name,
             'city' => City::query()->find($this->city_id)->name,
+            'name' => $this->name,
             'address' => $this->address,
             'postal_code' => $this->postal_code,
             'latitude' => (float)$this->latitude,
