@@ -87,7 +87,9 @@ class PaymentService
             );
         });
 
-        if ($payment->payment_status != PaymentStatuses::UNPAID->value) {
+        if ($payment->payment_status != PaymentStatuses::UNPAID->value &&
+            $payment->payment_status != PaymentStatuses::PROCESSING->value)
+        {
             throw new PaymentGatewayException(
                 'این پرداخت قبلاً پردازش شده است.'
             );
@@ -183,7 +185,10 @@ class PaymentService
             ->lockForUpdate()
             ->findOrFail($payment->id);
 
-        if ($payment->payment_status != PaymentStatuses::UNPAID->value) {
+        if ($payment->payment_status != PaymentStatuses::UNPAID->value &&
+            $payment->payment_status != PaymentStatuses::PROCESSING->value
+        )
+        {
             throw new PaymentGatewayException(
                 'این پرداخت قبلاً پردازش شده است.'
             );

@@ -110,7 +110,7 @@ class AppointmentController extends Controller
         }
     }
 
-    public function pay($appointment)
+    public function pay(Appointment $appointment)
     {
         $data =  request()->validate([
             'gateway' => ['required', Rule::enum(PaymentGateways::class)],
