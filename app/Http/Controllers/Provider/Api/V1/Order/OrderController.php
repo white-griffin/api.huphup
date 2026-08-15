@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Provider\Api\V1\Order;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\Provider\Orders\OrderVendorResource;
+use App\Models\OrderItem;
 use App\Models\OrderVendor;
 use App\Services\Order\OrderVendorService;
 use Illuminate\Http\Request;
@@ -108,6 +109,44 @@ class OrderController extends Controller
             );
 
         } catch (\DomainException $e) {
+            return ApiResponse::fail(
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                $e->getMessage()
+            );
+        }
+    }
+
+    public function cancelItem(
+        Request $request,
+        int $orderItemId,
+    ) {
+        $business = $request->user()->business;
+
+        $orderItem = OrderItem::query()
+            ->whereKey($orderItemId)
+            ->whereHas(
+                'orderVendor',
+                fn ($query) => $query->where(
+                    'business_id',
+                    $business->id
+                )
+            )
+            ->firstOrFail();
+
+        try {
+
+            $orderItem = app(OrderVendorService::class)
+                ->cancelItem($orderItem);
+
+            return ApiResponse::success(
+                'آیتم سفارش با موفقیت لغو شد.',
+                [
+                    'order_item' => $orderItem,
+                ]
+            );
+
+        } catch (\DomainException $e) {
+
             return ApiResponse::fail(
                 Response::HTTP_UNPROCESSABLE_ENTITY,
                 $e->getMessage()

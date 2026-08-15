@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OrderItemStatuses;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -23,6 +24,9 @@ return new class extends Migration
             $table->decimal('unit_price', 15, 2);      // snapshot از variation.price لحظه خرید
             $table->decimal('discount_price', 15, 2)->nullable(); // snapshot از variation.discount_price
             $table->decimal('total_price', 15, 2);    // quantity * (discount_price ?? unit_price)
+            $table->unsignedInteger('paid_amount')->default(0);
+            $table->tinyInteger('status')
+                ->default(OrderItemStatuses::PENDING->value);
             $table->timestamps();
         });
     }

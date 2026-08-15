@@ -68,4 +68,5 @@ Route::controller(OrderController::class)
         Route::get('/{orderVendorId}', 'show');
         Route::post('/{orderVendorId}/accept', 'accept');
         Route::post('/{orderVendorId}/reject', 'reject');
+        Route::post('/items/{orderItemId}/cancel','cancelItem');
     });
