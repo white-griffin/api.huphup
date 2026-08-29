@@ -131,6 +131,85 @@ class AuthController extends BaseController
     }
 
 
+    public function toggle2fa(Request $request)
+    {
+        try {
+            $provider = $request->user('provider');
+
+            $code = (string) random_int(100000, 999999);
+
+            $provider->update([
+                'two_factor_code' => $code,
+                'two_factor_expires_at' => now()->addMinutes(2),
+            ]);
+
+            $this->sendOtp($provider->mobile, $code);
+
+            return ApiResponse::Success('کد تایید ارسال شد');
+
+        } catch (\Exception $exception) {
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در ارسال کد تایید'
+            );
+        }
+    }
+
+    public function verifyToggle2fa(Request $request)
+    {
+        $request->validate([
+            'otp_code' => ['required', 'digits:6'],
+        ], [
+            'otp_code.required' => 'وارد کردن کد تایید الزامی است',
+            'otp_code.digits' => 'کد تایید باید 6 رقمی باشد',
+        ]);
+
+        $provider = $request->user('provider');
+
+        try {
+
+            if (
+                ! $provider->two_factor_code ||
+                ! $provider->two_factor_expires_at ||
+                now()->greaterThan($provider->two_factor_expires_at) ||
+                $provider->two_factor_code !== $request->otp_code
+            ) {
+                return ApiResponse::Fail(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'کد تایید نامعتبر یا منقضی شده است.'
+                );
+            }
+
+            $isActive = $provider->two_factor_status == ActivityStatus::ACTIVE->value;
+
+            $provider->update([
+                'two_factor_status' => $isActive
+                    ? ActivityStatus::INACTIVE->value
+                    : ActivityStatus::ACTIVE->value,
+
+                'two_factor_code' => null,
+                'two_factor_expires_at' => null,
+            ]);
+
+            return ApiResponse::Success(
+                $isActive
+                    ? 'ورود دو مرحله‌ای غیرفعال شد'
+                    : 'ورود دو مرحله‌ای فعال شد',
+                [
+                    'two_factor_status' => $isActive
+                        ? ActivityStatus::INACTIVE->value
+                        : ActivityStatus::ACTIVE->value,
+                ]
+            );
+
+        } catch (\Exception $exception) {
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در تایید کد'
+            );
+        }
+    }
+
     /**
      * Sending OTP code using SMS
      * @param $mobile
