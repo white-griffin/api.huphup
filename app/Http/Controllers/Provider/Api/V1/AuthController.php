@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Provider\Api\V1;
 
 use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
+use App\Http\Resources\V1\Provider\ProfileResource;
 use App\Models\Provider;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -63,6 +64,7 @@ class AuthController extends BaseController
 
             return ApiResponse::Success('با موفقیت وارد شدید', [
                 'token' => $provider->createToken('API TOKEN')->plainTextToken,
+                'profile' => ProfileResource::make($provider)
             ]);
 
         }catch (\Exception $exception){
