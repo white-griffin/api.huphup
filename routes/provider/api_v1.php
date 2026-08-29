@@ -8,8 +8,15 @@ use App\Http\Controllers\Provider\Api\V1\Product\BrandController;
 use App\Http\Controllers\Provider\Api\V1\Product\CategoryController;
 use App\Http\Controllers\Provider\Api\V1\Product\ProductAttributeController;
 use App\Http\Controllers\Provider\Api\V1\Product\ProductController;
+use App\Http\Controllers\Provider\Api\V1\ProfileController;
 use App\Http\Controllers\Provider\Api\V1\ReviewController;
 
+Route::controller(ProfileController::class)->prefix('profile')
+    ->withoutMiddleware('resolve.business')
+    ->group(function () {
+    Route::get('/', 'getProfile');
+    Route::post('/', 'updateProfile');
+});
 Route::controller(CategoryController::class)->prefix('categories')->group(function () {
     Route::get('/', 'index');
     Route::get('/{category}', 'show');
