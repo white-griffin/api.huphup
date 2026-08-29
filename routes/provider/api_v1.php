@@ -3,6 +3,7 @@
 use App\Http\Controllers\Provider\Api\V1\Appointment\BusinessOffDayController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleBreakController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleController;
+use App\Http\Controllers\Provider\Api\V1\BusinessController;
 use App\Http\Controllers\Provider\Api\V1\Order\OrderController;
 use App\Http\Controllers\Provider\Api\V1\Product\BrandController;
 use App\Http\Controllers\Provider\Api\V1\Product\CategoryController;
@@ -17,6 +18,14 @@ Route::controller(ProfileController::class)->prefix('profile')
     Route::get('/', 'getProfile');
     Route::post('/', 'updateProfile');
 });
+
+Route::controller(BusinessController::class)->prefix('businesses')
+    ->group(function () {
+        Route::get('/', 'getBusinesses')->withoutMiddleware('resolve.business');
+        Route::get('/{business}', 'showBusiness');
+        Route::post('/{business}', 'update');
+    });
+
 Route::controller(CategoryController::class)->prefix('categories')->group(function () {
     Route::get('/', 'index');
     Route::get('/{category}', 'show');
