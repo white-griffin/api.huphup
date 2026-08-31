@@ -72,7 +72,7 @@ class PaymentController extends Controller
         }
 
         return redirect()->to(
-            "huphup://payments/failed?reason={$payment->payment_status}"
+            "huphup://payments/failed"
         );
 //        return ApiResponse::Fail(
 //            Response::HTTP_BAD_REQUEST,
