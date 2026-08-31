@@ -66,6 +66,14 @@ class ProductResource extends JsonResource
 
             'ratings_count' => $this->reviewSummary?->ratings_count ?? 0,
 
+            'rating_stars' => [
+                'one_star' => $this->reviewSummary?->one_star ?? 0,
+                'two_star' => $this->reviewSummary?->two_star ?? 0,
+                'three_star' => $this->reviewSummary?->three_star ?? 0,
+                'four_star' => $this->reviewSummary?->four_star ?? 0,
+                'five_star' => $this->reviewSummary?->five_star ?? 0
+            ],
+
             'reviews_count' => $this->reviewSummary?->reviews_count ?? 0,
         ];
     }

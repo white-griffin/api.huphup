@@ -30,6 +30,14 @@ class BusinessServiceResource extends JsonResource
 
             'rating_count' => $this->reviewSummary?->rating_count,
 
+            'rating_stars' => [
+                'one_star' => $this->reviewSummary?->one_star ?? 0,
+                'two_star' => $this->reviewSummary?->two_star ?? 0,
+                'three_star' => $this->reviewSummary?->three_star ?? 0,
+                'four_star' => $this->reviewSummary?->four_star ?? 0,
+                'five_star' => $this->reviewSummary?->five_star ?? 0
+            ],
+
             'review_count' => $this->reviewSummary?->review_count,
         ];
     }
