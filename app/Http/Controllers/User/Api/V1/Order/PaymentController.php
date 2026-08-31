@@ -61,15 +61,22 @@ class PaymentController extends Controller
 
         if ($payment->payment_status == PaymentStatuses::PAID->value) {
 
-            return ApiResponse::Success(
-                'پرداخت با موفقیت انجام شد.',
-                $payment,
+//            return ApiResponse::Success(
+//                'پرداخت با موفقیت انجام شد.',
+//                $payment,
+//            );
+
+            return redirect()->to(
+                "huphup://payments/success/{$payment->id}"
             );
         }
 
-        return ApiResponse::Fail(
-            Response::HTTP_BAD_REQUEST,
-            'پرداخت ناموفق بود.'
+        return redirect()->to(
+            "huphup://payments/failed?reason={$payment->payment_status}"
         );
+//        return ApiResponse::Fail(
+//            Response::HTTP_BAD_REQUEST,
+//            'پرداخت ناموفق بود.'
+//        );
     }
 }
