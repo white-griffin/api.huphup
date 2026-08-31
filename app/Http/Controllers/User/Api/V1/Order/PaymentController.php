@@ -6,7 +6,10 @@ use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Models\Appointment;
+use App\Models\Order;
 use App\Models\OrderVendor;
+use App\Models\Payment;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -59,24 +62,63 @@ class PaymentController extends Controller
             payload: $request->all()
         );
 
-        if ($payment->payment_status == PaymentStatuses::PAID->value) {
-
-//            return ApiResponse::Success(
-//                'پرداخت با موفقیت انجام شد.',
-//                $payment,
-//            );
-
+        if ($payment->payment_status === PaymentStatuses::PAID->value) {
             return redirect()->to(
-                "huphup://payments/success/{$payment->id}"
+                $this->buildSuccessDeepLink($payment)
             );
         }
 
         return redirect()->to(
-            "huphup://payments/failed"
+            'huphup://payments/failed?' . http_build_query([
+                'type' => $this->payableType($payment),
+                'payment_id' => $payment->id,
+            ])
         );
-//        return ApiResponse::Fail(
-//            Response::HTTP_BAD_REQUEST,
-//            'پرداخت ناموفق بود.'
-//        );
+
+    }
+
+    private function buildSuccessDeepLink(Payment $payment): string
+    {
+        $payable = $payment->payable;
+
+        $params = match (true) {
+
+            $payable instanceof Order => [
+                'type' => 'order',
+                'order_id' => $payable->id,
+                'transaction_id' => $payment->transaction_id,
+                'amount' => $payment->amount,
+            ],
+
+            $payable instanceof Appointment => [
+                'type' => 'appointment',
+                'appointment_id' => $payable->id,
+                'transaction_id' => $payment->transaction_id,
+                'amount' => $payment->amount,
+
+                // اطلاعات اختصاصی Appointment
+                // 'date' => $payable->date,
+                // 'time' => $payable->time,
+                // ...
+            ],
+
+            default => [
+                'type' => 'payment',
+                'payment_id' => $payment->id,
+                'transaction_id' => $payment->transaction_id,
+                'amount' => $payment->amount,
+            ],
+        };
+
+        return 'huphup://payments/success?' . http_build_query($params);
+    }
+
+    private function payableType(Payment $payment): string
+    {
+        return match (true) {
+            $payment->payable instanceof Order => 'order',
+            $payment->payable instanceof Appointment => 'appointment',
+            default => 'payment',
+        };
     }
 }
