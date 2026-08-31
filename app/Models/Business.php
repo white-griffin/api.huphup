@@ -62,7 +62,10 @@ class Business extends Model
             ->where('activity_status', ActivityStatus::ACTIVE->value);
     }
 
-
+    public function offDays(): HasMany|Business
+    {
+        return $this->hasMany(BusinessOffDay::class);
+    }
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
