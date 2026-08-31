@@ -17,7 +17,7 @@ class RoutineTemplateResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'species' => SpeciesResource::make($this->species),
-            'routine_category' => RoutineCategoryTypes::label($this->routine_category),
+            'category' => $this->routine_category,
             'default_interval_days' => $this->default_interval_days,
             'reminder_days_before' => $this->reminder_days_before,
             'image' => $this->image_url,

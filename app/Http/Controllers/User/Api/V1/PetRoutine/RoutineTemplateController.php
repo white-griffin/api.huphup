@@ -22,6 +22,7 @@ class RoutineTemplateController extends BaseController
             $templates = RoutineTemplateResource::collection(
                 RoutineTemplate::query()
                     ->where('activity_status', ActivityStatus::ACTIVE->value)
+                    ->where('species_id', request()->species_id)
                     ->get()
             );
 
