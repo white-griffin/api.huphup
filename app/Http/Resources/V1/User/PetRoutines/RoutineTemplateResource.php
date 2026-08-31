@@ -14,6 +14,7 @@ class RoutineTemplateResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'title' => $this->title,
             'species' => SpeciesResource::make($this->species),
             'routine_category' => RoutineCategoryTypes::label($this->routine_category),
