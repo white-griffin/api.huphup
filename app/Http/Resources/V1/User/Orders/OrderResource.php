@@ -17,15 +17,20 @@ class OrderResource extends JsonResource
             'total_amount' => $this->total_amount,
             'discount_amount' => $this->discount_amount,
             'order_status' => $this->order_status,
-            'payment_status' => $this->payment_status,
-            'shipping_address'=> $this->shipping_address,
-            'shipping_postal_code'=> $this->shipping_postal_code,
-            'shipping_latitude'=> $this->shipping_latitude,
-            'shipping_longitude'=> $this->shipping_longitude,
+            'shipping' => [
+                'address'=> $this->shipping_address,
+                'postal_code'=> $this->shipping_postal_code,
+                'latitude'=> $this->shipping_latitude,
+                'longitude'=> $this->shipping_longitude,
+            ],
+            'payment' => [
+                'status' => $this->payment_status,
+                'transaction_id' => $this->whenLoaded('payments')->last()?->transaction_id,
+            ],
             'notes'=> $this->notes,
             'created_at' => $this->created_at,
             'vendors' => OrderVendorResource::collection($this->whenLoaded('vendors')),
-            'transaction_id' => $this->whenLoaded('payments')->last()?->transaction_id,
+
         ];
     }
 }

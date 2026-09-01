@@ -10,8 +10,11 @@ class OrderItemResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'product_slug' => $this->product->slug,
-            'product_name' => $this->product->name,
+            'product' => [
+                'slug' => $this->product->slug,
+                'name' => $this->product->name,
+                'image' => $this->product->images()->where('is_primary', 1)->first()->image_url
+            ],
             'price' => $this->variation->price,
             'discount_price' => $this->variation->discount_price,
             'quantity' => $this->quantity,
