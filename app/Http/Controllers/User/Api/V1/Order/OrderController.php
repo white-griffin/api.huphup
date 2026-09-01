@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\Api\V1\Order;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\Api\V1\Review\StoreReviewRequest;
+use App\Http\Resources\V1\User\Orders\OrderListResource;
 use App\Http\Resources\V1\User\Orders\OrderResource;
 use App\Http\Resources\V1\User\ReviewResource;
 use App\Models\OrderItem;
@@ -39,7 +40,7 @@ class OrderController extends Controller
             ->paginate(5);
 
         return ApiResponse::Success('عملیات موفق', [
-            'orders' => OrderResource::collection($orders),
+            'orders' => OrderListResource::collection($orders),
             'pagination' => [
                 'current_page' => $orders->currentPage(),
                 'last_page' => $orders->lastPage(),
@@ -85,7 +86,7 @@ class OrderController extends Controller
         );
 
         return ApiResponse::Success('عملیات موفق', [
-            'order' => $order,
+            'order' => OrderResource::make($order),
         ]);
     }
 

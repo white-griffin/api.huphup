@@ -14,7 +14,7 @@ class PetRoutineResource extends JsonResource
     {
         return [
             'pet' => PetResource::make($this->whenLoaded('pet')),
-            'template' => $this->template,
+            'template' => RoutineTemplateResource::make($this->whenLoaded('template')),
             'interval_days' => $this->interval_days,
             'start_date' => $this->start_date,
             'last_done_at' => $this->last_done_at,
