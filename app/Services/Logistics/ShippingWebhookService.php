@@ -20,6 +20,7 @@ class ShippingWebhookService
         ShipmentProvider $provider,
         array $payload,
     ): void {
+
         DB::transaction(function () use ($provider, $payload) {
 
             $driver = $this->manager->driver($provider);
@@ -39,8 +40,8 @@ class ShippingWebhookService
             }
 
             if (in_array($shipment->status, [
-                ShipmentStatuses::DELIVERED,
-                ShipmentStatuses::CANCELLED,
+                ShipmentStatuses::DELIVERED->value,
+                ShipmentStatuses::CANCELLED->value,
             ], true)) {
                 return;
             }
@@ -50,7 +51,7 @@ class ShippingWebhookService
                 $result->providerData,
             );
 
-            if ($result->status === ShipmentStatuses::DELIVERED) {
+            if ($result->status == ShipmentStatuses::DELIVERED->value) {
                 $shipment->loadMissing('orderVendor.payments');
 
                 $payment = $shipment->orderVendor

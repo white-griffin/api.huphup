@@ -52,8 +52,8 @@ class ShippingService
             }
 
             if (
-                $business->latitude === null ||
-                $business->longitude === null
+                $business->latitude == null ||
+                $business->longitude == null
             ) {
                 throw new \DomainException(
                     'مختصات آدرس فروشگاه ثبت نشده است.'
@@ -61,8 +61,8 @@ class ShippingService
             }
 
             if (
-                $shippingAddress->latitude === null ||
-                $shippingAddress->longitude === null
+                $shippingAddress->latitude == null ||
+                $shippingAddress->longitude == null
             ) {
                 throw new \DomainException(
                     'مختصات آدرس ارسال ثبت نشده است.'
@@ -113,13 +113,13 @@ class ShippingService
 
             if (
                 ! in_array($result->status, [
-                    ShipmentStatuses::DELIVERED,
-                    ShipmentStatuses::CANCELLED,
+                    ShipmentStatuses::DELIVERED->value,
+                    ShipmentStatuses::CANCELLED->value,
                 ], true)
             ) {
-                TrackShipmentJob::dispatch($shipment)
-                    ->delay(now()->addMinute())
-                    ->afterCommit();
+//                TrackShipmentJob::dispatch($shipment)
+//                    ->delay(now()->addMinute())
+//                    ->afterCommit();
             }
 
             return $shipment->fresh([

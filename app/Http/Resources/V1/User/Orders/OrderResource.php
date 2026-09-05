@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\V1\User\Orders;
 
+use App\Enums\PaymentStatuses;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,7 +26,10 @@ class OrderResource extends JsonResource
             ],
             'payment' => [
                 'status' => $this->payment_status,
-                'transaction_id' => $this->whenLoaded('payments')->last()?->transaction_id,
+                'transaction_id' => $this->payments
+                    ->where('payment_status', PaymentStatuses::PAID->value)
+                    ->sortByDesc('id')
+                    ->first()?->transaction_id,
             ],
             'notes'=> $this->notes,
             'created_at' => $this->created_at,

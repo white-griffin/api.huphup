@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class OrderPaymentService
 {
+
     public function succeeded(
         Order $order,
         Payment $payment,
@@ -39,6 +40,15 @@ class OrderPaymentService
                 return;
             }
 
+            if (
+                $payment->payment_status !=
+                PaymentStatuses::PAID->value
+            ) {
+                throw new \DomainException(
+                    'وضعیت پرداخت موفق نیست.'
+                );
+            }
+
             $paymentAmount = (int) $payment->amount;
 
             $totalOrderAmount = (int) $order->total_amount;
@@ -46,6 +56,18 @@ class OrderPaymentService
             if ($totalOrderAmount <= 0) {
                 throw new \DomainException(
                     'مبلغ سفارش معتبر نیست.'
+                );
+            }
+
+            if ($paymentAmount <= 0) {
+                throw new \DomainException(
+                    'مبلغ پرداخت معتبر نیست.'
+                );
+            }
+
+            if ($paymentAmount > $totalOrderAmount) {
+                throw new \DomainException(
+                    'مبلغ پرداخت بیشتر از مبلغ سفارش است.'
                 );
             }
 
@@ -58,27 +80,29 @@ class OrderPaymentService
                 if ($vendorTotal <= 0) {
                     $vendor->update([
                         'paid_amount' => 0,
-                        'status' => OrderVendorStatuses::PAID->value,
+                        'status' => OrderVendorStatuses::FAILED->value,
                     ]);
 
                     continue;
                 }
 
-                /*
-                 * سهم Vendor از مبلغ واقعی پرداخت‌شده.
-                 *
-                 * آخرین Vendor باقیمانده را می‌گیرد تا
-                 * rounding باعث اختلاف نشود.
-                 */
                 $isLastVendor =
                     $vendor->id === $order->vendors->last()->id;
 
                 if ($isLastVendor) {
+
                     $vendorPaidAmount = $remainingPayment;
+
+                    $remainingPayment = 0;
+
                 } else {
+
                     $vendorPaidAmount = (int) round(
                         $paymentAmount
-                        * ($vendorTotal / $totalOrderAmount)
+                        * (
+                            $vendorTotal
+                            / $totalOrderAmount
+                        )
                     );
 
                     $remainingPayment -= $vendorPaidAmount;
@@ -90,35 +114,51 @@ class OrderPaymentService
                 ]);
 
                 /*
-                 * تخصیص مبلغ Vendor بین Itemهای خودش.
+                 * در زمان پرداخت، allocation باید روی تمام
+                 * آیتم‌های فروشنده انجام شود.
+                 *
+                 * بعد از پرداخت، آیتم PENDING می‌تواند توسط
+                 * فروشنده cancel شود و refund بر اساس paid_amount
+                 * خودش انجام خواهد شد.
                  */
-                $remainingVendorAmount = $vendorPaidAmount;
+                $vendorItems = $vendor->items->values();
 
-                $vendorItems = $vendor->items
-                    ->where(
-                        'status',
-                        OrderItemStatuses::PENDING->value
-                    )
-                    ->values();
-
-                $vendorTotalAmount = $vendorItems->sum(
+                $vendorItemsTotal = $vendorItems->sum(
                     fn ($item) => (int) $item->total_price
                 );
+
+                if ($vendorItemsTotal != $vendorTotal) {
+                    throw new \DomainException(
+                        'مجموع مبلغ آیتم‌های فروشنده با مبلغ فروشنده مطابقت ندارد.'
+                    );
+                }
+
+                $remainingVendorAmount = $vendorPaidAmount;
 
                 foreach ($vendorItems as $index => $item) {
 
                     $isLastItem =
-                        $index === $vendorItems->count() - 1;
+                        $index == $vendorItems->count() - 1;
 
                     if ($isLastItem) {
-                        $itemPaidAmount = $remainingVendorAmount;
+
+                        /*
+                         * برای جلوگیری از خطای rounding،
+                         * کل remainder به آخرین آیتم داده می‌شود.
+                         */
+                        $itemPaidAmount =
+                            $remainingVendorAmount;
+
+                        $remainingVendorAmount = 0;
+
                     } else {
-                        $itemPaidAmount = $vendorTotalAmount > 0
+
+                        $itemPaidAmount = $vendorItemsTotal > 0
                             ? (int) round(
                                 $vendorPaidAmount
                                 * (
                                     (int) $item->total_price
-                                    / $vendorTotalAmount
+                                    / $vendorItemsTotal
                                 )
                             )
                             : 0;
@@ -143,7 +183,8 @@ class OrderPaymentService
                         amount: $vendorPaidAmount,
                         type: WalletTransactionType::PAYMENT,
                         payment: $payment,
-                        description: "ایجاد موجودی معلق سفارش #{$order->id}",
+                        description:
+                        "ایجاد موجودی معلق سفارش #{$order->id}",
                     );
                 }
             }
@@ -155,12 +196,14 @@ class OrderPaymentService
             }
 
             $order->update([
-                'payment_status' => PaymentStatuses::PAID->value,
-                'order_status' => OrderStatuses::PAID->value,
+                'payment_status' =>
+                    PaymentStatuses::PAID->value,
+
+                'order_status' =>
+                    OrderStatuses::PAID->value,
             ]);
         });
     }
-
     public function failed(
         Order $order,
         Payment $payment,

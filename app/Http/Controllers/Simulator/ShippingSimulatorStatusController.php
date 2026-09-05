@@ -6,28 +6,40 @@ use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
 use App\Http\Controllers\Controller;
 use App\Models\Shipment;
+use App\Services\Logistics\ShippingWebhookService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
 class ShippingSimulatorStatusController extends Controller
 {
-    public function __invoke(
+    public function updateStatus(
+        Request $request,
         Shipment $shipment,
-        ShipmentStatuses $status,
-    ): RedirectResponse {
-        abort_unless(
-            $shipment->provider === ShipmentProvider::SANDBOX,
-            404
+        ShippingWebhookService $webhookService,
+    ) {
+        $data = $request->validate([
+            'status' => ['required', 'string'],
+        ]);
+
+        $status = ShipmentStatuses::tryFrom($data['status']);
+
+        abort_if(! $status, 422, 'وضعیت نامعتبر است.');
+
+        $payload = [
+            'provider_order_id' => $shipment->provider_order_id,
+            'status' => $status->value,
+            'sandbox' => true,
+        ];
+
+        $webhookService->handle(
+            provider: $shipment->provider,
+            payload: $payload,
         );
 
-        Http::post(
-            route('shipping.webhook', ShipmentProvider::SANDBOX),
-            [
-                'provider_order_id' => $shipment->provider_order_id,
-                'status' => $status->value,
-            ]
-        );
-
-        return back();
+        return response()->json([
+            'message' => 'وضعیت با موفقیت تغییر کرد.',
+            'shipment' => $shipment->fresh(),
+        ]);
     }
 }

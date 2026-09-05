@@ -72,14 +72,11 @@ class OrderController extends Controller
             ->findOrFail($orderVendorId);
 
         try {
-            $orderVendor = $this->orderVendorService
-                ->accept($orderVendor);
+
+            $this->orderVendorService->accept($orderVendor);
 
             return ApiResponse::success(
-                'سفارش با موفقیت تأیید شد.',
-                [
-                    'order_vendor' => OrderVendorResource::make($orderVendor),
-                ]
+                'سفارش با موفقیت تأیید شد.'
             );
 
         } catch (\DomainException $e) {

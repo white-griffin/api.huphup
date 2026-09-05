@@ -30,12 +30,10 @@ class SandboxDriver implements ShippingProvider
             ],
         );
     }
-
     public function cancelShipment(Shipment $shipment): bool
     {
         return true;
     }
-
     public function track(Shipment $shipment): ShipmentUpdateData
     {
         return new ShipmentUpdateData(
@@ -46,21 +44,21 @@ class SandboxDriver implements ShippingProvider
     }
     public function handleWebhook(array $payload): ShipmentUpdateData
     {
+
         return new ShipmentUpdateData(
             providerOrderId: $payload['provider_order_id'],
             status: $this->mapStatus($payload['status']),
             providerData: $payload,
         );
     }
-
     private function mapStatus(string $status): ShipmentStatuses
     {
         return match ($status) {
-            'accepted' => ShipmentStatuses::ACCEPTED,
-            'picked_up' => ShipmentStatuses::PICKED,
-            'delivering' => ShipmentStatuses::DELIVERING,
-            'delivered' => ShipmentStatuses::DELIVERED,
-            'cancelled' => ShipmentStatuses::CANCELLED,
+            '2' => ShipmentStatuses::ACCEPTED,
+            '3' => ShipmentStatuses::PICKED,
+            '4' => ShipmentStatuses::DELIVERING,
+            '5' => ShipmentStatuses::DELIVERED,
+            '7' => ShipmentStatuses::CANCELLED,
             default => ShipmentStatuses::PENDING,
         };
     }
