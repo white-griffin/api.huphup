@@ -6,6 +6,7 @@ use App\Enums\PaymentStatuses;
 use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
 use App\Models\Shipment;
+use App\Services\Order\OrderDeliveryService;
 use App\Services\Payment\SettlementService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,7 @@ class ShippingWebhookService
         ShipmentProvider $provider,
         array $payload,
     ): void {
+
 
         DB::transaction(function () use ($provider, $payload) {
 
@@ -42,7 +44,7 @@ class ShippingWebhookService
             if (in_array($shipment->status, [
                 ShipmentStatuses::DELIVERED->value,
                 ShipmentStatuses::CANCELLED->value,
-            ], true)) {
+            ])) {
                 return;
             }
 
@@ -51,22 +53,9 @@ class ShippingWebhookService
                 $result->providerData,
             );
 
-            if ($result->status == ShipmentStatuses::DELIVERED->value) {
-                $shipment->loadMissing('orderVendor.payments');
-
-                $payment = $shipment->orderVendor
-                    ->payments()
-                    ->where(
-                        'payment_status',
-                        PaymentStatuses::PAID->value
-                    )
-                    ->latest()
-                    ->first();
-
-                if ($payment) {
-                    app(SettlementService::class)
-                        ->settle($payment);
-                }
+            if ($result->status == ShipmentStatuses::DELIVERED) {
+                app(OrderDeliveryService::class)
+                    ->delivered($shipment);
             }
         });
     }

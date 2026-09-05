@@ -20,7 +20,6 @@ return new class extends Migration
             $table->morphs('payable');
 
             $table->foreignId('payment_id')
-                ->unique()
                 ->constrained()
                 ->cascadeOnDelete();
 

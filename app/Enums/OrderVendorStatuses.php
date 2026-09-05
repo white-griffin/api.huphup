@@ -28,7 +28,6 @@ enum OrderVendorStatuses: string implements Contracts\EnumContractInterface
             self::FAILED->value   => 'با خطا مواجه شده',
         ];
     }
-
     public static function englishLabels(): array
     {
         return [
@@ -41,12 +40,10 @@ enum OrderVendorStatuses: string implements Contracts\EnumContractInterface
             self::FAILED->value   => 'Failed',
         ];
     }
-
     public static function englishLabel(string $value): ?string
     {
         return self::englishLabels()[$value] ?? null;
     }
-
     public static function fromEnglishLabel(string $englishLabel): ?self
     {
         $key = array_search(strtolower($englishLabel), array_map('strtolower', self::englishLabels()));
@@ -56,12 +53,10 @@ enum OrderVendorStatuses: string implements Contracts\EnumContractInterface
     {
         return self::labels()[$value] ?? null;
     }
-
     public static function fromValue(string $value): ?self
     {
         return self::from($value);
     }
-
     public static function toKeyValueItems(): ?array
     {
         return array_map(
