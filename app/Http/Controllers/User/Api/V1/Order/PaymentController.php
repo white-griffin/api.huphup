@@ -62,7 +62,7 @@ class PaymentController extends Controller
             payload: $request->all()
         );
 
-        if ($payment->payment_status === PaymentStatuses::PAID->value) {
+        if ($payment->payment_status == PaymentStatuses::PAID->value) {
             return redirect()->to(
                 $this->buildSuccessDeepLink($payment)
             );
@@ -71,7 +71,7 @@ class PaymentController extends Controller
         return redirect()->to(
             'huphup://payments/failed?' . http_build_query([
                 'type' => $this->payableType($payment),
-                'payment_id' => $payment->id,
+                'id' => $payment->id,
             ])
         );
 
@@ -85,14 +85,14 @@ class PaymentController extends Controller
 
             $payable instanceof Order => [
                 'type' => 'order',
-                'order_id' => $payable->id,
+                'id' => $payable->id,
                 'transaction_id' => $payment->transaction_id,
                 'amount' => $payment->amount,
             ],
 
             $payable instanceof Appointment => [
                 'type' => 'appointment',
-                'appointment_id' => $payable->id,
+                'id' => $payable->id,
                 'transaction_id' => $payment->transaction_id,
                 'amount' => $payment->amount,
 
@@ -104,7 +104,7 @@ class PaymentController extends Controller
 
             default => [
                 'type' => 'payment',
-                'payment_id' => $payment->id,
+                'id' => $payment->id,
                 'transaction_id' => $payment->transaction_id,
                 'amount' => $payment->amount,
             ],
