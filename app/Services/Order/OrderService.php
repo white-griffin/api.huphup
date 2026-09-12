@@ -13,6 +13,7 @@ use App\Models\OrderVendor;
 use App\Models\ProductVariation;
 use App\Models\UserAddress;
 use App\Services\Discount\DiscountService;
+use App\Services\Logistics\ShippingCostService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -24,32 +25,23 @@ class OrderService
     /**
      * $items: [['product_variation_id' => int, 'quantity' => int], ...]
      */
-
     public function create(
         int     $userId,
         array   $items,
         int     $shippingAddressId,
         ?string $notes = null,
-    ): Order
-    {
+    ): Order {
         $order = DB::transaction(function () use (
             $userId,
             $items,
             $notes,
             $shippingAddressId,
         ) {
-            /*
-             * دریافت آدرس متعلق به خود کاربر
-             */
             $shippingAddress = UserAddress::query()
                 ->whereKey($shippingAddressId)
                 ->where('user_id', $userId)
                 ->firstOrFail();
 
-            /*
-             * دریافت و Lock کردن Variationها
-             * برای جلوگیری از Overselling
-             */
             $variationIds = collect($items)
                 ->pluck('product_variation_id')
                 ->unique()
@@ -69,17 +61,14 @@ class OrderService
                 );
             }
 
-            /*
-             * ایجاد Order
-             *
-             * اطلاعات آدرس به‌صورت Snapshot ذخیره می‌شوند.
-             */
             $order = Order::query()->create([
                 'user_id' => $userId,
                 'order_number' => $this->generateOrderNumber(),
 
-                'total_amount' => 0,
+                'subtotal_amount' => 0,
+                'shipping_amount' => 0,
                 'discount_amount' => 0,
+                'total_amount' => 0,
 
                 'order_status' => OrderStatuses::PENDING->value,
                 'payment_status' => PaymentStatuses::UNPAID->value,
@@ -99,7 +88,7 @@ class OrderService
                     $item['product_variation_id']
                 );
 
-                $quantity = (int)$item['quantity'];
+                $quantity = (int) $item['quantity'];
 
                 if ($quantity <= 0) {
                     throw new \DomainException(
@@ -115,15 +104,13 @@ class OrderService
 
                 $businessId = $variation->product->business_id;
 
-                /*
-                 * هر Business در یک Order فقط یک OrderVendor دارد.
-                 */
-                if (!isset($vendors[$businessId])) {
+                if (! isset($vendors[$businessId])) {
                     $vendors[$businessId] = $order->vendors()->create([
                         'business_id' => $businessId,
 
                         'subtotal_amount' => 0,
                         'discount_amount' => 0,
+                        'shipping_amount' => 0,
                         'total_amount' => 0,
 
                         'status' => OrderVendorStatuses::PENDING->value,
@@ -133,10 +120,10 @@ class OrderService
                 /** @var OrderVendor $vendor */
                 $vendor = $vendors[$businessId];
 
-                $unitPrice = (int)$variation->price;
+                $unitPrice = (int) $variation->price;
 
                 $discountPrice = $variation->discount_price !== null
-                    ? (int)$variation->discount_price
+                    ? (int) $variation->discount_price
                     : null;
 
                 $effectivePrice = $discountPrice ?? $unitPrice;
@@ -149,9 +136,6 @@ class OrderService
 
                 $lineTotal = $effectivePrice * $quantity;
 
-                /*
-                 * Snapshot اطلاعات محصول در زمان خرید
-                 */
                 $vendor->items()->create([
                     'order_id' => $order->id,
                     'product_id' => $variation->product_id,
@@ -164,17 +148,11 @@ class OrderService
                     'total_price' => $lineTotal,
                 ]);
 
-                /*
-                 * subtotal = قیمت قبل از تخفیف
-                 */
                 $vendor->increment(
                     'subtotal_amount',
                     $lineSubtotal
                 );
 
-                /*
-                 * discount = مقدار تخفیف
-                 */
                 if ($lineDiscount > 0) {
                     $vendor->increment(
                         'discount_amount',
@@ -182,32 +160,54 @@ class OrderService
                     );
                 }
 
-                /*
-                 * total = مبلغ نهایی Vendor
-                 */
                 $vendor->increment(
                     'total_amount',
                     $lineTotal
                 );
 
-                /*
-                 * رزرو موجودی
-                 */
                 $variation->decrement(
                     'stock',
                     $quantity
                 );
             }
 
-            /*
-             * محاسبه Total نهایی Order
-             */
-            $order->update([
-                'total_amount' => $order->vendors()->sum('total_amount'),
+            $order->load('vendors.business', 'vendors.items');
 
-                'discount_amount' => $order->vendors()->sum(
-                    'discount_amount'
-                ),
+            $totalSubtotal = 0;
+            $totalDiscount = 0;
+            $totalShipping = 0;
+
+            foreach ($order->vendors as $vendor) {
+                $shippingAmount = app(ShippingCostService::class)->calculate(
+                    business: $vendor->business,
+                    items: $vendor->items->all(),
+                    order: $order,
+                );
+
+                $vendorTotal =
+                    (int) $vendor->subtotal_amount
+                    - (int) $vendor->discount_amount
+                    + $shippingAmount;
+
+                $vendor->update([
+                    'shipping_amount' => $shippingAmount,
+                    'total_amount' => $vendorTotal,
+                ]);
+
+                $totalSubtotal += (int) $vendor->subtotal_amount;
+                $totalDiscount += (int) $vendor->discount_amount;
+                $totalShipping += $shippingAmount;
+            }
+
+            $order->update([
+                'subtotal_amount' => $totalSubtotal,
+                'discount_amount' => $totalDiscount,
+                'shipping_amount' => $totalShipping,
+
+                'total_amount' =>
+                    $totalSubtotal
+                    - $totalDiscount
+                    + $totalShipping,
             ]);
 
             return $order;
@@ -219,7 +219,6 @@ class OrderService
             'vendors.business',
         ]);
     }
-
 
     public function cancel(Order $order): Order
     {
@@ -283,8 +282,8 @@ class OrderService
 
                     if ($refundAmount > 0) {
                         app(WalletService::class)->refundPending(
-                            from: $vendor->business->getWallet(),
-                            to: $order->user->getWallet(),
+                            from: $vendor->business()->getWallet(),
+                            to: $order->user()->getWallet(),
                             amount: $refundAmount,
                             debitType: WalletTransactionType::REFUND,
                             creditType: WalletTransactionType::REFUND,
@@ -349,11 +348,11 @@ class OrderService
         });
     }
 
-
     private function generateOrderNumber(): string
     {
         return 'ORD-' . now()->format('Ymd') . '-' . Str::upper(
-                Str::random(6)
-            );
+            Str::random(6)
+        );
     }
 }
+

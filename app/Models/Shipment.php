@@ -8,6 +8,7 @@ use App\Enums\ShipmentStatuses;
 use App\Services\Payment\SettlementService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
 class Shipment extends Model
@@ -78,5 +79,10 @@ class Shipment extends Model
                 }
             }
         });
+    }
+
+    public function logisticsPayment(): HasOne
+    {
+        return $this->hasOne(LogisticsPayment::class);
     }
 }

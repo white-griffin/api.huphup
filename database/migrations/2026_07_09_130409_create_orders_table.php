@@ -28,6 +28,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
 
             $table->text('shipping_address')->nullable();
+            $table->decimal('shipping_amount',15,2)->default(0);
             $table->string('shipping_postal_code', 10)->nullable();
             $table->decimal('shipping_latitude', 10, 7)->nullable();
             $table->decimal('shipping_longitude', 10, 7)->nullable();

@@ -74,4 +74,9 @@ class OrderVendor extends Model implements CouponEligible
         return $this->business->getWallet();
     }
 
+    public function logisticsPayments(): HasMany
+    {
+        return $this->hasMany(LogisticsPayment::class);
+    }
+
 }

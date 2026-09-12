@@ -26,6 +26,7 @@ return new class extends Migration
             $table->decimal('subtotal_amount', 15, 2);
             $table->decimal('discount_amount', 15, 2)->default(0);
             $table->decimal('total_amount', 15, 2);
+            $table->decimal('shipping_amount')->default(0);
             // مبلغ واقعی که از Payment به این Vendor تخصیص داده شده
             $table->decimal('paid_amount', 15, 2)
                 ->default(0);
