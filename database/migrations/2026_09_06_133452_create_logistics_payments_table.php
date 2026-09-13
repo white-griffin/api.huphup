@@ -48,6 +48,8 @@ return new class extends Migration
             $table->text('notes')->nullable();
 
             $table->json('metadata')->nullable();
+
+            $table->softDeletes();
             $table->timestamps();
         });
     }
