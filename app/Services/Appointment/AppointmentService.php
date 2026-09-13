@@ -7,6 +7,7 @@ use App\Enums\AppointmentStatuses;
 use App\Enums\PaymentStatuses;
 use App\Enums\WalletTransactionType;
 use App\Jobs\ExpireAppointmentPaymentJob;
+use App\Jobs\OrderExpiredJob;
 use App\Models\Appointment;
 use App\Models\BusinessOffDay;
 use App\Models\BusinessSchedule;
@@ -16,6 +17,7 @@ use App\Notifications\User\V1\Appointment\AppointmentCancelledNotification;
 use App\Services\Wallet\WalletService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;
 
 class AppointmentService
@@ -277,9 +279,12 @@ class AppointmentService
                 'status' => AppointmentStatuses::PENDING_PAYMENT->value,
             ]);
 
-        ExpireAppointmentPaymentJob::dispatch($appointment->id)
-            ->delay(now()->addMinutes(15))
-            ->afterCommit();
+        if (Env::get('APP_ENV') == 'production') {
+            ExpireAppointmentPaymentJob::dispatch($appointment->id)
+                ->delay(now()->addMinutes(15))
+                ->afterCommit();
+        }
+
 
         return $appointment;
     }

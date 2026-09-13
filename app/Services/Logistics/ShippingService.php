@@ -11,6 +11,7 @@ use App\Models\Shipment;
 use App\Services\Logistics\DTO\AddressData;
 use App\Services\Logistics\DTO\CreateShipmentData;
 use App\Services\Logistics\DTO\CustomerData;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;
 
 class ShippingService
@@ -134,9 +135,12 @@ class ShippingService
                     ShipmentStatuses::CANCELLED->value,
                 ], true)
             ) {
-//                TrackShipmentJob::dispatch($shipment)
-//                    ->delay(now()->addMinute())
-//                    ->afterCommit();
+                if (Env::get('APP_ENV') == 'production') {
+                    TrackShipmentJob::dispatch($shipment)
+                        ->delay(now()->addMinute())
+                        ->afterCommit();
+                }
+
             }
 
             return $shipment->fresh([

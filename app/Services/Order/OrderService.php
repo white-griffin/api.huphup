@@ -16,6 +16,7 @@ use App\Services\Discount\DiscountService;
 use App\Services\Logistics\ShippingCostService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\Response;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -212,6 +213,12 @@ class OrderService
 
             return $order;
         });
+
+        if (Env::get('APP_ENV') == 'production') {
+            OrderExpiredJob::dispatch($order->id)
+                ->delay(now()->addMinutes(5))
+                ->afterCommit();
+        }
 
         return $order->load([
             'vendors.items.product',
