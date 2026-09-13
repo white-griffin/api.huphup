@@ -15,7 +15,7 @@ class ShippingCostService
     ): int {
         // فعلاً منطق محاسبه هزینه ارسال
         // بعداً می‌توانیم بر اساس provider، مسافت، وزن و ... پیاده کنیم.
-        return 0;
+        return 10000;
     }
 
 }

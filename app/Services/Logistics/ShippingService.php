@@ -2,6 +2,7 @@
 
 namespace App\Services\Logistics;
 
+use App\Enums\LogisticsPaymentStatuses;
 use App\Enums\ShipmentProvider;
 use App\Enums\ShipmentStatuses;
 use App\Jobs\TrackShipmentJob;
@@ -105,6 +106,22 @@ class ShippingService
                 'status' => $result->status->value,
                 'provider_data' => $result->providerData,
             ]);
+
+            if ($orderVendor->shipping_amount > 0) {
+                $orderVendor->logisticsPayments()->firstOrCreate(
+                    [
+                        'shipment_id' => $orderVendor->shipments()
+                            ->latest('id')
+                            ->value('id'),
+                    ],
+                    [
+                        'order_vendor_id' => $orderVendor->id,
+                        'provider' => ShipmentProvider::SANDBOX->value,
+                        'amount' => $orderVendor->shipping_amount,
+                        'status' => LogisticsPaymentStatuses::PENDING->value,
+                    ]
+                );
+            }
 
             $shipment->events()->create([
                 'status' => $result->status->value,
