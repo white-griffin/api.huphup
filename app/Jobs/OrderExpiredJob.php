@@ -6,6 +6,7 @@ use App\Enums\OrderStatuses;
 use App\Enums\PaymentStatuses;
 use App\Models\Order;
 use App\Models\ProductVariation;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -14,7 +15,7 @@ use Illuminate\Queue\SerializesModels;
 
 class OrderExpiredJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable, InteractsWithQueue, SerializesModels, Queueable;
 
     public function __construct(public int $orderId) {}
 
