@@ -249,7 +249,7 @@ class OrderService
             if (! in_array($order->order_status, [
                 OrderStatuses::PENDING->value,
                 OrderStatuses::PAID->value,
-            ], true)) {
+            ], false)) {
                 throw new \DomainException(
                     'این سفارش قابل لغو نیست.'
                 );
