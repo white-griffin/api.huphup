@@ -2,6 +2,7 @@
 
 namespace App\Services\Order;
 
+use App\Enums\OrderItemStatuses;
 use App\Enums\OrderStatuses;
 use App\Enums\OrderVendorStatuses;
 use App\Enums\PaymentStatuses;
@@ -335,6 +336,9 @@ class OrderService
                         'stock',
                         $item->quantity
                     );
+                $item->update([
+                    'status' => OrderItemStatuses::CANCELED->value,
+                ]);
             }
 
             $order->update([
