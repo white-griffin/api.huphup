@@ -10,6 +10,7 @@ class BusinessOffDayResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
             'date' => $this->date,
             'reason' => $this->reason
         ];
