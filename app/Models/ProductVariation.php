@@ -22,8 +22,4 @@ class ProductVariation extends Model
         return $this->hasMany(ProductVariationAttribute::class);
     }
 
-    public function attributes(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
-    {
-        return $this->belongsToMany(Attribute::class);
-    }
 }

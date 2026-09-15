@@ -253,7 +253,7 @@ class ProductController extends Controller
 
             $variation = $product->variations()->create($variationData);
 
-            $variation->attributes()->createMany(
+            $variation->variationAttributes()->createMany(
                 collect($attributes)
                     ->map(fn ($attribute) => [
                         'attribute_id' => $attribute['attribute_id'],
