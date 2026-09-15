@@ -90,7 +90,7 @@ class ProductController extends Controller
             return ApiResponse::success('عملیات موفق');
         } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در عملیات');
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
         }
     }
 
