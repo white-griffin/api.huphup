@@ -14,6 +14,7 @@ use App\Models\BusinessSchedule;
 use App\Models\BusinessService;
 use App\Models\Service;
 use App\Notifications\User\V1\Appointment\AppointmentCancelledNotification;
+use App\Services\Payment\SettlementService;
 use App\Services\Wallet\WalletService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -397,5 +398,152 @@ class AppointmentService
         }
 
         return 0;
+    }
+
+    public function confirm(Appointment $appointment): Appointment
+    {
+        return DB::transaction(function () use ($appointment) {
+
+            $appointment = Appointment::query()
+                ->lockForUpdate()
+                ->with([
+                    'business',
+                    'user',
+                    'businessService',
+                ])
+                ->findOrFail($appointment->id);
+
+            if ($appointment->status != AppointmentStatuses::PENDING_CONFIRMATION->value) {
+                throw new \DomainException(
+                    'این رزرو در انتظار تایید نیست.'
+                );
+            }
+
+            $appointment->update([
+                'status' => AppointmentStatuses::CONFIRMED->value,
+            ]);
+
+            // TODO: notification to user
+
+            return $appointment->fresh([
+                'business',
+                'user',
+                'businessService',
+            ]);
+        });
+    }
+
+    public function reject(Appointment $appointment): Appointment
+    {
+        return DB::transaction(function () use ($appointment) {
+
+            $appointment = Appointment::query()
+                ->lockForUpdate()
+                ->with([
+                    'business',
+                    'user',
+                    'payments' => fn ($query) => $query
+                        ->where(
+                            'payment_status',
+                            PaymentStatuses::PAID->value
+                        )
+                        ->latest('id'),
+                ])
+                ->findOrFail($appointment->id);
+
+            if ($appointment->status !== AppointmentStatuses::PENDING_CONFIRMATION->value) {
+                throw new \DomainException(
+                    'این رزرو در انتظار تایید نیست.'
+                );
+            }
+
+            $payment = $appointment->payments->first();
+
+            if (! $payment) {
+                throw new \DomainException(
+                    'پرداختی برای این رزرو یافت نشد.'
+                );
+            }
+
+            $refundAmount = (int) $payment->amount;
+
+            app(WalletService::class)->refundPending(
+                from: $appointment->business->getWallet(),
+                to: $appointment->user->getWallet(),
+                amount: $refundAmount,
+                debitType: WalletTransactionType::REFUND,
+                creditType: WalletTransactionType::REFUND,
+                payment: $payment,
+                description: "بازگشت وجه رزرو #{$appointment->id}",
+            );
+
+            $payment->update([
+                'payment_status' => PaymentStatuses::REFUNDED->value,
+            ]);
+
+            $appointment->update([
+                'status' => AppointmentStatuses::CANCELLED->value,
+                'cancelled_at' => now(),
+                'refund_percentage' => 100,
+                'refund_amount' => $refundAmount,
+            ]);
+
+            // TODO: notification to user
+
+            return $appointment->fresh([
+                'business',
+                'user',
+                'payments',
+            ]);
+        });
+    }
+
+    public function complete(Appointment $appointment): Appointment
+    {
+        return DB::transaction(function () use ($appointment) {
+
+            $appointment = Appointment::query()
+                ->lockForUpdate()
+                ->with([
+                    'business',
+                    'payments' => fn ($query) => $query
+                        ->where(
+                            'payment_status',
+                            PaymentStatuses::PAID->value
+                        )
+                        ->latest('id'),
+                ])
+                ->findOrFail($appointment->id);
+
+            if (
+                $appointment->status !=
+                AppointmentStatuses::CONFIRMED->value
+            ) {
+                throw new DomainException(
+                    'فقط رزرو تایید شده قابل تکمیل است.'
+                );
+            }
+
+            $payment = $appointment->payments->first();
+
+            if (! $payment) {
+                throw new DomainException(
+                    'پرداختی برای این رزرو یافت نشد.'
+                );
+            }
+
+            app(SettlementService::class)->settle($payment);
+
+            $appointment->update([
+                'status' => AppointmentStatuses::COMPLETED->value,
+            ]);
+
+            return $appointment->fresh([
+                'business',
+                'user',
+                'businessService',
+                'payments',
+            ]);
+        });
     }
 }

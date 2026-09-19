@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Provider\Api\V1\Appointment\AppointmentController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\BusinessOffDayController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleBreakController;
 use App\Http\Controllers\Provider\Api\V1\Appointment\ScheduleController;
@@ -85,4 +86,18 @@ Route::controller(OrderController::class)
         Route::post('/{orderVendorId}/accept', 'accept');
         Route::post('/{orderVendorId}/reject', 'reject');
         Route::post('/items/{orderItemId}/cancel','cancelItem');
+    });
+
+Route::controller(AppointmentController::class)
+    ->prefix('appointments')
+    ->group(function () {
+        Route::get('/', 'index');
+
+        Route::get('/{appointment}','show');
+
+        Route::post('/{appointment}/confirm', 'confirm');
+
+        Route::post('/{appointment}/reject', 'reject');
+
+        Route::post('/{appointment}/complete', 'complete');
     });
