@@ -6,5 +6,6 @@ Route::controller(AuthController::class)->group(function (){
     Route::post('/login','login');
     Route::post('/check_code','checkCode');
     Route::get('/logout','logOut')->middleware('auth:sanctum');
+    Route::get('/chat_token','getChatJwtToken')->middleware('auth:sanctum');
 });
 

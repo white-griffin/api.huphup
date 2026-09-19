@@ -11,12 +11,12 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\MediaService;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Request;
 
 class ProductController extends Controller
 {

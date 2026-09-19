@@ -6,6 +6,7 @@ use App\Enums\ActivityStatus;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\User\Api\V1\BaseController;
 use App\Models\User;
+use App\Services\Chat\ChatTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,7 +26,7 @@ class AuthController extends BaseController
     {
         $request->validate([
             'mobile' => ['required', 'string', 'regex:/^09\d{9}$/'],
-        ],[
+        ], [
             'mobile.required' => 'شماره تماس را وارد کنید',
             'mobile.regex' => 'فرمت شماره تلفن صحیح نیست',
         ]);
@@ -33,29 +34,29 @@ class AuthController extends BaseController
         try {
             $user = User::query()
                 ->firstOrCreate(
-                [
-                    'mobile' => request('mobile')
-                ],[
-                    'mobile' => request('mobile')
-                ]
-            );
+                    [
+                        'mobile' => request('mobile')
+                    ], [
+                        'mobile' => request('mobile')
+                    ]
+                );
 
             $otp_code = Env::get('APP_ENV') == 'production' ? rand(100000, 999999) : '111111';
             $user->update(['otp_code' => $otp_code]);
             $user->tokens()->delete();
             if (Env::get('APP_ENV') == 'production') {
                 $sendOtp = $this->sendOtp($user->mobile, $otp_code);
-                if ($sendOtp['code'] != 1){
+                if ($sendOtp['code'] != 1) {
 
-                    return ApiResponse::Fail(501,'خطا در ارسال کد'
-                        ,$sendOtp);
+                    return ApiResponse::Fail(501, 'خطا در ارسال کد'
+                        , $sendOtp);
                 }
             }
 
             return ApiResponse::Success('رمز ارسال شد');
 
-        }catch (\Exception $exception){
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,'خطا در برقراری ارتباط');
+        } catch (\Exception $exception) {
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در برقراری ارتباط');
         }
 
     }
@@ -81,7 +82,7 @@ class AuthController extends BaseController
 
         $user = User::query()->where('mobile', $validation['mobile'])->first();
 
-        if (! $user) {
+        if (!$user) {
             return ApiResponse::Fail(Response::HTTP_NOT_FOUND, 'کاربری با این شماره یافت نشد');
         }
 
@@ -132,7 +133,7 @@ class AuthController extends BaseController
                 'code' => $response->status,
                 'message' => $response->message,
             ];
-        }catch (\Exception $exception){
+        } catch (\Exception $exception) {
             return [
                 'code' => $exception->getCode(),
                 'message' => $exception->getMessage()
@@ -151,10 +152,27 @@ class AuthController extends BaseController
             return ApiResponse::Success('با موفقیت خارج شدید');
 
         } catch (\Exception $e) {
-            return ApiResponse::Fail(500,$e->getMessage());
+            return ApiResponse::Fail(500, $e->getMessage());
         }
     }
 
+    public function getChatJwtToken(
+        Request          $request,
+        ChatTokenService $chatTokenService
+    ): JsonResponse
+    {
+        try {
+            $token = $chatTokenService->getToken(
+                $request->user()
+            );
 
+            return ApiResponse::Success('توکن دریافت شد', [
+                'token' => $token,
+            ]);
+        } catch (\Exception $exception) {
+            dd($exception->getMessage());
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در برقراری ارتباط');
+        }
+    }
 
 }
