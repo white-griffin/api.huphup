@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ActivityStatus;
 use App\Support\SlugService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,5 +53,11 @@ class Category extends Model
         return $this->image
             ? Storage::disk('public')->url($this->image)
             : null;
+    }
+
+    public function activeChildren(): HasMany
+    {
+        return $this->hasMany(Category::class, 'parent_id')
+            ->where('activity_status', ActivityStatus::ACTIVE->value);
     }
 }

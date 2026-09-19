@@ -20,12 +20,13 @@ class CategoryResource extends JsonResource
             }),
 
             'children' => CategoryResource::collection(
-                $this->whenLoaded('children')
+                $this->whenLoaded('activeChildren')
             ),
             'name' => $this->name,
             'slug' => $this->slug,
             'image' => $this->image_url,
-            'type' => CategoryTypes::label($this->type)
+            'type' => CategoryTypes::label($this->type),
+            'breadcrumb' => $this->breadcrumb,
         ];
     }
 }

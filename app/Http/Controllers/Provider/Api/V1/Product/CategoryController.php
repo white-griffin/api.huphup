@@ -14,16 +14,58 @@ class CategoryController extends BaseController
     public function index()
     {
         try {
-            $categories = CategoryResource::collection(
-                Category::query()
-                    ->where('activity_status',ActivityStatus::ACTIVE->value)
-                    ->with(['children','parent'])
-                    ->paginate()
+            $categories = Category::query()
+                ->where(
+                    'activity_status',
+                    ActivityStatus::ACTIVE->value
+                )
+                ->with([
+                    'activeChildren',
+                    'parent',
+                ])
+                ->paginate();
+
+            $categoryMap = Category::query()
+                ->get([
+                    'id',
+                    'parent_id',
+                    'name',
+                ])
+                ->keyBy('id');
+
+            $categories->getCollection()->transform(
+                function ($category) use ($categoryMap) {
+                    $names = [];
+                    $current = $category;
+
+                    while ($current) {
+                        $names[] = $current->name;
+
+                        $current = $categoryMap->get(
+                            $current->parent_id
+                        );
+                    }
+
+                    $category->breadcrumb = implode(
+                        ' > ',
+                        array_reverse($names)
+                    );
+
+                    return $category;
+                }
             );
-            return ApiResponse::success('عملیات موفق', $categories);
+
+            return ApiResponse::success(
+                'عملیات موفق',
+                CategoryResource::collection($categories)
+            );
         } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
+
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در دریافت اطلاعات'
+            );
         }
     }
 
