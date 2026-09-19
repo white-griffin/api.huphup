@@ -10,33 +10,57 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\MediaService;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Request;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $products = ProductResource::collection(
-                Product::query()
-                    ->with([
-                        'activeVariations.variationAttributes.attribute',
-                        'activeVariations.variationAttributes.option',
-                        'images',
-                        'categories',
-                        'brand',
-                    ])
-                    ->paginate()
+            $products = Product::query()
+                ->when($request->filled('category'), function (Builder $query) use ($request) {
+                    $query->whereHas('categories', function (Builder $query) use ($request) {
+                        $query->where('slug', $request->category);
+                    });
+                })
+                ->when($request->filled('brand'), function (Builder $query) use ($request) {
+                    $query->whereHas('brand', function (Builder $query) use ($request) {
+                        $query->where('slug', $request->brand);
+                    });
+                })
+                ->when($request->filled('publication_status'), function (Builder $query) use ($request) {
+                    $query->where('publication_status', $request->status);
+                })
+                ->when($request->filled('name'), function (Builder $query) use ($request) {
+                    $query->where('name', 'like', '%' . $request->name . '%');
+                })
+                ->with([
+                    'activeVariations.variationAttributes.attribute',
+                    'activeVariations.variationAttributes.option',
+                    'images',
+                    'categories',
+                    'brand',
+                ])
+                ->paginate();
+
+            return ApiResponse::success(
+                'عملیات موفق',
+                ProductResource::collection($products)
             );
 
-            return ApiResponse::success('عملیات موفق', $products);
         } catch (\Exception $exception) {
             report($exception);
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در دریافت اطلاعات');
+
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در دریافت اطلاعات'
+            );
         }
     }
 
