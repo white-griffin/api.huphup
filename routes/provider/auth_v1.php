@@ -8,4 +8,9 @@ Route::controller(AuthController::class)->group(function (){
     Route::get('/logout','logOut')->middleware('auth:provider');
     Route::get('/toggle2fa','toggle2fa')->middleware('auth:provider');
     Route::post('/toggle2fa','verifyToggle2fa')->middleware('auth:provider');
+
+    Route::middleware('auth:provider')->group(function () {
+        Route::post('/change-password', 'changePassword');
+        Route::post('/verify-change-password', 'verifyChangePassword');
+    });
 });

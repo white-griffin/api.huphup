@@ -254,4 +254,113 @@ class AuthController extends BaseController
         }
     }
 
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.required' => 'رمز عبور فعلی را وارد کنید',
+            'password.required' => 'رمز عبور جدید را وارد کنید',
+            'password.min' => 'رمز عبور جدید باید حداقل 8 کاراکتر باشد',
+            'password.confirmed' => 'تکرار رمز عبور با رمز عبور جدید مطابقت ندارد',
+        ]);
+
+        try {
+            $provider = $request->user('provider');
+
+            if (! Hash::check($request->current_password, $provider->password)) {
+                return ApiResponse::Fail(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'رمز عبور فعلی اشتباه است'
+                );
+            }
+
+            // اگر 2FA فعال نیست، مستقیم پسورد تغییر کند
+            if ($provider->two_factor_status != ActivityStatus::ACTIVE->value) {
+                $provider->update([
+                    'password' => Hash::make($request->password),
+                ]);
+
+                return ApiResponse::Success('رمز عبور با موفقیت تغییر کرد');
+            }
+
+            // ذخیره موقت پسورد جدید تا زمان تایید OTP
+            cache()->put(
+                'change-password:' . $provider->id,
+                Hash::make($request->password),
+                now()->addMinutes(2)
+            );
+
+            $code = (string) random_int(100000, 999999);
+
+            $provider->update([
+                'two_factor_code' => $code,
+                'two_factor_expires_at' => now()->addMinutes(2),
+            ]);
+
+            $this->sendOtp($provider->mobile, $code);
+
+            return ApiResponse::Success('کد تایید ارسال شد');
+
+        } catch (\Exception $exception) {
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در تغییر رمز عبور'
+            );
+        }
+    }
+
+    public function verifyChangePassword(Request $request)
+    {
+        $request->validate([
+            'otp_code' => ['required', 'digits:6'],
+        ], [
+            'otp_code.required' => 'وارد کردن کد تایید الزامی است',
+            'otp_code.digits' => 'کد تایید باید 6 رقمی باشد',
+        ]);
+
+        try {
+            $provider = $request->user('provider');
+
+            if (
+                ! $provider->two_factor_code ||
+                ! $provider->two_factor_expires_at ||
+                now()->greaterThan($provider->two_factor_expires_at) ||
+                $provider->two_factor_code != $request->otp_code
+            ) {
+                return ApiResponse::Fail(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'کد تایید نامعتبر یا منقضی شده است.'
+                );
+            }
+
+            $newPassword = cache()->pull(
+                'change-password:' . $provider->id
+            );
+
+            if (! $newPassword) {
+                return ApiResponse::Fail(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'درخواست تغییر رمز عبور منقضی شده است.'
+                );
+            }
+
+            $provider->update([
+                'password' => $newPassword,
+                'two_factor_code' => null,
+                'two_factor_expires_at' => null,
+            ]);
+
+            return ApiResponse::Success(
+                'رمز عبور با موفقیت تغییر کرد'
+            );
+
+        } catch (\Exception $exception) {
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در تایید کد'
+            );
+        }
+    }
 }
