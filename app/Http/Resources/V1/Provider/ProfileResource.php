@@ -14,6 +14,7 @@ class ProfileResource extends JsonResource
             'last_name' => $this->last_name,
             'national_code' => $this->national_code,
             'father_name' => $this->father_name,
+            'avatar' => $this->avatar_url,
             'birth_date' => $this->birth_date,
             'gender_type' => $this->gender_type,
             'mobile' => $this->mobile,
@@ -23,11 +24,12 @@ class ProfileResource extends JsonResource
             'city_id' => $this->city_id,
             'postal_code' => $this->postal_code,
             'address' => $this->address,
+            'verification_status' => $this->verification_status,
             'shahkar_verified' => $this->shahkar_verified,
             'rejection_reason' => $this->rejection_reason,
             'documents' => $this->getDocs($this->documents),
-            'businesses' => $this->getBusinesses($this->businesses)
-
+            'businesses' => $this->getBusinesses($this->businesses),
+            'created_at' => $this->created_at,
         ];
     }
 

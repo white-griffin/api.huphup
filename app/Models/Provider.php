@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 class Provider extends Authenticatable
@@ -12,6 +13,7 @@ class Provider extends Authenticatable
     use HasApiTokens;
     protected $guarded = ['id'];
 
+    protected $appends = ['avatar_url'];
     public function documents()
     {
         return $this->hasMany(ProviderDocument::class);
@@ -33,6 +35,13 @@ class Provider extends Authenticatable
         return $full !== ''
             ? $full
             : ($this->mobile ?? $this->email ?? 'تامین کننده');
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        return $this->avatar
+            ? Storage::disk('public')->url($this->avatar)
+            : null;
     }
 
     public function businesses()

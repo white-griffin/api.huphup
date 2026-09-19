@@ -15,6 +15,7 @@ class UpdateProfileRequest extends FormRequest
             'birth_date' => ['nullable', 'date'],
             'gender_type' => ['required', 'integer'],
             'email' => ['nullable', 'email', 'max:254'],
+            'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 

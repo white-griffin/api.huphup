@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('national_code',10)->unique();
             $table->string('father_name')->nullable();
+            $table->string('avatar')->nullable();
             $table->date('birth_date')->nullable();
             $table->tinyInteger('gender_type')
                 ->default(GenderType::UNKNOWN->value)
