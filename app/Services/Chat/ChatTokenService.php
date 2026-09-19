@@ -11,27 +11,22 @@ class ChatTokenService
     {
         $cacheKey = $this->getCacheKey($user);
 
-        return Cache::remember(
+        $result = Cache::remember(
             $cacheKey,
-            now()->addSeconds($this->getTokenTtl()),
+            now()->addDays(6)->addHours(23),
             function () use ($user) {
-                $result = app(ChatService::class)->createToken(
+                return app(ChatService::class)->createToken(
                     externalType: 'USER',
                     externalId: (string) $user->id,
                 );
-
-                return $result['token'];
             }
         );
+
+        return $result['token'];
     }
 
     private function getCacheKey(User $user): string
     {
         return "chat:token:user:{$user->id}";
-    }
-
-    private function getTokenTtl(): int
-    {
-        return 60 * 60 * 24 * 6;
     }
 }
