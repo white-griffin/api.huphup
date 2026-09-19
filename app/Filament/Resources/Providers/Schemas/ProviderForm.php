@@ -43,7 +43,7 @@ class ProviderForm
                                     ->required(),
                             ])->columnSpanFull(),
 
-                        Grid::make(3)
+                        Grid::make(4)
                             ->schema([
                                 TextInput::make('father_name')
                                     ->label('نام پدر')
@@ -54,6 +54,11 @@ class ProviderForm
                                 Select::make('gender')
                                     ->label('جنسیت')
                                     ->options(GenderType::labels()),
+                                FileUpload::make('avatar')
+                                    ->image()
+                                    ->directory('providers/avatars')
+                                    ->label('عکس پروفایل')
+                                    ->imageEditor(),
                             ])->columnSpanFull(),
 
                         Grid::make(3)

@@ -9,6 +9,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,12 @@ class ProvidersTable
     {
         return $table
             ->columns([
+                ImageColumn::make('avatar')
+                    ->label('تصویر')
+                    ->square() // اگر مربعی می‌خوای
+                    ->height(50) // کنترل سایز
+                    ->rounded(), // گوشه‌های گرد
+
                 TextColumn::make('full_name')
                     ->label('نام و نام خانوادگی')
                     ->getStateUsing(fn ($record) => trim(($record->first_name ?? '') . ' ' . ($record->last_name ?? '')))
