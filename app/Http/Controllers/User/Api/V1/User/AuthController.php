@@ -170,7 +170,6 @@ class AuthController extends BaseController
                 'token' => $token,
             ]);
         } catch (\Exception $exception) {
-            dd($exception->getMessage());
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در برقراری ارتباط');
         }
     }
