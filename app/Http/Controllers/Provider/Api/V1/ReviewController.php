@@ -19,7 +19,7 @@ class ReviewController extends Controller
 
     public function index(Request $request)
     {
-        $business = $request->user('provider')->business;
+        $business = app('business');
 
         $reviews = Review::query()
             ->whereHasMorph(
@@ -46,7 +46,7 @@ class ReviewController extends Controller
        return DB::transaction(function () use ($request, $review, $reviewMessageService) {
            $this->authorize('reply', $review);
 
-           $business = $request->user('provider')->business;
+           $business = app('business');
 
            $message = $reviewMessageService->create(
                review: $review,
