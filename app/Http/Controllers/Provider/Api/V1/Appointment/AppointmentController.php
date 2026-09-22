@@ -9,16 +9,15 @@ use App\Http\Resources\V1\Provider\Appointment\AppointmentResource;
 use App\Models\Appointment;
 use App\Services\Appointment\AppointmentService;
 use DomainException;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
-use Request;
 
 class AppointmentController extends Controller
 {
 
     public function index(Request $request)
     {
-        $business = app('business');
 
         $data = $request->validate([
             'status'              => ['nullable', Rule::enum(AppointmentStatuses::class)],
@@ -30,7 +29,6 @@ class AppointmentController extends Controller
         ]);
 
         $appointments = Appointment::query()
-            ->where('business_id', $business->id)
             ->with([
                 'user',
                 'pet',
