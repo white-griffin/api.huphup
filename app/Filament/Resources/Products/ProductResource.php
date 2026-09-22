@@ -20,6 +20,8 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت محصولات';
+
     protected static ?string $navigationLabel = 'محصولات';
 
     protected static ?string $pluralLabel = 'محصولات';

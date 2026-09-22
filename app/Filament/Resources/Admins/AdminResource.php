@@ -20,6 +20,8 @@ class AdminResource extends Resource
 {
     protected static ?string $model = Admin::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت اعضا';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::User;
 
     protected static ?string $navigationLabel = 'مدیران';

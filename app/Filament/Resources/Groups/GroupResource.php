@@ -21,6 +21,8 @@ class GroupResource extends Resource
 {
     protected static ?string $model = Conversation::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت اعضا';
+
     protected static ?string $navigationLabel = ' گروه های چت';
 
     protected static ?string $pluralLabel = 'گروه های چت';

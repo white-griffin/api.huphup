@@ -18,9 +18,15 @@ class CommissionResource extends Resource
 {
     protected static ?string $model = Commission::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'تنظیمات مالی';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
     protected static ?string $navigationLabel = 'کمیسیون‌ها';
+
+    protected static ?string $pluralLabel = 'کمیسیون‌ها';
+
+    protected static ?string $modelLabel = 'کمیسیون';
 
     public static function form(Schema $schema): Schema
     {

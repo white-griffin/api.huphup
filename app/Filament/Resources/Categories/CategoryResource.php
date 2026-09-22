@@ -18,6 +18,8 @@ class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت محصولات';
+
     protected static ?string $navigationLabel = 'دسته بندی ها';
 
     protected static ?string $pluralLabel = 'دسته بندی ها';

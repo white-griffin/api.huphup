@@ -16,6 +16,8 @@ use Filament\Tables\Table;
 
 class UserResource extends Resource
 {
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت اعضا';
+
     protected static ?string $navigationLabel = 'کاربران';
 
     protected static ?string $pluralLabel = 'کاربران';

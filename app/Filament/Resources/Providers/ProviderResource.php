@@ -18,6 +18,8 @@ class ProviderResource extends Resource
 {
     protected static ?string $model = Provider::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت اعضا';
+
     protected static ?string $navigationLabel = 'تأمین‌کنندگان';
 
     protected static ?string $pluralLabel = 'تأمین‌کنندگان';

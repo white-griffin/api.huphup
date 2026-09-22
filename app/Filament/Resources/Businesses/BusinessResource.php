@@ -21,6 +21,8 @@ class BusinessResource extends Resource
 {
     protected static ?string $model = Business::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت کسب و کارها';
+
     protected static ?string $navigationLabel = 'کسب وکارها';
 
     protected static ?string $pluralLabel = 'کسب وکارها';

@@ -18,6 +18,8 @@ class ReviewResource extends Resource
 {
     protected static ?string $model = Review::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت کسب و کارها';
+
     protected static ?string $navigationLabel = 'نظرات';
 
     protected static ?string $pluralLabel = 'نظرات';

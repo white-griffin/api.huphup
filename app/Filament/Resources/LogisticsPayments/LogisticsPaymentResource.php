@@ -20,6 +20,8 @@ class LogisticsPaymentResource extends Resource
 {
     protected static ?string $model = LogisticsPayment::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت کسب و کارها';
+
     protected static ?string $navigationLabel = 'مرسولات';
 
     protected static ?string $pluralLabel = 'مرسولات';

@@ -18,6 +18,8 @@ class ServiceResource extends Resource
 {
     protected static ?string $model = Service::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت کسب و کارها';
+
     protected static ?string $navigationLabel = 'خدمات';
 
     protected static ?string $pluralLabel = 'خدمات';

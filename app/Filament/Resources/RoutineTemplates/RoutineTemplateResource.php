@@ -18,6 +18,8 @@ class RoutineTemplateResource extends Resource
 {
     protected static ?string $model = RoutineTemplate::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت حیوانات';
+
     protected static ?string $navigationLabel = 'روتین های حیوانات';
 
     protected static ?string $pluralLabel = 'روتین های حیوانات';

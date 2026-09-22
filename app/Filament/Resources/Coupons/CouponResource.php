@@ -18,6 +18,8 @@ class CouponResource extends Resource
 {
     protected static ?string $model = Coupon::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'تنظیمات مالی';
+
     protected static ?string $navigationLabel = 'کد تخفیف ها';
 
     protected static ?string $pluralLabel = 'کد تخفیف ها';

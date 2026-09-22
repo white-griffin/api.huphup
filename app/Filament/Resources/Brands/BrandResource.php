@@ -18,6 +18,8 @@ class BrandResource extends Resource
 {
     protected static ?string $model = Brand::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت محصولات';
+
     protected static ?string $navigationLabel = 'برند ها';
 
     protected static ?string $pluralLabel = 'برند ها';

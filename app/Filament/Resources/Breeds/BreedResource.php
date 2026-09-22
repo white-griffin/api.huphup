@@ -18,6 +18,8 @@ class BreedResource extends Resource
 {
     protected static ?string $model = Breed::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت حیوانات';
+
     protected static ?string $navigationLabel = 'نژادهای حیوانات';
 
     protected static ?string $pluralLabel = 'نژادهای حیوانات';

@@ -18,6 +18,8 @@ class PetResource extends Resource
 {
     protected static ?string $model = Pet::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت حیوانات';
+
     protected static ?string $navigationLabel = ' حیوانات';
 
     protected static ?string $pluralLabel = 'حیوانات';

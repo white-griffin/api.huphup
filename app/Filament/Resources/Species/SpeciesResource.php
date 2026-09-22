@@ -18,6 +18,8 @@ class SpeciesResource extends Resource
 {
     protected static ?string $model = Species::class;
 
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت حیوانات';
+
     protected static ?string $navigationLabel = 'انواع حیوانات';
 
     protected static ?string $pluralLabel = 'انواع حیوانات';
