@@ -13,7 +13,30 @@
                 @forelse ($messages as $message)
 
                     @php
-                        $isOutgoing = (string) $message->senderId === (string) $this->record->createdBy;
+                        $chatUser = $message->sender;
+
+                        $mysqlUser = null;
+
+                        if (
+                            $chatUser &&
+                            $chatUser->externalType === 'USER'
+                        ) {
+                            $mysqlUser = $users[(int) $chatUser->externalId] ?? null;
+                        }
+
+                        $nickname = $mysqlUser
+                            ? trim($mysqlUser->first_name . ' ' . $mysqlUser->last_name)
+                            : ($chatUser?->nickname ?? 'Unknown');
+
+                        $initial = strtoupper(
+                            mb_substr($nickname, 0, 1)
+                        );
+
+
+                        $isOutgoing =
+                            (string) $message->senderId ===
+                            (string) $this->record->createdBy;
+
                         $isDeleted = $message->deletedAt !== null;
                         $isEdited = $message->editedAt !== null;
 
@@ -22,27 +45,41 @@
                         $reply = $replyToId
                             ? $replies->get((string) $replyToId)
                             : null;
-
-                        $nickname = $message->sender?->nickname ?? 'Unknown';
-                        $initial = strtoupper(mb_substr($nickname, 0, 1));
                     @endphp
 
-                    <div class="flex w-full {{ $isOutgoing ? 'justify-end' : 'justify-start' }}">
+                    <div
+                        class="flex w-full {{ $isOutgoing ? 'justify-end' : 'justify-start' }}"
+                    >
 
                         <div class="flex max-w-[75%] items-end gap-2">
 
+                            {{-- Incoming avatar --}}
                             @if (! $isOutgoing)
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                                    {{ $initial }}
+                                <div class="h-8 w-8 shrink-0">
+                                    @if ($mysqlUser?->avatar_url)
+                                        <img
+                                            src="{{ $mysqlUser->avatar_url }}"
+                                            alt="{{ $nickname }}"
+                                            class="h-8 w-8 rounded-full object-cover"
+                                        >
+                                    @else
+                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                            {{ $initial }}
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
 
                             <div class="min-w-0">
 
-                                <div class="mb-1 {{ $isOutgoing ? 'mr-1 text-right' : 'ml-1' }} text-xs text-gray-500">
+                                {{-- Sender --}}
+                                <div
+                                    class="mb-1 text-xs text-gray-500 {{ $isOutgoing ? 'mr-1 text-right' : 'ml-1' }}"
+                                >
                                     {{ $nickname }}
                                 </div>
 
+                                {{-- Message bubble --}}
                                 <div
                                     class="
                                         rounded-2xl px-4 py-3 shadow-sm
@@ -53,7 +90,26 @@
                                     "
                                 >
 
+                                    {{-- Reply --}}
                                     @if ($reply)
+
+                                        @php
+                                            $replyChatUser = $reply->sender;
+
+                                            $replyUser = null;
+
+                                            if (
+                                                $replyChatUser &&
+                                                $replyChatUser->externalType === 'USER'
+                                            ) {
+                                                $replyUser = $users[(int) $replyChatUser->externalId] ?? null;
+                                            }
+
+                                            $replyName = $replyUser
+                                                ? trim($replyUser->first_name . ' ' . $replyUser->last_name)
+                                                : ($replyChatUser?->nickname ?? 'Unknown');
+                                        @endphp
+
                                         <div
                                             class="
                                                 mb-3 border-l-4 pl-3 text-xs
@@ -64,7 +120,7 @@
                                             "
                                         >
                                             <div class="font-medium">
-                                                {{ $reply->sender?->nickname ?? 'Unknown' }}
+                                                {{ $replyName }}
                                             </div>
 
                                             <div class="mt-1 truncate">
@@ -79,11 +135,15 @@
                                                 @endif
                                             </div>
                                         </div>
+
                                     @endif
 
+                                    {{-- Message --}}
                                     @if ($isDeleted)
 
-                                        <div class="{{ $isOutgoing ? 'text-white/60' : 'text-gray-400' }} italic">
+                                        <div
+                                            class="{{ $isOutgoing ? 'text-white/60' : 'text-gray-400' }} italic"
+                                        >
                                             Message deleted
                                         </div>
 
@@ -119,6 +179,7 @@
 
                                     @endif
 
+                                    {{-- Meta --}}
                                     <div
                                         class="
                                             mt-2 flex items-center justify-end gap-2 text-[11px]
@@ -138,9 +199,20 @@
 
                             </div>
 
+                            {{-- Outgoing avatar --}}
                             @if ($isOutgoing)
-                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 dark:bg-primary-900 dark:text-primary-200">
-                                    {{ $initial }}
+                                <div class="h-8 w-8 shrink-0">
+                                    @if ($mysqlUser?->avatar_url)
+                                        <img
+                                            src="{{ $mysqlUser->avatar_url }}"
+                                            alt="{{ $nickname }}"
+                                            class="h-8 w-8 rounded-full object-cover"
+                                        >
+                                    @else
+                                        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-xs font-semibold text-primary-700 dark:bg-primary-900 dark:text-primary-200">
+                                            {{ $initial }}
+                                        </div>
+                                    @endif
                                 </div>
                             @endif
 

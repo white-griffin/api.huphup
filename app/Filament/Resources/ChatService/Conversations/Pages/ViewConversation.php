@@ -5,8 +5,10 @@ namespace App\Filament\Resources\ChatService\Conversations\Pages;
 
 use App\Filament\Resources\ChatService\Conversations\ConversationResource;
 use App\Models\MongoDB\Message;
+use App\Models\User;
 use Filament\Resources\Pages\ViewRecord;
-
+use MongoDB\BSON\ObjectId;
+use App\Services\MongoChatService\ChatUserResolver;
 class ViewConversation extends ViewRecord
 {
     protected static string $resource = ConversationResource::class;
@@ -16,7 +18,9 @@ class ViewConversation extends ViewRecord
 
     protected function getViewData(): array
     {
-        $conversationId = new \MongoDB\BSON\ObjectId(
+        $chatUserResolver = app(ChatUserResolver::class);
+
+        $conversationId = new ObjectId(
             (string) $this->record->id
         );
 
@@ -27,26 +31,45 @@ class ViewConversation extends ViewRecord
             ->get();
 
         $replyIds = $messages
-            ->map(fn ($message) => $message->getAttribute('replyTo'))
+            ->map(fn (Message $message) => $message->getAttribute('replyTo'))
             ->filter()
             ->map(fn ($id) => (string) $id)
             ->unique()
             ->values();
 
-        $replies = Message::query()
-            ->whereIn(
-                '_id',
-                $replyIds->map(
-                    fn ($id) => new \MongoDB\BSON\ObjectId($id)
-                )->all()
+        $replies = collect();
+
+        if ($replyIds->isNotEmpty()) {
+            $replies = Message::query()
+                ->whereIn(
+                    '_id',
+                    $replyIds
+                        ->map(fn (string $id) => new ObjectId($id))
+                        ->all()
+                )
+                ->with('sender')
+                ->get()
+                ->keyBy(fn (Message $message) => (string) $message->id);
+        }
+
+        $chatUsers = $messages
+            ->pluck('sender')
+            ->merge($replies->pluck('sender'))
+            ->filter()
+            ->unique(
+                fn ($chatUser) =>
+                    $chatUser->externalType . ':' . $chatUser->externalId
             )
-            ->with('sender')
-            ->get()
-            ->keyBy(fn ($message) => (string) $message->id);
+            ->values();
+
+        $users = $chatUserResolver->resolveMany($chatUsers);
+
+
 
         return [
             'messages' => $messages,
             'replies' => $replies,
+            'users' => $users,
         ];
     }
 
