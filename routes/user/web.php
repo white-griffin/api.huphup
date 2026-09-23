@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Simulator\ShippingSimulatorController;
 use App\Http\Controllers\Simulator\ShippingSimulatorStatusController;
+use App\Models\MongoDB\ChatUser;
 use Illuminate\Http\Request;
 use App\Services\Payment\Gateways\TestGateway;
 use Illuminate\Support\Facades\Route;
@@ -25,3 +26,7 @@ Route::prefix('simulator/shipping')
         )->name('status');
 
     });
+
+Route::get('/test-chat-db', function () {
+    return ChatUser::query()->limit(5)->get();
+});

@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-http": "*",
         "bezhansalleh/filament-shield": "^4.2",
         "filament/filament": "^4.0",
         "hekmatinasser/verta": "^9.0",
@@ -17,10 +18,11 @@
         "laravel/scout": "^11.3",
         "laravel/tinker": "^2.10.1",
         "mokhosh/filament-jalali": "^5.1",
+        "mongodb/laravel-mongodb": "^5.8",
         "morilog/jalali": "^3.5",
         "spatie/laravel-permission": "^6.25",
         "teamtnt/tntsearch": "^5.0",
-        "ext-http": "*"
+        "ext-mongodb": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
