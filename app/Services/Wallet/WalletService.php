@@ -6,6 +6,7 @@ use App\Enums\WalletTransactionType;
 use App\Exceptions\WalletException;
 use App\Models\Payment;
 use App\Models\Wallet;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class WalletService
@@ -208,57 +209,61 @@ class WalletService
         int $commissionAmount,
         WalletTransactionType $type,
         ?Payment $payment = null,
+        ?Model $source = null,
         ?string $description = null,
     ): void {
-        DB::transaction(function () use (
-            $wallet,
-            $amount,
-            $commissionAmount,
-            $type,
-            $payment,
-            $description
-        ) {
-            $this->validateAmount($amount);
+        $this->validateAmount($amount);
 
-            if ($commissionAmount < 0 || $commissionAmount > $amount) {
-                throw new WalletException(
-                    'مبلغ کمیسیون نامعتبر است.'
-                );
-            }
-
-            $wallet = $this->lockWallet($wallet);
-
-            $availableBefore = $wallet->available_balance;
-            $pendingBefore = $wallet->pending_balance;
-
-            if ($pendingBefore < $amount) {
-                throw new WalletException(
-                    'موجودی معلق کیف پول کافی نیست.'
-                );
-            }
-
-            $netAmount = $amount - $commissionAmount;
-
-            $availableAfter = $availableBefore + $netAmount;
-            $pendingAfter = $pendingBefore - $amount;
-
-            $wallet->update([
-                'available_balance' => $availableAfter,
-                'pending_balance' => $pendingAfter,
-            ]);
-
-            $this->createTransaction(
-                wallet: $wallet,
-                type: $type,
-                amount: $netAmount,
-                availableBefore: $availableBefore,
-                availableAfter: $availableAfter,
-                pendingBefore: $pendingBefore,
-                pendingAfter: $pendingAfter,
-                payment: $payment,
-                description: $description,
+        if ($commissionAmount < 0 || $commissionAmount > $amount) {
+            throw new WalletException(
+                'مبلغ کمیسیون نامعتبر است.'
             );
-        });
+        }
+
+        $wallet = $this->lockWallet($wallet);
+
+        $exists = $wallet->transactions()
+            ->where('payment_id', $payment?->id)
+            ->where('type', $type->value)
+            ->where('source_type', $source ? $source::class : null)
+            ->where('source_id', $source?->id)
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        $availableBefore = $wallet->available_balance;
+        $pendingBefore = $wallet->pending_balance;
+
+        if ($pendingBefore < $amount) {
+            throw new WalletException(
+                'موجودی معلق کیف پول کافی نیست.'
+            );
+        }
+
+        $netAmount = $amount - $commissionAmount;
+
+        $availableAfter = $availableBefore + $netAmount;
+        $pendingAfter = $pendingBefore - $amount;
+
+        $wallet->update([
+            'available_balance' => $availableAfter,
+            'pending_balance' => $pendingAfter,
+        ]);
+
+        $this->createTransaction(
+            wallet: $wallet,
+            type: $type,
+            amount: $netAmount,
+            availableBefore: $availableBefore,
+            availableAfter: $availableAfter,
+            pendingBefore: $pendingBefore,
+            pendingAfter: $pendingAfter,
+            payment: $payment,
+            source: $source,
+            description: $description,
+        );
     }
 
     private function creditPendingInternal(
@@ -479,6 +484,7 @@ class WalletService
         int $pendingBefore,
         int $pendingAfter,
         ?Payment $payment = null,
+        ?Model $source = null,
         ?string $description = null,
     ): void {
         $wallet->transactions()->create([
@@ -489,6 +495,8 @@ class WalletService
             'available_after' => $availableAfter,
             'pending_before' => $pendingBefore,
             'pending_after' => $pendingAfter,
+            'source_type' => $source ? $source::class : null,
+            'source_id' => $source?->id,
             'description' => $description,
         ]);
     }

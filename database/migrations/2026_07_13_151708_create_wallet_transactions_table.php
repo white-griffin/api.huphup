@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('wallet_transactions', function (Blueprint $table) {
             $table->id();
+            $table->nullableMorphs('source');
             $table->foreignId('wallet_id')
                 ->constrained()
                 ->cascadeOnDelete();
@@ -35,6 +36,11 @@ return new class extends Migration
             $table->string('description')->nullable();
 
             $table->timestamps();
+
+            $table->unique(
+                ['wallet_id', 'payment_id', 'type', 'source_type', 'source_id'],
+                'wallet_transactions_idempotency_unique'
+            );
         });
     }
 

@@ -27,20 +27,13 @@ class SettlementService
         Payment $payment,
         ?OrderVendor $orderVendor = null,
     ): void {
-
         DB::transaction(function () use ($payment, $orderVendor) {
-
             $payment = Payment::query()
                 ->lockForUpdate()
                 ->findOrFail($payment->id);
 
-            if (
-                $payment->payment_status !=
-                PaymentStatuses::PAID->value
-            ) {
-                throw new DomainException(
-                    'فقط پرداخت موفق قابل تسویه است.'
-                );
+            if ($payment->payment_status != PaymentStatuses::PAID->value) {
+                throw new DomainException('فقط پرداخت موفق قابل تسویه است.');
             }
 
             if ($orderVendor) {
@@ -49,19 +42,27 @@ class SettlementService
                     orderVendor: $orderVendor,
                 );
 
+                $order = OrderVendor::query()
+                    ->with('order')
+                    ->findOrFail($orderVendor->id)
+                    ->order;
+
+                $this->markOrderPaymentAsSettledIfCompleted(
+                    payment: $payment,
+                    order: $order,
+                );
+
                 return;
             }
 
-            if ($payment->settled_at != null) {
+            if ($payment->settled_at !== null) {
                 return;
             }
 
             $payable = $payment->payable;
 
             if (! $payable) {
-                throw new DomainException(
-                    'موضوع پرداخت برای تسویه یافت نشد.'
-                );
+                throw new DomainException('موضوع پرداخت برای تسویه یافت نشد.');
             }
 
             match (true) {
@@ -83,7 +84,10 @@ class SettlementService
                     orderVendor: $payable,
                 ),
 
-                default => null,
+                default =>
+                throw new DomainException(
+                    'نوع موضوع پرداخت برای تسویه پشتیبانی نمی‌شود.'
+                ),
             };
 
             $payment->update([
@@ -96,58 +100,41 @@ class SettlementService
         Payment $payment,
         Order $order,
     ): void {
-        $order->loadMissing('vendors.business');
+        $order->loadMissing('vendors');
 
         foreach ($order->vendors as $orderVendor) {
-            $this->settleOrderVendorAmount(
+            $this->settleOrderVendor(
                 payment: $payment,
                 orderVendor: $orderVendor,
-                amount: (int) $orderVendor->paid_amount,
             );
         }
     }
 
-
-    public function settleOrderVendor(
+    private function settleOrderVendor(
         Payment $payment,
         OrderVendor $orderVendor,
     ): void {
-        DB::transaction(function () use ($payment, $orderVendor) {
+        $orderVendor = OrderVendor::query()
+            ->lockForUpdate()
+            ->with('business')
+            ->findOrFail($orderVendor->id);
 
-            $payment = Payment::query()
-                ->lockForUpdate()
-                ->findOrFail($payment->id);
-
-            $orderVendor = OrderVendor::query()
-                ->lockForUpdate()
-                ->with('business')
-                ->findOrFail($orderVendor->id);
-
-            if (
-                $payment->payment_status !=
-                PaymentStatuses::PAID->value
-            ) {
-                throw new DomainException(
-                    'فقط پرداخت موفق قابل تسویه است.'
-                );
-            }
-
-            if (
-                $orderVendor->status !=
-                OrderVendorStatuses::COMPLETED->value
-            ) {
-                throw new DomainException(
-                    'فقط فروشنده‌ی تکمیل‌شده قابل تسویه است.'
-                );
-            }
-
-            $this->settleOrderVendorAmount(
-                payment: $payment,
-                orderVendor: $orderVendor,
-                amount: (int) $orderVendor->paid_amount,
+        if (
+            $orderVendor->status !=
+            OrderVendorStatuses::COMPLETED->value
+        ) {
+            throw new DomainException(
+                'فقط فروشنده‌ی تکمیل‌شده قابل تسویه است.'
             );
-        });
+        }
+
+        $this->settleOrderVendorAmount(
+            payment: $payment,
+            orderVendor: $orderVendor,
+            amount: (int) $orderVendor->paid_amount,
+        );
     }
+
     private function settleOrderVendorAmount(
         Payment $payment,
         OrderVendor $orderVendor,
@@ -165,38 +152,31 @@ class SettlementService
             );
         }
 
-        $existingCommission = Commission::query()
-            ->where('payment_id', $payment->id)
-            ->where('payable_type', OrderVendor::class)
-            ->where('payable_id', $orderVendor->id)
-            ->first();
-
-        if ($existingCommission) {
-            return;
-        }
-
         $rate = $business->reputation?->current_commission_rate ?? 0;
 
-        $commissionAmount = $this->commissionService->calculateAmount(
-            amount: $amount,
-            rate: $rate,
+        $commission = Commission::firstOrCreate(
+            [
+                'payment_id' => $payment->id,
+                'payable_type' => OrderVendor::class,
+                'payable_id' => $orderVendor->id,
+            ],
+            [
+                'business_id' => $business->id,
+                'amount' => $this->commissionService->calculateAmount(
+                    amount: $amount,
+                    rate: $rate,
+                ),
+                'rate' => $rate,
+            ]
         );
-
-        $commission = Commission::create([
-            'payment_id' => $payment->id,
-            'payable_type' => OrderVendor::class,
-            'payable_id' => $orderVendor->id,
-            'business_id' => $business->id,
-            'amount' => $commissionAmount,
-            'rate' => $rate,
-        ]);
 
         $this->walletService->settlePending(
             wallet: $business->getWallet(),
             amount: $amount,
-            commissionAmount: $commissionAmount,
+            commissionAmount: (int) $commission->amount,
             type: WalletTransactionType::PAYMENT,
             payment: $payment,
+            source: $orderVendor,
             description: "تسویه فروشنده سفارش #{$orderVendor->id}",
         );
     }
@@ -217,7 +197,8 @@ class SettlementService
 
         $amount = max(
             0,
-            (int) $payment->amount - (int) $appointment->refund_amount
+            (int) $payment->amount -
+            (int) $appointment->refund_amount
         );
 
         if ($amount <= 0) {
@@ -225,11 +206,6 @@ class SettlementService
         }
 
         $rate = $business->reputation?->current_commission_rate ?? 0;
-
-        $commissionAmount = $this->commissionService->calculateAmount(
-            amount: $amount,
-            rate: $rate,
-        );
 
         $commission = Commission::firstOrCreate(
             [
@@ -239,7 +215,10 @@ class SettlementService
             ],
             [
                 'business_id' => $business->id,
-                'amount' => $commissionAmount,
+                'amount' => $this->commissionService->calculateAmount(
+                    amount: $amount,
+                    rate: $rate,
+                ),
                 'rate' => $rate,
             ]
         );
@@ -250,7 +229,30 @@ class SettlementService
             commissionAmount: (int) $commission->amount,
             type: WalletTransactionType::PAYMENT,
             payment: $payment,
+            source: $appointment,
             description: "تسویه رزرو #{$appointment->id}",
         );
+    }
+
+    private function markOrderPaymentAsSettledIfCompleted(
+        Payment $payment,
+        Order $order,
+    ): void {
+        $order->loadMissing('vendors');
+
+        $hasIncompleteVendor = $order->vendors()
+            ->whereNotIn('status', [
+                OrderVendorStatuses::COMPLETED->value,
+                OrderVendorStatuses::CANCELED->value,
+            ])
+            ->exists();
+
+        if ($hasIncompleteVendor) {
+            return;
+        }
+
+        $payment->update([
+            'settled_at' => now(),
+        ]);
     }
 }

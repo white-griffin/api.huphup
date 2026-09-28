@@ -17,6 +17,7 @@ use App\Notifications\User\V1\Appointment\AppointmentCancelledNotification;
 use App\Services\Payment\SettlementService;
 use App\Services\Wallet\WalletService;
 use Carbon\Carbon;
+use DomainException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;

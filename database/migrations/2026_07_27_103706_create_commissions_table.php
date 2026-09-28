@@ -27,6 +27,11 @@ return new class extends Migration
 
             $table->decimal('rate', 5, 2);
             $table->timestamps();
+
+            $table->unique(
+                ['payment_id', 'payable_type', 'payable_id'],
+                'commissions_payment_payable_unique'
+            );
         });
     }
 

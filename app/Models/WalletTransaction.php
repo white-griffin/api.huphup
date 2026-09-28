@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\WalletTransactionType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class WalletTransaction extends Model
 {
@@ -21,5 +22,10 @@ class WalletTransaction extends Model
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
+    }
+
+    public function source(): MorphTo
+    {
+        return $this->morphTo();
     }
 }
