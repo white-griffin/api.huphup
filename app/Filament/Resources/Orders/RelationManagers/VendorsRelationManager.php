@@ -2,8 +2,14 @@
 
 namespace App\Filament\Resources\Orders\RelationManagers;
 
-use App\Filament\Resources\OrderVendors\OrderVendorResource;
+use App\Enums\ShipmentProvider;
+use App\Enums\ShipmentStatuses;
+use Filament\Actions\Action;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Morilog\Jalali\Jalalian;
@@ -51,13 +57,68 @@ class VendorsRelationManager extends RelationManager
                 TextColumn::make('created_at')
                     ->label('تاریخ')
                     ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null),
+
+                TextColumn::make('shipments')
+                    ->label('ارسال‌ها')
+                    ->state(fn ($record) => $record->shipments->isNotEmpty()
+                        ? 'مشاهده ارسال‌ها'
+                        : 'ارسال نشده'
+                    )
+                    ->color(fn ($record) => $record->shipments->isNotEmpty()
+                        ? 'primary'
+                        : null
+                    )
+                    ->icon(fn ($record) => $record->shipments->isNotEmpty()
+                        ? Heroicon::Truck
+                        : null
+                    )
+                    ->action(
+                        Action::make('shipments')
+                            ->label('ارسال‌ها')
+                            ->modalHeading('اطلاعات ارسال')
+                            ->modalSubmitAction(false)
+                            ->modalCancelActionLabel('بستن')
+                            ->infolist(function (Schema $schema, $record) {
+                                $record->loadMissing('shipments');
+
+                                return $schema
+                                    ->record($record)
+                                    ->components([
+                                        RepeatableEntry::make('shipments')
+                                            ->label('ارسال‌ها')
+                                            ->schema([
+                                                TextEntry::make('id')
+                                                    ->label('شناسه ارسال'),
+
+                                                TextEntry::make('provider')
+                                                    ->label('ارائه‌دهنده ارسال')
+                                                   ->formatStateUsing(fn ($state) => ShipmentProvider::label($state?->value) ?? '-'),
+
+                                                TextEntry::make('status')
+                                                    ->label('وضعیت')
+                                                   ->formatStateUsing(fn ($state) => ShipmentStatuses::label($state?->value) ?? '-')
+                                                    ->badge(),
+
+                                                TextEntry::make('tracking_code')
+                                                    ->label('کد رهگیری')
+                                                    ->placeholder('-'),
+
+                                                TextEntry::make('created_at')
+                                                    ->label('تاریخ ایجاد')
+                                                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null),
+
+                                                TextEntry::make('updated_at')
+                                                    ->label('آخرین بروزرسانی')
+                                                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null),
+                                            ])
+                                            ->columns(2),
+                                    ]);
+                            })
+                            ->visible(
+                                fn ($record) => $record->shipments->isNotEmpty()
+                            )
+                    ),
             ])
-            ->recordUrl(
-                fn ($record) => OrderVendorResource::getUrl('view', [
-                    'record' => $record,
-                ])
-            )
-            ->openRecordUrlInNewTab()
             ->defaultSort('id', 'desc');
     }
 }
