@@ -17,8 +17,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('order_number')->unique();
-            $table->decimal('total_amount', 15, 2);
-            $table->decimal('discount_amount', 15, 2)->default(0);
+            $table->decimal('total_amount', 15, 2); // مبلغ پرداختی
+            $table->decimal('subtotal_amount', 15, 2); // جمع کل
+            $table->decimal('discount_amount', 15, 2)->default(0); // مبلغ تخفیف
             $table->tinyInteger('order_status')
                 ->default(OrderStatuses::PENDING->value)
                 ->comment('1=pending,2=paid,3=processing,4=shipped,5=completed,6=cancelled,7=failed');
@@ -28,7 +29,7 @@ return new class extends Migration
             $table->text('notes')->nullable();
 
             $table->text('shipping_address')->nullable();
-            $table->decimal('shipping_amount',15,2)->default(0);
+            $table->decimal('shipping_amount',15,2)->default(0); // هزینه ارسال
             $table->string('shipping_postal_code', 10)->nullable();
             $table->decimal('shipping_latitude', 10, 7)->nullable();
             $table->decimal('shipping_longitude', 10, 7)->nullable();

@@ -12,16 +12,14 @@ class CommissionService
         Business $business,
         float $rating,
     ): float {
-        return (float) (
-            CommissionRule::query()
-                ->where('business_type', $business->business_type)
-                ->where('activity_status', ActivityStatus::ACTIVE->value)
-                ->where('min_rating', '<=', $rating)
-                ->where('max_rating', '>=', $rating)
-                ->orderBy('priority')
-                ->value('commission_rate')
-            ?? 0
-        );
+        $query = CommissionRule::query()
+            ->where('business_type', $business->business_type)
+            ->where('activity_status', ActivityStatus::ACTIVE->value)
+            ->where('min_rating', '<=', $rating)
+            ->where('max_rating', '>=', $rating)
+            ->orderBy('priority');
+
+        return (float) ($query->value('commission_rate') ?? 0);
     }
 
 

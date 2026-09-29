@@ -11,6 +11,7 @@ use App\Models\Order;
 use App\Models\OrderVendor;
 use App\Models\Payment;
 use App\Services\Commission\CommissionService;
+use App\Services\Review\BusinessReputationService;
 use App\Services\Wallet\WalletService;
 use DomainException;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,7 @@ class SettlementService
     public function __construct(
         private readonly WalletService $walletService,
         private readonly CommissionService $commissionService,
+        private readonly BusinessReputationService $businessReputationService,
     ) {
     }
 
@@ -152,7 +154,8 @@ class SettlementService
             );
         }
 
-        $rate = $business->reputation?->current_commission_rate ?? 0;
+        $rate = $this->businessReputationService
+            ->getCommissionRate($business);
 
         $commission = Commission::firstOrCreate(
             [

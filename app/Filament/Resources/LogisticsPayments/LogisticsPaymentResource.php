@@ -20,7 +20,7 @@ class LogisticsPaymentResource extends Resource
 {
     protected static ?string $model = LogisticsPayment::class;
 
-    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت کسب و کارها';
+    protected static string|null|\UnitEnum $navigationGroup = 'مدیریت سفارشات';
 
     protected static ?string $navigationLabel = 'مرسولات';
 
@@ -51,7 +51,7 @@ class LogisticsPaymentResource extends Resource
     {
         return [
             'index' => ListLogisticsPayments::route('/'),
-            'create' => CreateLogisticsPayment::route('/create'),
+//            'create' => CreateLogisticsPayment::route('/create'),
             'edit' => EditLogisticsPayment::route('/{record}/edit'),
         ];
     }

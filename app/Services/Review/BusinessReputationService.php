@@ -29,7 +29,6 @@ class BusinessReputationService
             ? round($ratingSum / $ratingCount, 2)
             : 0;
 
-
         $reputationScore = $this->calculateScore(
             $ratingAvg,
             $ratingCount,
@@ -57,12 +56,24 @@ class BusinessReputationService
         );
     }
 
+    public function getCommissionRate(Business $business): float
+    {
+        $reputation = $business->reputation;
+
+        if (! $reputation) {
+            $this->refresh($business);
+
+            $reputation = $business->fresh('reputation')->reputation;
+        }
+
+        return (float) $reputation->current_commission_rate;
+    }
+
     protected function calculateScore(
         float $ratingAvg,
         int $ratingCount,
         int $reviewCount,
     ): float {
-        // فعلاً الگوریتم ساده
         return $ratingAvg;
     }
 }

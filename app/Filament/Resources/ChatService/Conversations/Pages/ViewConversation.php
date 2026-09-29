@@ -6,10 +6,7 @@ namespace App\Filament\Resources\ChatService\Conversations\Pages;
 use App\Filament\Resources\ChatService\Conversations\ConversationResource;
 use App\Models\MongoDB\ConversationMember;
 use App\Models\MongoDB\Message;
-use App\Models\User;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Schemas\Schema;
 use MongoDB\BSON\ObjectId;
 use App\Services\MongoChatService\ChatUserResolver;
 class ViewConversation extends ViewRecord
