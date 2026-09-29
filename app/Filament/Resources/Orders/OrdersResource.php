@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\Orders;
 
-use App\Filament\Resources\Orders\Pages\CreateOrders;
-use App\Filament\Resources\Orders\Pages\EditOrders;
 use App\Filament\Resources\Orders\Pages\ListOrders;
+use App\Filament\Resources\Orders\Pages\ViewOrder;
+use App\Filament\Resources\Orders\RelationManagers\ItemsRelationManager;
+use App\Filament\Resources\Orders\RelationManagers\PaymentsRelationManager;
+use App\Filament\Resources\Orders\RelationManagers\VendorsRelationManager;
 use App\Filament\Resources\Orders\Schemas\OrdersForm;
 use App\Filament\Resources\Orders\Tables\OrdersTable;
 use App\Models\Order;
@@ -42,7 +44,9 @@ class OrdersResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            VendorsRelationManager::class,
+            ItemsRelationManager::class,
+            PaymentsRelationManager::class,
         ];
     }
 
@@ -50,6 +54,7 @@ class OrdersResource extends Resource
     {
         return [
             'index' => ListOrders::route('/'),
+            'view' => ViewOrder::route('/{record}'),
 //            'create' => CreateOrders::route('/create'),
 //            'edit' => EditOrders::route('/{record}/edit'),
         ];

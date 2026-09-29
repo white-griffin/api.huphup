@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Commissions\Tables;
 
+use App\Filament\Resources\Orders\OrdersResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -28,6 +29,10 @@ class CommissionsTable
 
                 TextColumn::make('payment.id')
                     ->label('پرداخت')
+                    ->url(fn ($record) => OrdersResource::getUrl('index', [
+                        'record' => $record->payment?->payable->id,
+                    ]))
+                    ->openUrlInNewTab()
                     ->sortable(),
 
 
@@ -39,7 +44,8 @@ class CommissionsTable
 
                 TextColumn::make('amount')
                     ->label('مبلغ کمیسیون')
-                    ->money('IRR')
+                    ->numeric(decimalPlaces: 0)
+                    ->suffix(' تومان')
                     ->sortable(),
 
 
@@ -52,9 +58,9 @@ class CommissionsTable
             ->filters([
                 //
             ])
-            ->recordActions([
-                ViewAction::make(),
-            ])
+//            ->recordActions([
+//                ViewAction::make(),
+//            ])
             ->toolbarActions([
 
             ]);

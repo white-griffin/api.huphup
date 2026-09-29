@@ -31,7 +31,8 @@ class LogisticsPaymentsTable
                     ->sortable(),
                 TextColumn::make('amount')
                     ->label('مبلغ')
-                    ->numeric()
+                    ->numeric(decimalPlaces: 0)
+                    ->suffix(' تومان')
                     ->sortable(),
                 TextColumn::make('status')
                     ->label('وضعیت')
