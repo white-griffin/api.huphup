@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "07d0c7e365bc00173114406659422cb7",
+    "content-hash": "393e7c7301bff3c7c5713948e9d9ff06",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -4167,32 +4167,32 @@
         },
         {
             "name": "mokhosh/filament-jalali",
-            "version": "v5.1.0",
+            "version": "v6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mokhosh/filament-jalali.git",
-                "reference": "dc53da5238c604d892b495a1c5be56d56debba23"
+                "reference": "7debf97bf4cb35fc586f85e6d44ce976b9ff02ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mokhosh/filament-jalali/zipball/dc53da5238c604d892b495a1c5be56d56debba23",
-                "reference": "dc53da5238c604d892b495a1c5be56d56debba23",
+                "url": "https://api.github.com/repos/mokhosh/filament-jalali/zipball/7debf97bf4cb35fc586f85e6d44ce976b9ff02ce",
+                "reference": "7debf97bf4cb35fc586f85e6d44ce976b9ff02ce",
                 "shasum": ""
             },
             "require": {
-                "filament/filament": "^4.0",
-                "illuminate/contracts": "^11.28|^12.0",
-                "morilog/jalali": "^v3.4.2",
+                "filament/filament": "^4.0|^5.0",
+                "illuminate/contracts": "^11.28|^12.0|^13.0",
+                "morilog/jalali": "^3.4.2",
                 "php": "^8.2",
                 "spatie/laravel-package-tools": "^1.14.0"
             },
             "require-dev": {
                 "laravel/pint": "^1.0",
                 "nunomaduro/collision": "^7.9|^8.0",
-                "orchestra/testbench": "^9.0|^10.0",
-                "pestphp/pest": "^3.7",
-                "pestphp/pest-plugin-arch": "^3.0",
-                "pestphp/pest-plugin-laravel": "^3.0"
+                "orchestra/testbench": "^9.0|^10.0|^11.0",
+                "pestphp/pest": "^3.7|^4.0",
+                "pestphp/pest-plugin-arch": "^3.0|^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0|^4.0"
             },
             "type": "library",
             "extra": {
@@ -4231,9 +4231,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mokhosh/filament-jalali/issues",
-                "source": "https://github.com/mokhosh/filament-jalali/tree/v5.1.0"
+                "source": "https://github.com/mokhosh/filament-jalali/tree/v6.0.0"
             },
-            "time": "2025-10-10T11:02:32+00:00"
+            "time": "2026-08-21T09:28:11+00:00"
         },
         {
             "name": "mongodb/laravel-mongodb",
@@ -13495,7 +13495,8 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2",
-        "ext-http": "*"
+        "ext-http": "*",
+        "ext-mongodb": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
