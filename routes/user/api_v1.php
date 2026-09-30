@@ -28,7 +28,9 @@ Route::controller(LocationController::class)->prefix('location')->group(function
     Route::get('/cities', 'cities');
 });
 
-Route::controller(UserNearbyController::class)->prefix('nearby')->group(function () {
+Route::controller(UserNearbyController::class)
+    ->middleware('auth:sanctum')
+    ->prefix('nearby')->group(function () {
     Route::get('/', 'index');
     Route::post('/toggle', 'toggle');
 });
