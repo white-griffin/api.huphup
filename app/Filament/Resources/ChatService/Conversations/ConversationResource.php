@@ -32,7 +32,7 @@ class ConversationResource extends Resource
 
     protected static ?string $pluralModelLabel = 'مکالمه';
 
-    protected static string|null|\UnitEnum $navigationGroup = 'چت';
+    protected static string|null|\UnitEnum $navigationGroup = 'سرویس چت';
 
     protected static ?string $recordTitleAttribute = 'چت';
 

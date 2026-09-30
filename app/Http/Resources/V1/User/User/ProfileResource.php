@@ -1,9 +1,7 @@
 <?php
 
-namespace App\Http\Resources\V1\User;
+namespace App\Http\Resources\V1\User\User;
 
-use App\Enums\GenderType;
-use Hekmatinasser\Verta\Facades\Verta;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

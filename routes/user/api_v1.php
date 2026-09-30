@@ -20,11 +20,17 @@ use App\Http\Controllers\User\Api\V1\Products\ProductController;
 use App\Http\Controllers\User\Api\V1\ReactionController;
 use App\Http\Controllers\User\Api\V1\Review\ReviewController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
+use App\Http\Controllers\User\Api\V1\User\UserNearbyController;
 use Illuminate\Support\Facades\Route;
 
 Route::controller(LocationController::class)->prefix('location')->group(function () {
     Route::get('/provinces', 'provinces');
     Route::get('/cities', 'cities');
+});
+
+Route::controller(UserNearbyController::class)->prefix('nearby')->group(function () {
+    Route::get('/', 'index');
+    Route::post('/toggle', 'toggle');
 });
 
 Route::controller(ProfileController::class)->middleware('auth:sanctum')->group(function () {

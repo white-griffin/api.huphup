@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\V1\User;
+namespace App\Http\Resources\V1\User\User;
 
 use App\Models\City;
 use App\Models\Province;
