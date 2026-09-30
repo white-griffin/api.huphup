@@ -125,4 +125,9 @@ class User extends Authenticatable
     {
         return $this->morphMany(ReviewMessage::class, 'author');
     }
+
+    public function notices(): HasMany
+    {
+        return $this->hasMany(UserNotice::class);
+    }
 }

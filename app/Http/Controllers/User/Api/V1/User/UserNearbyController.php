@@ -5,7 +5,7 @@ namespace App\Http\Controllers\User\Api\V1\User;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\User\User\UserNearbyResource;
-use App\Services\NearbyUserService;
+use App\Services\UserDomain\NearbyUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;

@@ -21,6 +21,7 @@ use App\Http\Controllers\User\Api\V1\ReactionController;
 use App\Http\Controllers\User\Api\V1\Review\ReviewController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use App\Http\Controllers\User\Api\V1\User\UserNearbyController;
+use App\Http\Controllers\User\Api\V1\User\UserNoticeController;
 use Illuminate\Support\Facades\Route;
 
 Route::controller(LocationController::class)->prefix('location')->group(function () {
@@ -31,9 +32,9 @@ Route::controller(LocationController::class)->prefix('location')->group(function
 Route::controller(UserNearbyController::class)
     ->middleware('auth:sanctum')
     ->prefix('nearby')->group(function () {
-    Route::get('/', 'index');
-    Route::post('/toggle', 'toggle');
-});
+        Route::get('/', 'index');
+        Route::post('/toggle', 'toggle');
+    });
 
 Route::controller(ProfileController::class)->middleware('auth:sanctum')->group(function () {
     Route::get('profile', 'getProfile');
@@ -149,8 +150,8 @@ Route::controller(OrderController::class)->prefix('orders')->middleware('auth:sa
         Route::post('/', 'store');
         Route::get('/', 'index');
         Route::get('/{order}', 'show');
-        Route::post('/{order}/cancel','cancel');
-        Route::post('/order-items/{orderItem}/review','review');
+        Route::post('/{order}/cancel', 'cancel');
+        Route::post('/order-items/{orderItem}/review', 'review');
     });
 
 Route::controller(PaymentController::class)->prefix('payments')
@@ -185,6 +186,13 @@ Route::controller(ReactionController::class)
 Route::controller(ReviewController::class)->prefix('reviews')
     ->middleware('auth:sanctum')
     ->group(function () {
-        Route::put('/{review}','update');
-        Route::delete('/{review}','destroy');
+        Route::put('/{review}', 'update');
+        Route::delete('/{review}', 'destroy');
+    });
+
+Route::controller(UserNoticeController::class)
+    ->prefix('notices')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::get('user-notices', 'index');
     });
