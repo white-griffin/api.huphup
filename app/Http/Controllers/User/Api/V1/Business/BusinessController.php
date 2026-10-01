@@ -1,20 +1,17 @@
 <?php
 
-namespace App\Http\Controllers\User\Api\V1;
+namespace App\Http\Controllers\User\Api\V1\Business;
 
 use App\Enums\ActivityStatus;
 use App\Enums\VerificationStatuses;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\User\Api\V1\Review\StoreReviewRequest;
-use App\Http\Resources\V1\User\BusinessResource;
-use App\Http\Resources\V1\User\ReviewResource;
+use App\Http\Resources\V1\User\Business\BusinessNearbyResource;
+use App\Http\Resources\V1\User\Business\BusinessResource;
 use App\Models\Business;
-use App\Models\BusinessService;
-use App\Services\Review\ReviewService;
+use App\Services\UserDomain\NearbyBusinessService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 class BusinessController extends Controller
 {
@@ -68,7 +65,6 @@ class BusinessController extends Controller
         }
     }
 
-
     public function show(Business $business)
     {
         try {
@@ -106,6 +102,27 @@ class BusinessController extends Controller
                 Response::HTTP_INTERNAL_SERVER_ERROR,
                 $exception->getMessage()
             );
+        }
+    }
+
+    public function getNearbyBusinesses(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'lat' => ['required', 'numeric', 'between:-90,90'],
+                'lng' => ['required', 'numeric', 'between:-180,180'],
+                'radius' => ['nullable', 'numeric', 'min:0.1', 'max:100'],
+            ]);
+
+            $businesses = app(NearbyBusinessService::class)->getNearby(
+                lat: (float) $validated['lat'],
+                lng: (float) $validated['lng'],
+                radiusKm: (float) ($validated['radius'] ?? 10)
+            );
+
+            return ApiResponse::Success('عملیات موفق',BusinessNearbyResource::collection($businesses));
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,$exception->getMessage());
         }
     }
 

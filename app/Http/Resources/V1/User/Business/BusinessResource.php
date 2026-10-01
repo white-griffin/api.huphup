@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Resources\V1\User;
+namespace App\Http\Resources\V1\User\Business;
 
-use App\Enums\ActivityStatus;
 use App\Models\Business;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

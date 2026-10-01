@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\User\Api\V1\AppointmentController;
-use App\Http\Controllers\User\Api\V1\BusinessController;
+use App\Http\Controllers\User\Api\V1\Business\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\LocationController;
@@ -80,14 +80,14 @@ Route::controller(AppointmentController::class)->prefix('appointments')
 
 Route::controller(BusinessController::class)->prefix('businesses')->group(function () {
     Route::get('/', 'index');
-
+    Route::get('/nearby', 'getNearbyBusinesses');
     Route::get('/{business}', 'show');
-
     Route::post(
         '/{business}/services/{businessService}/reviews',
         'reviewService'
     );
 });
+
 
 Route::controller(BrandController::class)->prefix('brands')->group(function () {
     Route::get('/', 'index');

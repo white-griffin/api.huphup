@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\V1\User;
 
+use App\Http\Resources\V1\User\Business\BusinessResource;
 use App\Models\ReviewMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

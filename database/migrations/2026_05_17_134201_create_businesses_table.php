@@ -39,6 +39,7 @@ return new class extends Migration
             $table->string('postal_code', 10)->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
+            $table->boolean('nearby_enabled')->default(false);
 
             // اطلاعات بانکی (در سطح کسب‌وکار)
             $table->string('bank_name')->nullable();

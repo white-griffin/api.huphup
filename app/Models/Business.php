@@ -22,6 +22,7 @@ class Business extends Model
 
     protected $casts =[
         'settings' => 'array',
+        'nearby_enabled' => 'boolean',
     ];
 
     protected $appends = [

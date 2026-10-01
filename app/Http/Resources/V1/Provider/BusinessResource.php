@@ -2,11 +2,6 @@
 
 namespace App\Http\Resources\V1\Provider;
 
-use App\Http\Resources\V1\Provider\Products\ProductResource;
-use App\Http\Resources\V1\User\BusinessServiceResource;
-use App\Http\Resources\V1\User\Orders\OrderVendorResource;
-use App\Http\Resources\V1\User\ReviewMessageResource;
-use App\Http\Resources\V1\User\ReviewResource;
 use App\Models\Business;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

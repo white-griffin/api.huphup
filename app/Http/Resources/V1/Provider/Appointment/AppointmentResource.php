@@ -2,8 +2,7 @@
 
 namespace App\Http\Resources\V1\Provider\Appointment;
 
-use App\Http\Resources\V1\User\BusinessResource;
-use App\Http\Resources\V1\User\BusinessServiceResource;
+use App\Http\Resources\V1\User\Business\BusinessServiceResource;
 use App\Http\Resources\V1\User\Pets\PetResource;
 use App\Http\Resources\V1\User\ReviewResource;
 use App\Models\Appointment;

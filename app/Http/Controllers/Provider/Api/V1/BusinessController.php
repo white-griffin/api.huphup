@@ -8,6 +8,9 @@ use App\Http\Requests\Provider\Api\V1\Business\UpdateBusinessRequest;
 use App\Http\Resources\V1\Provider\BusinessResource;
 use App\Models\Business;
 use App\Services\MediaService;
+use App\Services\UserDomain\NearbyBusinessService;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class BusinessController extends Controller
@@ -62,6 +65,24 @@ class BusinessController extends Controller
             });
         }catch (\Exception $exception){
             return ApiResponse::Fail(500,$exception->getMessage());
+        }
+    }
+
+    public function toggleNearbyShow(Request $request,Business $business)
+    {
+        try {
+            $validated = $request->validate([
+                'enabled' => ['required', 'boolean'],
+            ]);
+
+            $business = app(NearbyBusinessService::class)->setEnabled(
+                business: $business,
+                enabled: (bool) $validated['enabled'],
+            );
+
+            return ApiResponse::Success('عملیات موفق');
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,$exception->getMessage());
         }
     }
 }

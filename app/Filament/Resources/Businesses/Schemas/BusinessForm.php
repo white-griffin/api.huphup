@@ -14,6 +14,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -129,7 +130,7 @@ class BusinessForm
                             ->default(null)
                             ->columnSpanFull(),
 
-                        Grid::make()
+                        Grid::make(3)
                             ->schema([
                                 TextInput::make('latitude')
                                     ->numeric()
@@ -138,6 +139,9 @@ class BusinessForm
                                 TextInput::make('longitude')
                                     ->numeric()
                                     ->default(null),
+
+                                Toggle::make('nearby_enabled')
+                                    ->label('نمایش در نقشه'),
                             ])
                     ])
                     ->collapsed()

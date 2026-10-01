@@ -25,6 +25,7 @@ Route::controller(BusinessController::class)->prefix('businesses')
         Route::get('/', 'getBusinesses')->withoutMiddleware('resolve.business');
         Route::get('/{business}', 'showBusiness');
         Route::post('/{business}', 'update');
+        Route::post('/{business}/toggle_nearby', 'toggleNearbyShow');
     });
 
 Route::controller(CategoryController::class)->prefix('categories')->group(function () {
