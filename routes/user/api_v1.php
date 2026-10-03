@@ -4,6 +4,7 @@ use App\Http\Controllers\User\Api\V1\AppointmentController;
 use App\Http\Controllers\User\Api\V1\Business\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
+use App\Http\Controllers\User\Api\V1\ChatService\SupportChatController;
 use App\Http\Controllers\User\Api\V1\LocationController;
 use App\Http\Controllers\User\Api\V1\NotificationController;
 use App\Http\Controllers\User\Api\V1\Order\CouponController;
@@ -195,4 +196,13 @@ Route::controller(UserNoticeController::class)
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::get('user-notices', 'index');
+    });
+
+Route::controller(SupportChatController::class)
+    ->middleware('auth:sanctum')
+    ->prefix('chat_service')
+    ->group(function () {
+
+        Route::post('/support', 'start');
+
     });

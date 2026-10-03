@@ -1,21 +1,22 @@
 <?php
 
-namespace App\Filament\Resources\ChatService\Conversations\Pages;
+namespace App\Filament\Resources\ChatService\SupportChats\Pages;
 
-
-use App\Filament\Resources\ChatService\Conversations\ConversationResource;
-use App\Models\MongoDB\ChatUser;
-use App\Models\MongoDB\ConversationMember;
-use App\Models\MongoDB\Message;
-use Filament\Resources\Pages\ViewRecord;
-use MongoDB\BSON\ObjectId;
+use App\Filament\Resources\ChatService\SupportChats\SupportChatsResource;
+use App\Services\MongoChatService\ChatMessageService;
 use App\Services\MongoChatService\ChatUserResolver;
-class ViewConversation extends ViewRecord
+use Filament\Resources\Pages\ViewRecord;
+use App\Models\MongoDB\ChatUser;
+use App\Models\MongoDB\Message;
+use MongoDB\BSON\ObjectId;
+class ViewSupportChat extends ViewRecord
 {
-    protected static string $resource = ConversationResource::class;
+    protected static string $resource = SupportChatsResource::class;
 
     protected string $view =
-        'filament.resources.chat-service.conversations.pages.view-conversation';
+        'filament.resources.chat-service.support-chats.pages.view-support-chat';
+
+    public string $content = '';
 
     protected function getViewData(): array
     {
@@ -82,73 +83,33 @@ class ViewConversation extends ViewRecord
                 : null;
         }
 
-        $chatMessages = $messages->map(function (Message $message) use ($users) {
-            $sender = $message->sender;
-
-            $mysqlUser = null;
-
-            if (
-                $sender &&
-                $sender->externalType === 'USER'
-            ) {
-                $mysqlUser = $users[(int) $sender->externalId] ?? null;
-            }
-
-            $senderName = $mysqlUser
-                ? trim(
-                    $mysqlUser->first_name . ' ' .
-                    $mysqlUser->last_name
-                )
-                : ($sender?->nickname ?? 'Unknown');
-
-            return [
-                'id' => (string) $message->id,
-                'conversationId' => (string) $message->conversationId,
-                'senderId' => (string) $message->senderId,
-                'senderName' => $senderName,
-                'type' => $message->type,
-                'content' => $message->content,
-                'createdAt' => $message->createdAt?->toISOString(),
-            ];
-        })->values()->all();
-
         return [
             'messages' => $messages,
             'replies' => $replies,
             'users' => $users,
             'currentAdminChatUserId' => $currentAdminChatUserId,
-            'chatMessages' => $chatMessages,
         ];
     }
 
-    protected function getHeaderWidgetsData(): array
+    public function sendMessage(): void
     {
-        return [];
-    }
+        $admin = auth('admin')->user();
 
-    protected function getInfolistData(): array
-    {
-        $creator = $this->record->creator;
-
-        $creatorUser = null;
-
-        if ($creator?->externalType === 'USER') {
-            $creatorUser = \App\Models\User::query()
-                ->find((int) $creator->externalId);
+        if (! $admin) {
+            abort(403);
         }
 
-        return [
-            'creator_name' => $creatorUser
-                ? trim($creatorUser->first_name . ' ' . $creatorUser->last_name)
-                : ($creator?->nickname ?? '-'),
+        app(ChatMessageService::class)->send(
+            conversation: $this->record,
+            admin: $admin,
+            content: $this->content,
+        );
 
-            'creator_mobile' => $creatorUser?->mobile,
-        ];
+        $this->content = '';
     }
 
     protected function getHeaderActions(): array
     {
         return [];
     }
-
 }

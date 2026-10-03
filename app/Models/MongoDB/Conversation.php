@@ -15,6 +15,7 @@ class Conversation extends Model
     protected $casts = [
         'createdAt' => 'datetime',
         'updatedAt' => 'datetime',
+        'closedAt' => 'datetime',
     ];
 
     public function members()
@@ -42,6 +43,25 @@ class Conversation extends Model
             'createdBy',
             '_id'
         );
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(
+            ChatUser::class,
+            'userId',
+            '_id'
+        );
+    }
+
+    public function scopeSupport($query)
+    {
+        return $query->where('context', 'SUPPORT');
+    }
+
+    public function scopeOpen($query)
+    {
+        return $query->where('status', 'OPEN');
     }
 
 }
