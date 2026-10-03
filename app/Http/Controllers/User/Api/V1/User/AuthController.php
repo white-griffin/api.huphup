@@ -94,7 +94,7 @@ class AuthController extends BaseController
         try {
             $user->activity_status = ActivityStatus::ACTIVE->value;
             $user->save();
-            $user->tokens()->delete();
+//            $user->tokens()->delete();
 
             DB::commit();
 
