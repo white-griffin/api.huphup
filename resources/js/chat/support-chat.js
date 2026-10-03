@@ -32,6 +32,7 @@ export function supportChat({
 
             try {
                 this.socket = await connectChatSocket();
+                console.log('Chat socket connected:', this.socket.id);
 
                 this.registerEvents();
 
@@ -200,44 +201,47 @@ export function supportChat({
         },
 
         sendMessage() {
-            const content =
-                this.messageContent.trim();
+            const content = this.messageContent.trim();
 
             if (!content) {
                 return;
             }
 
-            this.socket.emit(
-                'message:send',
-                {
-                    conversationId:
-                    this.conversationId,
+            if (!this.socket?.connected) {
+                console.error('Chat socket is not connected.');
+                return;
+            }
 
-                    type: 'TEXT',
+            console.log('Sending message:', {
+                conversationId: this.conversationId,
+                content,
+            });
 
-                    content,
-
-                    replyTo: null,
-                }
-            );
+            this.socket.emit('message:send', {
+                conversationId: this.conversationId,
+                type: 'TEXT',
+                content,
+                replyTo: null,
+            });
 
             this.messageContent = '';
-
             this.stopTyping();
         },
 
         startTyping() {
-            this.socket.emit(
-                'user:typing',
-                this.conversationId
-            );
+            if (!this.socket?.connected) {
+                return;
+            }
+
+            this.socket.emit('user:typing', this.conversationId);
         },
 
         stopTyping() {
-            this.socket.emit(
-                'user:stop-typing',
-                this.conversationId
-            );
+            if (!this.socket?.connected) {
+                return;
+            }
+
+            this.socket.emit('user:stop-typing', this.conversationId);
         },
 
         markAsRead(messageId) {

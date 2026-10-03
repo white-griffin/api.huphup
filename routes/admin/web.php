@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\ChatService\ChatController;
 
 Route::middleware('auth:admin')->group(function () {
     Route::get(
-        '/admin/chat/token',
+        '/chat/token',
         ChatController::class
     )->name('admin.chat.token');
 });

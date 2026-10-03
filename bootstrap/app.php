@@ -41,6 +41,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('v1/webhooks')
                 ->group(base_path('routes/webhook/web_v1.php'));
 
+            /* Admin Web Version 1 */
+            Route::middleware('web')
+                ->prefix('admin')
+                ->group(base_path('routes/admin/web.php'));
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {

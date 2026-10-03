@@ -35,11 +35,7 @@ class SupportChatsResource extends Resource
     {
         return parent::getEloquentQuery()
             ->where('context', 'SUPPORT')
-            ->where('status', 'OPEN')
-            ->with([
-                'creator',
-                'members.user',
-            ]);
+            ->where('status', 'OPEN');
     }
 
     public static function form(Schema $schema): Schema

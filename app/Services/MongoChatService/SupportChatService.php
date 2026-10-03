@@ -8,13 +8,13 @@ use App\Models\MongoDB\ChatUser;
 use App\Models\MongoDB\Conversation;
 use App\Models\MongoDB\ConversationMember;
 use Illuminate\Support\Facades\Cache;
+use MongoDB\BSON\ObjectId;
 
 class SupportChatService
 {
-
     private const CONTEXT = 'SUPPORT';
-    private const STATUS_OPEN = 'OPEN';
 
+    private const STATUS_OPEN = 'OPEN';
 
     public function start(User $user): Conversation
     {
@@ -28,11 +28,16 @@ class SupportChatService
             $existing = Conversation::query()
                 ->where('context', self::CONTEXT)
                 ->where('status', self::STATUS_OPEN)
-                ->where('createdBy', $userChatUser->id)
+                ->where(
+                    'createdBy',
+                    new ObjectId((string) $userChatUser->id)
+                )
                 ->first();
 
             if ($existing) {
-                return $existing;
+                $this->ensureMembers($existing);
+
+                return $existing->fresh();
             }
 
             $admin = $this->findLeastLoadedAdmin();
@@ -42,31 +47,65 @@ class SupportChatService
             $conversation = Conversation::query()->create([
                 'type' => 'DIRECT',
                 'title' => 'Support',
-                'createdBy' => $userChatUser->id,
+
+                'createdBy' => new ObjectId(
+                    (string) $userChatUser->id
+                ),
+
                 'context' => self::CONTEXT,
                 'status' => self::STATUS_OPEN,
-                'assignedTo' => $adminChatUser->id,
+
+                'assignedTo' => new ObjectId(
+                    (string) $adminChatUser->id
+                ),
+
                 'closedAt' => null,
             ]);
 
-            ConversationMember::query()->create([
-                'conversationId' => $conversation->id,
-                'userId' => $userChatUser->id,
-                'role' => 'MEMBER',
-                'joinedAt' => now(),
-                'leftAt' => null,
-            ]);
-
-            ConversationMember::query()->create([
-                'conversationId' => $conversation->id,
-                'userId' => $adminChatUser->id,
-                'role' => 'ADMIN',
-                'joinedAt' => now(),
-                'leftAt' => null,
-            ]);
+            $this->ensureMembers($conversation);
 
             return $conversation->fresh();
         });
+    }
+
+    private function ensureMembers(
+        Conversation $conversation
+    ): void {
+        ConversationMember::query()->firstOrCreate(
+            [
+                'conversationId' => new ObjectId(
+                    (string) $conversation->id
+                ),
+
+                'userId' => new ObjectId(
+                    (string) $conversation->createdBy
+                ),
+            ],
+            [
+                'role' => 'MEMBER',
+                'joinedAt' => now(),
+                'leftAt' => null,
+            ]
+        );
+
+        if ($conversation->assignedTo) {
+            ConversationMember::query()->firstOrCreate(
+                [
+                    'conversationId' => new ObjectId(
+                        (string) $conversation->id
+                    ),
+
+                    'userId' => new ObjectId(
+                        (string) $conversation->assignedTo
+                    ),
+                ],
+                [
+                    'role' => 'ADMIN',
+                    'joinedAt' => now(),
+                    'leftAt' => null,
+                ]
+            );
+        }
     }
 
     private function resolveUserChatUser(User $user): ChatUser
@@ -95,22 +134,31 @@ class SupportChatService
         );
     }
 
-
     private function findLeastLoadedAdmin(): Admin
     {
         $admins = Admin::query()
-            ->permission('support.chat')
+            ->whereHas('roles', function ($query) {
+                $query->whereIn('name', [
+                    'support',
+                    'super-admin',
+                    'super_admin',
+                ]);
+            })
             ->get();
 
         if ($admins->isEmpty()) {
-            abort(503, 'No support agents are currently available.');
+            abort(
+                503,
+                'No support agents are currently available.'
+            );
         }
 
         $adminChatUsers = ChatUser::query()
             ->where('externalType', 'ADMIN')
             ->whereIn(
                 'externalId',
-                $admins->pluck('id')
+                $admins
+                    ->pluck('id')
                     ->map(fn ($id) => (string) $id)
                     ->all()
             )
@@ -121,7 +169,11 @@ class SupportChatService
         }
 
         $adminChatUserIds = $adminChatUsers
-            ->map(fn (ChatUser $user) => $user->id)
+            ->map(
+                fn (ChatUser $user) => new ObjectId(
+                    (string) $user->id
+                )
+            )
             ->values()
             ->all();
 
@@ -137,10 +189,14 @@ class SupportChatService
             ->map->count();
 
         return $admins
-            ->sortBy(function (Admin $admin) use ($adminChatUsers, $loads) {
+            ->sortBy(function (Admin $admin) use (
+                $adminChatUsers,
+                $loads
+            ) {
                 $chatUser = $adminChatUsers->first(
                     fn (ChatUser $chatUser) =>
-                        (string) $chatUser->externalId === (string) $admin->id
+                        (string) $chatUser->externalId ===
+                        (string) $admin->id
                 );
 
                 return $chatUser

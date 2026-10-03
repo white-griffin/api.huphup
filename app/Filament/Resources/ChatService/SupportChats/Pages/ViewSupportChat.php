@@ -33,7 +33,9 @@ class ViewSupportChat extends ViewRecord
             ->get();
 
         $replyIds = $messages
-            ->map(fn (Message $message) => $message->getAttribute('replyTo'))
+            ->map(fn (Message $message) =>
+            $message->getAttribute('replyTo')
+            )
             ->filter()
             ->map(fn ($id) => (string) $id)
             ->unique()
@@ -52,7 +54,8 @@ class ViewSupportChat extends ViewRecord
                 ->with('sender')
                 ->get()
                 ->keyBy(
-                    fn (Message $message) => (string) $message->id
+                    fn (Message $message) =>
+                    (string) $message->id
                 );
         }
 
@@ -62,7 +65,8 @@ class ViewSupportChat extends ViewRecord
             ->filter()
             ->unique(
                 fn ($chatUser) =>
-                    $chatUser->externalType . ':' . $chatUser->externalId
+                    $chatUser->externalType . ':' .
+                    $chatUser->externalId
             )
             ->values();
 
@@ -75,7 +79,10 @@ class ViewSupportChat extends ViewRecord
         if ($admin) {
             $currentAdminChatUserId = ChatUser::query()
                 ->where('externalType', 'ADMIN')
-                ->where('externalId', (string) $admin->id)
+                ->where(
+                    'externalId',
+                    (string) $admin->id
+                )
                 ->value('_id');
 
             $currentAdminChatUserId = $currentAdminChatUserId
@@ -83,11 +90,50 @@ class ViewSupportChat extends ViewRecord
                 : null;
         }
 
+        /*
+         * Messages for Alpine / Socket.IO initial state
+         */
+        $chatMessages = $messages
+            ->map(function (Message $message) use ($users) {
+                $sender = $message->sender;
+
+                $mysqlUser = null;
+
+                if (
+                    $sender &&
+                    $sender->externalType === 'USER'
+                ) {
+                    $mysqlUser = $users[
+                    (int) $sender->externalId
+                    ] ?? null;
+                }
+
+                $senderName = $mysqlUser
+                    ? trim(
+                        $mysqlUser->first_name . ' ' .
+                        $mysqlUser->last_name
+                    )
+                    : ($sender?->nickname ?? 'Unknown');
+
+                return [
+                    'id' => (string) $message->id,
+                    'conversationId' => (string) $message->conversationId,
+                    'senderId' => (string) $message->senderId,
+                    'senderName' => $senderName,
+                    'type' => $message->type,
+                    'content' => $message->content,
+                    'createdAt' => $message->createdAt?->toISOString(),
+                ];
+            })
+            ->values()
+            ->all();
+
         return [
             'messages' => $messages,
             'replies' => $replies,
             'users' => $users,
             'currentAdminChatUserId' => $currentAdminChatUserId,
+            'chatMessages' => $chatMessages,
         ];
     }
 
