@@ -2,7 +2,7 @@
 
 namespace App\Http\Resources\V1\User\User;
 
-use App\Http\Resources\V1\User\Pets\PetResource;
+use App\Http\Resources\V1\User\Pets\PetNearbyResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,7 +17,7 @@ class UserNearbyResource extends JsonResource
             'lat' => (float) $this->latitude,
             'lng' => (float) $this->longitude,
             'distance' => round((float) $this->distance, 2),
-            'pets' => PetResource::collection($this->pets)
+            'pets' => PetNearbyResource::collection($this->pets)
         ];
     }
 }
