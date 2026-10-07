@@ -7,6 +7,7 @@ use App\Filament\Resources\UserNotices\UserNoticeResource;
 use App\Models\User;
 use App\Services\UserDomain\UserNoticeService;
 use Filament\Resources\Pages\CreateRecord;
+use League\HTMLToMarkdown\HtmlConverter;
 
 class CreateUserNotice extends CreateRecord
 {
@@ -16,12 +17,15 @@ class CreateUserNotice extends CreateRecord
     {
         $service = app(UserNoticeService::class);
 
+        $converter = new HtmlConverter();
+
+
         $type = UserNoticeTypes::from($data['type']);
 
         if ($data['target'] === 'all') {
             $notice = $service->sendToAll(
                 title: $data['title'],
-                body: $data['body'],
+                body: $converter->convert($data['body']),
                 type: $type,
                 data: $data['data'] ?? [],
             );
@@ -35,7 +39,7 @@ class CreateUserNotice extends CreateRecord
             $notice = $service->sendToUser(
                 user: User::find($data['user_id']),
                 title: $data['title'],
-                body: $data['body'],
+                body: $converter->convert($data['body']),
                 type: $type,
                 data: $data['data'] ?? [],
             );
@@ -52,7 +56,7 @@ class CreateUserNotice extends CreateRecord
         $service->sendToUsers(
             users: $users,
             title: $data['title'],
-            body: $data['body'],
+            body: $converter->convert($data['body']),
             type: $type,
             data: $data['data'] ?? [],
         );
@@ -60,7 +64,7 @@ class CreateUserNotice extends CreateRecord
         $notice = $service->sendToUser(
             user: $users->first(),
             title: $data['title'],
-            body: $data['body'],
+            body: $converter->convert($data['body']),
             type: $type,
             data: $data['data'] ?? [],
         );
