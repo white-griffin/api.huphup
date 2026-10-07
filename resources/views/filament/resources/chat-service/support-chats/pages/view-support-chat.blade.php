@@ -5,6 +5,7 @@
             conversationId: @js((string) $this->record->id),
             currentAdminChatUserId: @js($currentAdminChatUserId),
             initialMessages: @js($chatMessages),
+            senderMeta: @js($senderMeta),
         })"
         x-init="init()"
         x-on:beforeunload.window="destroy()"

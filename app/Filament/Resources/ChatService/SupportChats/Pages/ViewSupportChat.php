@@ -168,6 +168,7 @@ class ViewSupportChat extends ViewRecord
                     ) ?: 'U';
                 }
 
+
                 return [
                     'id' => $senderId === ''
                         ? (string) $message->id
@@ -193,12 +194,25 @@ class ViewSupportChat extends ViewRecord
             ->values()
             ->all();
 
+        $senderMeta = $chatMessages
+            ->mapWithKeys(function (array $message) {
+                return [
+                    $message['senderId'] => [
+                        'name' => $message['senderName'],
+                        'avatar' => $message['senderAvatar'],
+                        'initials' => $message['senderInitials'],
+                    ],
+                ];
+            })
+            ->all();
+
         return [
             'messages' => $messages,
             'replies' => $replies,
             'users' => $users,
             'currentAdminChatUserId' => $currentAdminChatUserId,
             'chatMessages' => $chatMessages,
+            'senderMeta' => $senderMeta,
         ];
     }
 

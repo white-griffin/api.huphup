@@ -1,17 +1,15 @@
-import {
-    connectChatSocket,
-    getChatSocket,
-    disconnectChatSocket,
-} from './socket';
+import {connectChatSocket,} from './socket';
 
 export function supportChat({
-    conversationId,
-    currentAdminChatUserId,
-    initialMessages = [],
-}) {
+                                conversationId,
+                                currentAdminChatUserId,
+                                initialMessages = [],
+                                senderMeta = {},
+                            }) {
     return {
         conversationId,
         currentAdminChatUserId,
+        senderMeta,
 
         socket: null,
 
@@ -32,7 +30,11 @@ export function supportChat({
 
             try {
                 this.socket = await connectChatSocket();
-                console.log('Chat socket connected:', this.socket.id);
+
+                console.log(
+                    'Chat socket connected:',
+                    this.socket.id
+                );
 
                 this.registerEvents();
 
@@ -50,132 +52,153 @@ export function supportChat({
         },
 
         registerEvents() {
-            this.socket.on(
-                'message:history',
-                (result) => {
-                    if (
-                        result.conversationId &&
-                        String(result.conversationId) !==
-                        String(this.conversationId)
-                    ) {
-                        return;
-                    }
-
-                    this.messages = (result.messages ?? [])
-                        .map(message => this.normalizeMessage(message));
-
-                    this.scrollToBottom();
+            this.socket.on('message:history', (result) => {
+                if (
+                    result.conversationId &&
+                    String(result.conversationId) !==
+                    String(this.conversationId)
+                ) {
+                    return;
                 }
-            );
 
-            this.socket.on(
-                'message:new',
-                (message) => {
-                    if (
-                        String(message.conversationId) !==
-                        String(this.conversationId)
-                    ) {
-                        return;
-                    }
-
-                    const normalized =
-                        this.normalizeMessage(message);
-
-                    if (
-                        this.messages.some(
-                            item =>
-                                String(item.id) ===
-                                String(normalized.id)
-                        )
-                    ) {
-                        return;
-                    }
-
-                    this.messages.push(normalized);
-
-                    this.scrollToBottom();
-                }
-            );
-
-            this.socket.on(
-                'user:typing',
-                (data) => {
-                    if (
-                        String(data.userId) ===
-                        String(this.currentAdminChatUserId)
-                    ) {
-                        return;
-                    }
-
-                    this.typingUsers.add(
-                        String(data.userId)
+                this.messages = (result.messages ?? [])
+                    .map(message => {
+                        return this.normalizeMessage(message);
+                    })
+                    .sort(
+                        (a, b) =>
+                            new Date(a.createdAt) -
+                            new Date(b.createdAt)
                     );
-                }
-            );
 
-            this.socket.on(
-                'user:stop-typing',
-                (data) => {
-                    this.typingUsers.delete(
-                        String(data.userId)
-                    );
-                }
-            );
+                this.scrollToBottom();
+            });
 
-            this.socket.on(
-                'message:read',
-                (data) => {
-                    console.log(
-                        'Message read:',
-                        data
-                    );
+            this.socket.on('message:new', (message) => {
+                if (
+                    String(message.conversationId) !==
+                    String(this.conversationId)
+                ) {
+                    return;
                 }
-            );
 
-            this.socket.on(
-                'conversation:read',
-                (data) => {
-                    console.log(
-                        'Conversation read:',
-                        data
-                    );
-                }
-            );
+                const normalized =
+                    this.normalizeMessage(message);
 
-            this.socket.on(
-                'message:error',
-                (data) => {
-                    console.error(
-                        'Message error:',
-                        data
-                    );
+                if (
+                    this.messages.some(
+                        item =>
+                            String(item.id) ===
+                            String(normalized.id)
+                    )
+                ) {
+                    return;
                 }
-            );
 
-            this.socket.on(
-                'conversation:error',
-                (data) => {
-                    console.error(
-                        'Conversation error:',
-                        data
-                    );
+                this.messages.push(normalized);
+
+                this.messages.sort(
+                    (a, b) =>
+                        new Date(a.createdAt) -
+                        new Date(b.createdAt)
+                );
+
+                this.scrollToBottom();
+            });
+
+            this.socket.on('user:typing', (data) => {
+                if (
+                    String(data.userId) ===
+                    String(this.currentAdminChatUserId)
+                ) {
+                    return;
                 }
-            );
+
+                this.typingUsers.add(
+                    String(data.userId)
+                );
+            });
+
+            this.socket.on('user:stop-typing', (data) => {
+                this.typingUsers.delete(
+                    String(data.userId)
+                );
+            });
+
+            this.socket.on('message:read', data => {
+                console.log('Message read:', data);
+            });
+
+            this.socket.on('conversation:read', data => {
+                console.log(
+                    'Conversation read:',
+                    data
+                );
+            });
+
+            this.socket.on('message:error', data => {
+                console.error(
+                    'Message error:',
+                    data
+                );
+            });
+
+            this.socket.on('conversation:error', data => {
+                console.error(
+                    'Conversation error:',
+                    data
+                );
+            });
         },
 
         normalizeMessage(message) {
+            const id = String(
+                message.id ?? message._id
+            );
+
+            const senderId = String(
+                message.senderId
+            );
+
+            const meta =
+                this.senderMeta[senderId] ?? {};
+
             return {
-                id: String(message.id ?? message._id),
-                conversationId: String(message.conversationId),
-                senderId: String(message.senderId),
-                senderName: message.senderName
-                    ?? message.sender?.nickname
-                    ?? 'Unknown',
-                senderAvatar: message.senderAvatar ?? null,
-                senderInitials: message.senderInitials ?? 'U',
-                type: message.type ?? 'TEXT',
-                content: message.content ?? '',
-                createdAt: message.createdAt ?? null,
+                id,
+
+                conversationId: String(
+                    message.conversationId
+                ),
+
+                senderId,
+
+                senderName:
+                    message.senderName ??
+                    message.sender?.nickname ??
+                    meta.name ??
+                    'Unknown',
+
+                senderAvatar:
+                    message.senderAvatar ??
+                    meta.avatar ??
+                    null,
+
+                senderInitials:
+                    message.senderInitials ??
+                    meta.initials ??
+                    'U',
+
+                type:
+                    message.type ??
+                    'TEXT',
+
+                content:
+                    message.content ??
+                    '',
+
+                createdAt:
+                    message.createdAt ??
+                    null,
             };
         },
 
@@ -187,30 +210,34 @@ export function supportChat({
         },
 
         sendMessage() {
-            const content = this.messageContent.trim();
+            const content =
+                this.messageContent.trim();
 
             if (!content) {
                 return;
             }
 
             if (!this.socket?.connected) {
-                console.error('Chat socket is not connected.');
+                console.error(
+                    'Chat socket is not connected.'
+                );
+
                 return;
             }
 
-            console.log('Sending message:', {
-                conversationId: this.conversationId,
-                content,
-            });
-
             this.socket.emit('message:send', {
-                conversationId: this.conversationId,
+                conversationId:
+                this.conversationId,
+
                 type: 'TEXT',
+
                 content,
+
                 replyTo: null,
             });
 
             this.messageContent = '';
+
             this.stopTyping();
         },
 
@@ -219,7 +246,10 @@ export function supportChat({
                 return;
             }
 
-            this.socket.emit('user:typing', this.conversationId);
+            this.socket.emit(
+                'user:typing',
+                this.conversationId
+            );
         },
 
         stopTyping() {
@@ -227,10 +257,17 @@ export function supportChat({
                 return;
             }
 
-            this.socket.emit('user:stop-typing', this.conversationId);
+            this.socket.emit(
+                'user:stop-typing',
+                this.conversationId
+            );
         },
 
         markAsRead(messageId) {
+            if (!this.socket?.connected) {
+                return;
+            }
+
             this.socket.emit(
                 'message:read',
                 messageId
