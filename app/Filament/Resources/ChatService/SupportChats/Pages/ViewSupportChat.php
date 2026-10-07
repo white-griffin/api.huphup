@@ -194,7 +194,7 @@ class ViewSupportChat extends ViewRecord
             ->values()
             ->all();
 
-        $senderMeta = $chatMessages
+        $senderMeta = collect($chatMessages)
             ->mapWithKeys(function (array $message) {
                 return [
                     $message['senderId'] => [
