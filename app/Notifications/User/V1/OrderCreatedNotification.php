@@ -5,12 +5,13 @@ namespace App\Notifications\User\V1;
 use App\Enums\SmsProviders;
 use App\Models\Order;
 use App\Notifications\Channels\SmsChannel;
+use App\Notifications\Contracts\FcmNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class OrderCreatedNotification extends Notification implements ShouldQueue
+class OrderCreatedNotification extends Notification implements FcmNotification, ShouldQueue
 {
     use Queueable;
 
@@ -78,5 +79,10 @@ class OrderCreatedNotification extends Notification implements ShouldQueue
         return [
             //
         ];
+    }
+
+    public function toFcm(object $notifiable): array
+    {
+        // TODO: Implement toFcm() method.
     }
 }

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\User\Api\V1\User;
 
 use App\Enums\ActivityStatus;
+use App\Enums\PlatformTypes;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\User\Api\V1\BaseController;
+use App\Models\DeviceToken;
 use App\Models\User;
 use App\Services\Chat\ChatTokenService;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Ipe\Sdk\Facades\SmsIr;
 
 class AuthController extends BaseController
@@ -173,5 +176,59 @@ class AuthController extends BaseController
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, 'خطا در برقراری ارتباط');
         }
     }
+
+
+    public function setFcmToken(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'device_id' => ['required', 'string', 'max:255'],
+                'token' => ['required', 'string'],
+                'platform' => [
+                    'required',
+                    'integer',
+                    Rule::in([
+                        PlatformTypes::ANDROID,
+                        PlatformTypes::IOS,
+                        PlatformTypes::UNKNOWN,
+                    ]),
+                ],
+            ]);
+
+            $deviceToken = DeviceToken::query()
+                ->updateOrCreate(
+                    [
+                        'user_id' => $request->user()->id,
+                        'device_id' => $validated['device_id'],
+                    ],
+                    [
+                        'token' => $validated['token'],
+                        'platform' => $validated['platform'],
+                        'last_seen_at' => now(),
+                    ],
+                );
+
+            return ApiResponse::Success('عملیات موفق');
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+        }
+    }
+
+    public function destroyFcmToken(Request $request,$deviceId)
+    {
+        try {
+            DeviceToken::query()
+                ->where('user_id', $request->user()->id)
+                ->where('device_id', $deviceId)
+                ->delete();
+
+            return ApiResponse::Success('عملیات موفق');
+
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+
+        }
+    }
+
 
 }
