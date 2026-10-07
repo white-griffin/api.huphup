@@ -205,4 +205,103 @@ class SupportChatService
             })
             ->first();
     }
+
+    public function assignAdmin(
+        Conversation $conversation,
+        int $adminId,
+    ): Conversation {
+        if ($conversation->context !== self::CONTEXT) {
+            abort(422, 'This is not a support conversation.');
+        }
+
+        if ($conversation->status !== self::STATUS_OPEN) {
+            abort(422, 'This support conversation is closed.');
+        }
+
+        $admin = Admin::query()->find($adminId);
+
+        if (! $admin) {
+            abort(404, 'Admin not found.');
+        }
+
+        $isEligible = $admin->roles()
+            ->whereIn('name', [
+                'support',
+                'super-admin',
+                'super_admin',
+            ])
+            ->exists();
+
+        if (! $isEligible) {
+            abort(
+                422,
+                'Selected admin is not eligible for support chats.'
+            );
+        }
+
+        return Cache::lock(
+            "support-chat:assign:{$conversation->id}",
+            10
+        )->block(5, function () use (
+            $conversation,
+            $admin,
+        ) {
+            $newAdminChatUser = $this->resolveAdminChatUser($admin);
+
+            $newAdminChatUserId = new ObjectId(
+                (string) $newAdminChatUser->id
+            );
+
+            /*
+             * Admin قبلی
+             */
+            if ($conversation->assignedTo) {
+                $oldAdminChatUserId = new ObjectId(
+                    (string) $conversation->assignedTo
+                );
+
+                ConversationMember::query()
+                    ->where(
+                        'conversationId',
+                        new ObjectId((string) $conversation->id)
+                    )
+                    ->where(
+                        'userId',
+                        $oldAdminChatUserId
+                    )
+                    ->where('leftAt', null)
+                    ->update([
+                        'leftAt' => now(),
+                        'updatedAt' => now(),
+                    ]);
+            }
+
+            /*
+             * Admin جدید
+             */
+            ConversationMember::query()->updateOrCreate(
+                [
+                    'conversationId' => new ObjectId(
+                        (string) $conversation->id
+                    ),
+                    'userId' => $newAdminChatUserId,
+                ],
+                [
+                    'role' => 'ADMIN',
+                    'joinedAt' => now(),
+                    'leftAt' => null,
+                    'updatedAt' => now(),
+                ]
+            );
+
+            /*
+             * تغییر assignedTo
+             */
+            $conversation->assignedTo = $newAdminChatUserId;
+
+            $conversation->save();
+
+            return $conversation->fresh();
+        });
+    }
 }

@@ -34,30 +34,48 @@ class SupportChatsResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
+        $query = parent::getEloquentQuery()
+            ->where('context', 'SUPPORT')
+            ->where('status', 'OPEN');
+
         $admin = auth('admin')->user();
 
         if (! $admin) {
-            return parent::getEloquentQuery()
-                ->whereRaw(['_id' => null]);
+            return $query->whereRaw([
+                '_id' => null,
+            ]);
         }
 
+        /*
+         * Super Admin:
+         * تمام Support Chatها
+         */
+        if (
+            $admin->hasRole('super-admin') ||
+            $admin->hasRole('super_admin')
+        ) {
+            return $query;
+        }
+
+        /*
+         * Admin معمولی:
+         * فقط Chatهای assign شده به خودش
+         */
         $chatUser = ChatUser::query()
             ->where('externalType', 'ADMIN')
             ->where('externalId', (string) $admin->id)
             ->first();
 
         if (! $chatUser) {
-            return parent::getEloquentQuery()
-                ->whereRaw(['_id' => null]);
+            return $query->whereRaw([
+                '_id' => null,
+            ]);
         }
 
-        return parent::getEloquentQuery()
-            ->where('context', 'SUPPORT')
-            ->where('status', 'OPEN')
-            ->where(
-                'assignedTo',
-                new ObjectId((string) $chatUser->id)
-            );
+        return $query->where(
+            'assignedTo',
+            new ObjectId((string) $chatUser->id)
+        );
     }
 
     public static function form(Schema $schema): Schema
