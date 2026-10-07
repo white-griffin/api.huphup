@@ -55,9 +55,16 @@ class ViewConversation extends ViewRecord
                 );
         }
 
+        $members = ConversationMember::query()
+            ->where('conversationId', $conversationId)
+            ->with('user')
+            ->orderBy('joinedAt')
+            ->get();
+
         $chatUsers = $messages
             ->pluck('sender')
             ->merge($replies->pluck('sender'))
+            ->merge($members->pluck('user'))
             ->filter()
             ->unique(
                 fn ($chatUser) =>
@@ -67,57 +74,11 @@ class ViewConversation extends ViewRecord
 
         $users = $chatUserResolver->resolveMany($chatUsers);
 
-        $admin = auth('admin')->user();
-
-        $currentAdminChatUserId = null;
-
-        if ($admin) {
-            $currentAdminChatUserId = ChatUser::query()
-                ->where('externalType', 'ADMIN')
-                ->where('externalId', (string) $admin->id)
-                ->value('_id');
-
-            $currentAdminChatUserId = $currentAdminChatUserId
-                ? (string) $currentAdminChatUserId
-                : null;
-        }
-
-        $chatMessages = $messages->map(function (Message $message) use ($users) {
-            $sender = $message->sender;
-
-            $mysqlUser = null;
-
-            if (
-                $sender &&
-                $sender->externalType === 'USER'
-            ) {
-                $mysqlUser = $users[(int) $sender->externalId] ?? null;
-            }
-
-            $senderName = $mysqlUser
-                ? trim(
-                    $mysqlUser->first_name . ' ' .
-                    $mysqlUser->last_name
-                )
-                : ($sender?->nickname ?? 'Unknown');
-
-            return [
-                'id' => (string) $message->id,
-                'conversationId' => (string) $message->conversationId,
-                'senderId' => (string) $message->senderId,
-                'senderName' => $senderName,
-                'type' => $message->type,
-                'content' => $message->content,
-                'createdAt' => $message->createdAt?->toISOString(),
-            ];
-        })->values()->all();
-
         return [
             'messages' => $messages,
             'replies' => $replies,
+            'members' => $members,
             'users' => $users,
-            'currentAdminChatUserId' => $currentAdminChatUserId,
-            'chatMessages' => $chatMessages,
         ];
     }
 
