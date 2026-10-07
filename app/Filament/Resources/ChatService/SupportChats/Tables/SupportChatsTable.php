@@ -17,7 +17,7 @@ class SupportChatsTable
         return $table
             ->columns([
                 TextColumn::make('customer')
-                    ->label('Customer')
+                    ->label('کاربر')
                     ->state(function ($record) {
                         $creator = $record->creator;
 
@@ -41,7 +41,7 @@ class SupportChatsTable
                     ->searchable(),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label('وضعیت')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'OPEN' => 'success',
@@ -50,12 +50,7 @@ class SupportChatsTable
                     }),
 
                 TextColumn::make('createdAt')
-                    ->label('Created At')
-                    ->dateTime('Y-m-d H:i')
-                    ->sortable(),
-
-                TextColumn::make('updatedAt')
-                    ->label('Updated At')
+                    ->label('تاریخ ایجاد')
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
 

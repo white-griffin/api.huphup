@@ -2,18 +2,19 @@
 
 namespace App\Filament\Resources\ChatService\SupportChats;
 
-use App\Filament\Resources\ChatService\SupportChats\Pages\CreateSupportChats;
-use App\Filament\Resources\ChatService\SupportChats\Pages\EditSupportChats;
+
 use App\Filament\Resources\ChatService\SupportChats\Pages\ListSupportChats;
 use App\Filament\Resources\ChatService\SupportChats\Pages\ViewSupportChat;
 use App\Filament\Resources\ChatService\SupportChats\Schemas\SupportChatsForm;
 use App\Filament\Resources\ChatService\SupportChats\Tables\SupportChatsTable;
+use App\Models\MongoDB\ChatUser;
 use App\Models\MongoDB\Conversation;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use MongoDB\BSON\ObjectId;
 
 class SupportChatsResource extends Resource
 {
@@ -33,9 +34,30 @@ class SupportChatsResource extends Resource
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
+        $admin = auth('admin')->user();
+
+        if (! $admin) {
+            return parent::getEloquentQuery()
+                ->whereRaw(['_id' => null]);
+        }
+
+        $chatUser = ChatUser::query()
+            ->where('externalType', 'ADMIN')
+            ->where('externalId', (string) $admin->id)
+            ->first();
+
+        if (! $chatUser) {
+            return parent::getEloquentQuery()
+                ->whereRaw(['_id' => null]);
+        }
+
         return parent::getEloquentQuery()
             ->where('context', 'SUPPORT')
-            ->where('status', 'OPEN');
+            ->where('status', 'OPEN')
+            ->where(
+                'assignedTo',
+                new ObjectId((string) $chatUser->id)
+            );
     }
 
     public static function form(Schema $schema): Schema
