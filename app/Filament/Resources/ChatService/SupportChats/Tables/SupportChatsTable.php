@@ -54,7 +54,7 @@ class SupportChatsTable
                     ->searchable(),
 
                 TextColumn::make('assigned_admin')
-                    ->label('Assigned Admin')
+                    ->label('مدیر مربوطه')
                     ->state(function ($record) {
                         $assignedTo = $record->assignedTo;
 
@@ -105,7 +105,7 @@ class SupportChatsTable
             ->recordActions([
                 ViewAction::make(),
                 Action::make('assignAdmin')
-                    ->label('Assign Admin')
+                    ->label('تغییر مدیر')
                     ->icon('heroicon-m-user')
                     ->visible(fn () => $isSuperAdmin)
                     ->form([
