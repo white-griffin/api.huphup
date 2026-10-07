@@ -28,10 +28,12 @@ class ViewSupportChat extends ViewRecord
 
         $messages = Message::query()
             ->where('conversationId', $conversationId)
-            ->with('sender')
             ->orderBy('createdAt')
             ->get();
 
+        /*
+         * Reply messages
+         */
         $replyIds = $messages
             ->map(fn (Message $message) =>
             $message->getAttribute('replyTo')
@@ -51,7 +53,6 @@ class ViewSupportChat extends ViewRecord
                         ->map(fn (string $id) => new ObjectId($id))
                         ->all()
                 )
-                ->with('sender')
                 ->get()
                 ->keyBy(
                     fn (Message $message) =>
@@ -59,19 +60,37 @@ class ViewSupportChat extends ViewRecord
                 );
         }
 
-        $chatUsers = $messages
-            ->pluck('sender')
-            ->merge($replies->pluck('sender'))
+        /*
+         * همه sender ها را مستقیم از Mongo می‌گیریم
+         */
+        $senderIds = $messages
+            ->pluck('senderId')
             ->filter()
-            ->unique(
-                fn ($chatUser) =>
-                    $chatUser->externalType . ':' .
-                    $chatUser->externalId
-            )
+            ->map(fn ($id) => (string) $id)
+            ->unique()
             ->values();
 
+        $chatUsers = collect();
+
+        if ($senderIds->isNotEmpty()) {
+            $chatUsers = ChatUser::query()
+                ->whereIn(
+                    '_id',
+                    $senderIds
+                        ->map(fn (string $id) => new ObjectId($id))
+                        ->all()
+                )
+                ->get();
+        }
+
+        /*
+         * USER های واقعی MySQL
+         */
         $users = $chatUserResolver->resolveMany($chatUsers);
 
+        /*
+         * Admin فعلی
+         */
         $admin = auth('admin')->user();
 
         $currentAdminChatUserId = null;
@@ -79,10 +98,7 @@ class ViewSupportChat extends ViewRecord
         if ($admin) {
             $currentAdminChatUserId = ChatUser::query()
                 ->where('externalType', 'ADMIN')
-                ->where(
-                    'externalId',
-                    (string) $admin->id
-                )
+                ->where('externalId', (string) $admin->id)
                 ->value('_id');
 
             $currentAdminChatUserId = $currentAdminChatUserId
@@ -91,11 +107,19 @@ class ViewSupportChat extends ViewRecord
         }
 
         /*
-         * Messages for Alpine / Socket.IO initial state
+         * آماده‌سازی پیام‌ها برای Alpine
          */
         $chatMessages = $messages
-            ->map(function (Message $message) use ($users) {
-                $sender = $message->sender;
+            ->map(function (Message $message) use (
+                $chatUsers,
+                $users
+            ) {
+                $senderId = (string) $message->senderId;
+
+                $sender = $chatUsers->first(
+                    fn (ChatUser $chatUser) =>
+                        (string) $chatUser->id === $senderId
+                );
 
                 $mysqlUser = null;
 
@@ -108,20 +132,61 @@ class ViewSupportChat extends ViewRecord
                     ] ?? null;
                 }
 
-                $senderName = $mysqlUser
-                    ? trim(
+                if ($mysqlUser) {
+                    $senderName = trim(
                         $mysqlUser->first_name . ' ' .
                         $mysqlUser->last_name
-                    )
-                    : ($sender?->nickname ?? 'Unknown');
+                    );
+
+                    if ($senderName === '') {
+                        $senderName = 'User';
+                    }
+
+                    $avatarUrl = $mysqlUser->avatar_url;
+
+                    $firstName = trim(
+                        (string) $mysqlUser->first_name
+                    );
+
+                    $lastName = trim(
+                        (string) $mysqlUser->last_name
+                    );
+
+                    $initials = mb_strtoupper(
+                        mb_substr($firstName, 0, 1) .
+                        mb_substr($lastName, 0, 1)
+                    );
+
+                    if ($initials === '') {
+                        $initials = 'U';
+                    }
+                } else {
+                    $senderName = $sender?->nickname ?? 'Unknown';
+                    $avatarUrl = null;
+                    $initials = mb_strtoupper(
+                        mb_substr($senderName, 0, 1)
+                    ) ?: 'U';
+                }
 
                 return [
-                    'id' => (string) $message->id,
+                    'id' => $senderId === ''
+                        ? (string) $message->id
+                        : (string) $message->id,
+
                     'conversationId' => (string) $message->conversationId,
-                    'senderId' => (string) $message->senderId,
+
+                    'senderId' => $senderId,
+
                     'senderName' => $senderName,
+
+                    'senderAvatar' => $avatarUrl,
+
+                    'senderInitials' => $initials,
+
                     'type' => $message->type,
+
                     'content' => $message->content,
+
                     'createdAt' => $message->createdAt?->toISOString(),
                 ];
             })

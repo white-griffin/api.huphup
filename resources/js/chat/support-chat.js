@@ -165,31 +165,17 @@ export function supportChat({
 
         normalizeMessage(message) {
             return {
-                id: String(
-                    message.id ??
-                    message._id
-                ),
-
-                conversationId: String(
-                    message.conversationId
-                ),
-
-                senderId: String(
-                    message.senderId
-                ),
-
-                senderName:
-                    message.senderName ??
-                    message.sender?.nickname ??
-                    'Unknown',
-
+                id: String(message.id ?? message._id),
+                conversationId: String(message.conversationId),
+                senderId: String(message.senderId),
+                senderName: message.senderName
+                    ?? message.sender?.nickname
+                    ?? 'Unknown',
+                senderAvatar: message.senderAvatar ?? null,
+                senderInitials: message.senderInitials ?? 'U',
                 type: message.type ?? 'TEXT',
-
                 content: message.content ?? '',
-
-                createdAt:
-                    message.createdAt ??
-                    null,
+                createdAt: message.createdAt ?? null,
             };
         },
 

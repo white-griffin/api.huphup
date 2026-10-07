@@ -39,51 +39,65 @@
                             "
                         >
 
-                            {{-- Sender --}}
-                            <div
-                                class="mb-1 text-xs opacity-70"
-                                x-text="
-                                    String(message.senderId) === String(currentAdminChatUserId)
-                                        ? 'You'
-                                        : message.senderName
-                                "
-                            ></div>
+                            <div class="flex items-start gap-3">
 
-                            {{-- Text --}}
-                            <template x-if="message.type === 'TEXT'">
-                                <div
-                                    class="whitespace-pre-wrap break-words text-sm"
-                                    x-text="message.content"
-                                ></div>
-                            </template>
+                                <div class="shrink-0">
+                                    <template x-if="message.senderAvatar">
+                                        <img
+                                            :src="message.senderAvatar"
+                                            :alt="message.senderName"
+                                            class="h-9 w-9 rounded-full object-cover"
+                                        >
+                                    </template>
 
-                            {{-- Image --}}
-                            <template x-if="message.type === 'IMAGE'">
-                                <div class="text-sm">
-                                    <span
-                                        x-text="message.content"
-                                    ></span>
+                                    <template x-if="!message.senderAvatar">
+                                        <div
+                                            class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                                            x-text="message.senderInitials"
+                                        ></div>
+                                    </template>
                                 </div>
-                            </template>
 
-                            {{-- File --}}
-                            <template x-if="message.type === 'FILE'">
-                                <div class="text-sm">
-                                    <span
-                                        x-text="message.content"
-                                    ></span>
+                                <div class="min-w-0 flex-1">
+                                    <div
+                                        class="mb-1 text-xs opacity-70"
+                                        x-text="
+                String(message.senderId) === String(currentAdminChatUserId)
+                    ? 'You'
+                    : message.senderName
+            "
+                                    ></div>
+
+                                    <template x-if="message.type === 'TEXT'">
+                                        <div
+                                            class="whitespace-pre-wrap break-words text-sm"
+                                            x-text="message.content"
+                                        ></div>
+                                    </template>
+
+                                    <template x-if="message.type === 'IMAGE'">
+                                        <div class="text-sm">
+                                            <span x-text="message.content"></span>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="message.type === 'FILE'">
+                                        <div class="text-sm">
+                                            <span x-text="message.content"></span>
+                                        </div>
+                                    </template>
+
+                                    <div
+                                        class="mt-2 text-[10px] opacity-60"
+                                        x-text="
+                message.createdAt
+                    ? new Date(message.createdAt).toLocaleString()
+                    : ''
+            "
+                                    ></div>
                                 </div>
-                            </template>
 
-                            {{-- Time --}}
-                            <div
-                                class="mt-2 text-[10px] opacity-60"
-                                x-text="
-                                    message.createdAt
-                                        ? new Date(message.createdAt).toLocaleString()
-                                        : ''
-                                "
-                            ></div>
+                            </div>
 
                         </div>
                     </div>
