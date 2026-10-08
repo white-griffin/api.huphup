@@ -104,14 +104,6 @@
                     </div>
                 </template>
 
-                {{-- Typing indicator --}}
-                <div
-                    x-show="typingUsers.size > 0"
-                    x-cloak
-                    class="text-xs text-gray-500"
-                >
-                    درحال نوشتن . . .
-                </div>
 
                 {{-- Empty --}}
                 <template x-if="messages.length === 0">
@@ -122,9 +114,27 @@
                     </div>
                 </template>
 
+                {{-- Typing indicator --}}
+                <div
+                    x-show="typingUsers.size > 0"
+                    x-cloak
+                    class="pointer-events-none sticky bottom-0 mt-3 flex items-center"
+                >
+                    <div
+                        class="flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-xs text-gray-500 shadow-sm ring-1 ring-gray-950/5 backdrop-blur dark:bg-gray-900/95 dark:text-gray-400 dark:ring-white/10"
+                    >
+                        <span>در حال نوشتن</span>
+
+                        <span class="flex items-center gap-1">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </span>
+                    </div>
+                </div>
+
             </div>
         </div>
-
 
 
         {{-- Message form --}}
