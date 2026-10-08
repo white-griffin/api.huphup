@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\User\Api\V1\AppointmentController;
+use App\Http\Controllers\User\Api\V1\BannerController;
 use App\Http\Controllers\User\Api\V1\Business\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
@@ -202,7 +203,11 @@ Route::controller(SupportChatController::class)
     ->middleware('auth:sanctum')
     ->prefix('chat_service')
     ->group(function () {
-
         Route::post('/support', 'start');
+    });
 
+Route::controller(BannerController::class)
+    ->prefix('banners')
+    ->group(function () {
+        Route::get('/{placement}', 'index');
     });
