@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ChatService\SupportChats\Pages;
 use App\Filament\Resources\ChatService\SupportChats\SupportChatsResource;
 use App\Services\MongoChatService\ChatMessageService;
 use App\Services\MongoChatService\ChatUserResolver;
+use Carbon\Carbon;
 use Filament\Resources\Pages\ViewRecord;
 use App\Models\MongoDB\ChatUser;
 use App\Models\MongoDB\Message;
@@ -190,7 +191,9 @@ class ViewSupportChat extends ViewRecord
 
                     'content' => $message->content,
 
-                    'createdAt' => Jalalian::fromDateTime($message->createdAt?->toISOString())->format('yyyy/MM/dd HH:mm')
+                    'createdAt' => $message->createdAt
+                        ? Jalalian::fromCarbon(Carbon::parse($message->createdAt))->format('Y/m/d H:i')
+                        : null,
                 ];
             })
             ->values()
