@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources\V1\User;
 
+use App\Models\Business;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -20,8 +23,19 @@ class BannerResource extends JsonResource
     private function resolveAction(): ?array
     {
         if ($this->target_type && $this->target_id) {
+            $type = match ($this->target_type) {
+                Product::class => 'product',
+                Business::class => 'business',
+                Category::class => 'category',
+                default => null,
+            };
+
+            if ($type === null) {
+                return null;
+            }
+
             return [
-                'type' => $this->target_type,
+                'type' => $type,
                 'id' => $this->target_id,
             ];
         }

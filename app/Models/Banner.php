@@ -15,8 +15,6 @@ class Banner extends Model
     {
         return [
             'images' => 'array',
-            'placement' => BannerPlacement::class,
-            'activity_status' => ActivityStatus::class,
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];

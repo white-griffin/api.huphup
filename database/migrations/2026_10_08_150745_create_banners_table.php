@@ -44,7 +44,6 @@ return new class extends Migration
 
             $table->index([
                 'placement',
-                'is_active',
                 'sort_order',
             ]);
         });
