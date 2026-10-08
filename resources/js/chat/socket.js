@@ -22,7 +22,7 @@ export async function connectChatSocket() {
 
     const data = await response.json();
 
-    socket = io(import.meta.env.VITE_CHAT_SOCKET_URL, {
+    socket = io(window.chatConfig.socketUrl, {
         auth: {
             token: data.token,
         },
