@@ -27,8 +27,8 @@
                         class="flex w-full"
                         :class="
                             String(message.senderId) === String(currentAdminChatUserId)
-                                ? 'justify-end'
-                                : 'justify-start'
+                                ? 'justify-start'
+                                : 'justify-end'
                         "
                     >
                         <div
@@ -108,7 +108,7 @@
                 <template x-if="messages.length === 0">
                     <div class="flex h-full min-h-32 items-center justify-center">
                         <span class="text-sm text-gray-500">
-                            No messages yet.
+                            پیامی وجود ندارد .
                         </span>
                     </div>
                 </template>
@@ -122,7 +122,7 @@
             x-cloak
             class="text-xs text-gray-500"
         >
-            User is typing...
+            درحال نوشتن . . .
         </div>
 
         {{-- Message form --}}
@@ -142,7 +142,7 @@
                             x-on:blur="stopTyping()"
                             x-on:keydown.enter.exact.prevent="sendMessage()"
                             rows="2"
-                            placeholder="Type your message..."
+                            placeholder="پیام خود را بنویسید . . ."
                             class="block w-full resize-none border-0 bg-transparent px-3 py-2 text-sm focus:ring-0"
                         ></textarea>
 
@@ -154,7 +154,7 @@
                     type="submit"
                     icon="heroicon-m-paper-airplane"
                 >
-                    Send
+                    ارسال
                 </x-filament::button>
 
             </div>

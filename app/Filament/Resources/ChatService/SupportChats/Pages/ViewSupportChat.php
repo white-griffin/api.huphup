@@ -9,6 +9,8 @@ use Filament\Resources\Pages\ViewRecord;
 use App\Models\MongoDB\ChatUser;
 use App\Models\MongoDB\Message;
 use MongoDB\BSON\ObjectId;
+use Morilog\Jalali\Jalalian;
+
 class ViewSupportChat extends ViewRecord
 {
     protected static string $resource = SupportChatsResource::class;
@@ -188,7 +190,8 @@ class ViewSupportChat extends ViewRecord
 
                     'content' => $message->content,
 
-                    'createdAt' => $message->createdAt?->toISOString(),
+//                    'createdAt' => $message->createdAt?->toISOString(),
+                    'createdAt' => Jalalian::fromDateTime($message->createdAt?->toISOString())->format('Y/m/d H:i')
                 ];
             })
             ->values()
