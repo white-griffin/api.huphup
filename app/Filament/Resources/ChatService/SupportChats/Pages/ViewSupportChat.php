@@ -190,8 +190,7 @@ class ViewSupportChat extends ViewRecord
 
                     'content' => $message->content,
 
-//                    'createdAt' => $message->createdAt?->toISOString(),
-                    'createdAt' => Jalalian::fromDateTime($message->createdAt?->toISOString())->format('Y/m/d H:i')
+                    'createdAt' => Jalalian::fromDateTime($message->createdAt?->toISOString())->format('yyyy/MM/dd HH:mm')
                 ];
             })
             ->values()
