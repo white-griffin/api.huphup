@@ -102,37 +102,16 @@
 
                         </div>
                     </div>
-
-                    {{-- Typing indicator --}}
-                    <div
-                        class="flex w-full justify-end"
-                    >
-                        <div
-                            class="max-w-[75%] rounded-2xl px-4 py-3 bg-white text-gray-950 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:text-white dark:ring-white/10"
-                        >
-
-                            <div class="flex items-start gap-3">
-                                <div class="min-w-0 flex-1">
-                                    <div
-                                        class="mb-1 text-xs opacity-70"
-                                        x-text="message.senderName"
-                                    ></div>
-
-                                    <div
-                                        x-show="typingUsers.size > 0"
-                                        x-cloak
-                                        class="whitespace-pre-wrap break-words text-sm"
-                                    >
-                                        درحال نوشتن . . .
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-                    </div>
                 </template>
+
+                {{-- Typing indicator --}}
+                <div
+                    x-show="typingUsers.size > 0"
+                    x-cloak
+                    class="text-xs text-gray-500"
+                >
+                    درحال نوشتن . . .
+                </div>
 
                 {{-- Empty --}}
                 <template x-if="messages.length === 0">
