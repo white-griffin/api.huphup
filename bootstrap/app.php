@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\ResolveBusiness;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -56,5 +57,13 @@ return Application::configure(basePath: dirname(__DIR__))
         attributes: ['middleware' => ['api', 'auth:sanctum']],
     )
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->report(function (AuthorizationException $e) {
+            Log::error('Authorization exception', [
+                'message' => $e->getMessage(),
+                'user_id' => auth('admin')->id(),
+                'url' => request()->fullUrl(),
+                'route' => request()->route()?->getName(),
+            ]);
+        });
+
     })->create();

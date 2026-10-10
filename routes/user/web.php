@@ -31,12 +31,3 @@ Route::get('/test-chat-db', function () {
     return ChatUser::query()->limit(5)->get();
 });
 
-Route::get('/debug-admin-auth', function () {
-    return response()->json([
-        'admin_authenticated' => auth('admin')->check(),
-        'admin_id' => auth('admin')->id(),
-        'default_guard' => config('auth.defaults.guard'),
-        'session_id' => session()->getId(),
-        'session_admin_login' => session()->get('login_admin_' . sha1('admin')),
-    ]);
-});
