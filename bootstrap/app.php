@@ -49,6 +49,16 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->after(function (Request $request, $response) {
+            if ($response->getStatusCode() === 403) {
+                Log::error('HTTP 403 diagnostic', [
+                    'url' => $request->fullUrl(),
+                    'route' => $request->route()?->getName(),
+                    'user_id' => auth('admin')->id(),
+                    'middleware' => $request->route()?->gatherMiddleware(),
+                ]);
+            }
+        });
         $middleware->alias([
             'resolve.business' => ResolveBusiness::class,
         ]);
