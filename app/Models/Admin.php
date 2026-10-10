@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use Filament\Panel;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 class Admin extends Authenticatable
 {
-    use SoftDeletes,HasRoles;
+    use SoftDeletes,HasRoles,HasPageShield;
     protected $guarded = ['id'];
 
     public function getNameAttribute(): string
@@ -20,9 +21,5 @@ class Admin extends Authenticatable
             : ($this->mobile ?? $this->email ?? 'ادمین');
     }
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $panel->getId() === 'admin';
-    }
 
 }
