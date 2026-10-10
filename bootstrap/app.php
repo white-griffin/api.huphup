@@ -49,16 +49,6 @@ return Application::configure(basePath: dirname(__DIR__))
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->after(function (Request $request, $response) {
-            if ($response->getStatusCode() === 403) {
-                Log::error('HTTP 403 diagnostic', [
-                    'url' => $request->fullUrl(),
-                    'route' => $request->route()?->getName(),
-                    'user_id' => auth('admin')->id(),
-                    'middleware' => $request->route()?->gatherMiddleware(),
-                ]);
-            }
-        });
         $middleware->alias([
             'resolve.business' => ResolveBusiness::class,
         ]);
@@ -67,13 +57,19 @@ return Application::configure(basePath: dirname(__DIR__))
         attributes: ['middleware' => ['api', 'auth:sanctum']],
     )
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->report(function (AuthorizationException $e) {
-            Log::error('Authorization exception', [
-                'message' => $e->getMessage(),
-                'user_id' => auth('admin')->id(),
-                'url' => request()->fullUrl(),
-                'route' => request()->route()?->getName(),
-            ]);
+        $exceptions->report(function (Throwable $e) {
+            if (
+                $e instanceof Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+                && $e->getStatusCode() === 403
+            ) {
+                logger()->error('HTTP 403 exception', [
+                    'class' => get_class($e),
+                    'message' => $e->getMessage(),
+                    'url' => request()->fullUrl(),
+                    'route' => request()->route()?->getName(),
+                    'admin_id' => auth('admin')->id(),
+                ]);
+            }
         });
 
     })->create();
