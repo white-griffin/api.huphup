@@ -26,6 +26,12 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        \Illuminate\Support\Facades\Log::info('Filament panel diagnostic', [
+            'environment' => app()->environment(),
+            'default_guard' => config('auth.defaults.guard'),
+            'admin_authenticated' => auth('admin')->check(),
+            'admin_id' => auth('admin')->id(),
+        ]);
         return $panel
             ->default()
             ->id('admin')
