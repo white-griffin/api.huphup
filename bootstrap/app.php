@@ -57,19 +57,5 @@ return Application::configure(basePath: dirname(__DIR__))
         attributes: ['middleware' => ['api', 'auth:sanctum']],
     )
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->report(function (Throwable $e) {
-            if (
-                $e instanceof Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
-                && $e->getStatusCode() === 403
-            ) {
-                logger()->error('HTTP 403 exception', [
-                    'class' => get_class($e),
-                    'message' => $e->getMessage(),
-                    'url' => request()->fullUrl(),
-                    'route' => request()->route()?->getName(),
-                    'admin_id' => auth('admin')->id(),
-                ]);
-            }
-        });
 
     })->create();
