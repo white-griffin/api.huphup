@@ -41,7 +41,7 @@ class SendFcmNotificationJob implements ShouldQueue
 
         $query = User::query();
 
-        match ($notification->audience_type) {
+        match ((string) $notification->audience_type) {
             FcmNotificationAudience::ALL->value => null,
 
             FcmNotificationAudience::USERS->value => $query->whereIn(

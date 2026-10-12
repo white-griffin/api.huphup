@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FcmNotifications\Tables;
 
+use App\Enums\FcmNotificationStatus;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -25,6 +26,7 @@ class FcmNotificationsTable
 
                 TextColumn::make('status')
                     ->label('وضعیت')
+                    ->formatStateUsing(fn($state) => FcmNotificationStatus::label((string)$state) ?? '—')
                     ->badge(),
 
                 TextColumn::make('total_recipients')
