@@ -31,6 +31,7 @@ class SendFcmNotificationJob implements ShouldQueue
      */
     public function handle(): void
     {
+
         $notification = FcmNotification::findOrFail(
             $this->fcmNotificationId
         );
