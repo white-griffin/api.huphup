@@ -54,7 +54,7 @@ class SendFcmNotificationJob implements ShouldQueue
                 'deviceTokens',
                 fn ($query) => $query->where(
                     'platform',
-                    $notification->platform->value,
+                    $notification->platform,
                 ),
             ),
         };
