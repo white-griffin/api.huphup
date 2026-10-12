@@ -53,6 +53,22 @@ class PetRoutineController extends BaseController
         try {
 
             // --------------------------------------------------
+            // جلوگیری از ثبت تکراری یک روتین برای یک پت
+            // --------------------------------------------------
+
+            $exists = PetRoutine::query()
+                ->where('pet_id', $data['pet_id'])
+                ->where('routine_template_id', $data['routine_template_id'])
+                ->exists();
+
+            if ($exists) {
+                return ApiResponse::Fail(
+                    Response::HTTP_CONFLICT,
+                    'این روتین قبلاً برای این پت ثبت شده است'
+                );
+            }
+
+            // --------------------------------------------------
             // اگر interval یا next_due ارسال نشده باشد،
             // از مقدار پیش‌فرض template استفاده می‌کنیم
             // --------------------------------------------------
