@@ -7,6 +7,9 @@ use App\Enums\BannerPlacement;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+
 class Banner extends Model
 {
     protected $guarded = ['id'];
@@ -25,6 +28,14 @@ class Banner extends Model
         return $this->morphTo();
     }
 
+    protected function imagesUrl(): Attribute
+    {
+        return Attribute::get(function (): array {
+            return collect($this->images ?? [])
+                ->map(fn (?string $path) => $path ? Storage::disk('public')->url($path) : null)
+                ->all();
+        });
+    }
 
     public function scopeActive(Builder $query): Builder
     {
