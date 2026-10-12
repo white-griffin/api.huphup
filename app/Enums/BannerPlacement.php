@@ -4,21 +4,23 @@ namespace App\Enums;
 
 use App\Enums\Contracts\EnumContractInterface;
 
-enum BannerPlacement: string implements Contracts\EnumContractInterface
+enum BannerPlacement: string implements EnumContractInterface
 {
 
     case HOME = '1';
-    case SEARCH = '2';
-    case CATEGORY = '3';
+//    case SEARCH = '2';
+//    case CATEGORY = '3';
     case PRODUCT = '4';
+    case BUSINESSES = '5';
 
     public static function labels(): array
     {
         return [
             self::HOME->value => 'صفحه اصلی',
-            self::SEARCH->value => 'صفحه جستجو',
-            self::CATEGORY->value => 'صفحه دسته بندی ',
+//            self::SEARCH->value => 'صفحه جستجو',
+//            self::CATEGORY->value => 'صفحه دسته بندی ',
             self::PRODUCT->value => 'صفحه محصولات',
+            self::BUSINESSES->value => 'صفحه بیزنس ها',
         ];
     }
 
@@ -26,9 +28,10 @@ enum BannerPlacement: string implements Contracts\EnumContractInterface
     {
         return [
             self::HOME->value => 'home',
-            self::SEARCH->value => 'search',
-            self::CATEGORY->value => 'category',
+//            self::SEARCH->value => 'search',
+//            self::CATEGORY->value => 'category',
             self::PRODUCT->value => 'product',
+            self::BUSINESSES->value => 'businesses',
         ];
     }
 
