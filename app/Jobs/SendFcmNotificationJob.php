@@ -36,20 +36,20 @@ class SendFcmNotificationJob implements ShouldQueue
         );
 
         $notification->update([
-            'status' => FcmNotificationStatus::PROCESSING,
+            'status' => FcmNotificationStatus::PROCESSING->value,
         ]);
 
         $query = User::query();
 
         match ($notification->audience_type) {
-            FcmNotificationAudience::ALL => null,
+            FcmNotificationAudience::ALL->value => null,
 
-            FcmNotificationAudience::USERS => $query->whereIn(
+            FcmNotificationAudience::USERS->value => $query->whereIn(
                 'id',
                 $notification->user_ids ?? [],
             ),
 
-            FcmNotificationAudience::PLATFORM => $query->whereHas(
+            FcmNotificationAudience::PLATFORM->value => $query->whereHas(
                 'deviceTokens',
                 fn ($query) => $query->where(
                     'platform',
@@ -83,7 +83,7 @@ class SendFcmNotificationJob implements ShouldQueue
         });
 
         $notification->update([
-            'status' => FcmNotificationStatus::SENT,
+            'status' => FcmNotificationStatus::SENT->value,
             'sent_at' => now(),
         ]);
     }
@@ -93,7 +93,7 @@ class SendFcmNotificationJob implements ShouldQueue
         FcmNotification::query()
             ->whereKey($this->fcmNotificationId)
             ->update([
-                'status' => FcmNotificationStatus::FAILED,
+                'status' => FcmNotificationStatus::FAILED->value,
             ]);
     }
 }
