@@ -24,14 +24,12 @@ class PetRoutineController extends BaseController
     public function index()
     {
         try {
-            $routines = PetRoutineResource::collection(
-                PetRoutine::query()
-                    ->whereHas('pet', fn ($query) => $query->where('user_id', auth()->id()))
-                    ->when(request()->filled('pet_id'), fn ($query) => $query->where('pet_id', request()->pet_id))
-                    ->with(['pet', 'template'])
-                    ->latest()
-                    ->get()
-            );
+            $routines =  PetRoutine::query()
+                ->whereHas('pet', fn ($query) => $query->where('user_id', auth()->id()))
+                ->when(request()->filled('pet_id'), fn ($query) => $query->where('pet_id', request()->pet_id))
+                ->with(['pet', 'template'])
+                ->latest()
+                ->get();
 
             return ApiResponse::Success('لیست روتین‌ها دریافت شد', $routines);
         }catch (\Exception $exception){
@@ -85,7 +83,7 @@ class PetRoutineController extends BaseController
 
             return ApiResponse::Success(
                 'روتین با موفقیت ثبت شد',
-                PetRoutineResource::make($routine),
+                $routine,
             );
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -114,7 +112,7 @@ class PetRoutineController extends BaseController
             $recommendations = app(RoutineRecommendationService::class)->getRecommendations($pet_routine);
 
             return ApiResponse::Success('اطلاعات روتین دریافت شد', [
-                'routine' => PetRoutineResource::make($pet_routine),
+                'routine' => $pet_routine,
                 'progress' => $progress,
                 'recommendations' => $recommendations,
             ]);
