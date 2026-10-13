@@ -6,6 +6,7 @@ use App\Enums\ActivityStatus;
 use App\Models\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -55,10 +56,23 @@ class Business extends Model
         return $this->belongsTo(Provider::class);
     }
 
-    public function services(): HasMany
+    public function services(): BelongsToMany
     {
-        return $this->hasMany(BusinessService::class)
-            ->where('activity_status', ActivityStatus::ACTIVE->value);
+        return $this->belongsToMany(Service::class, 'business_services')
+            ->using(BusinessService::class)
+            ->withPivot([
+                'id',
+                'price',
+                'duration',
+                'settings',
+                'activity_status',
+            ])
+            ->withTimestamps();
+    }
+
+    public function businessServices(): HasMany
+    {
+        return $this->hasMany(BusinessService::class);
     }
 
     public function offDays(): HasMany|Business

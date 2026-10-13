@@ -31,7 +31,15 @@ class Service extends Model
     public function businesses(): BelongsToMany
     {
         return $this->belongsToMany(Business::class, 'business_services')
-            ->withPivot(['price', 'duration', 'settings', 'activity_status']);
+            ->using(BusinessService::class)
+            ->withPivot([
+                'id',
+                'price',
+                'duration',
+                'settings',
+                'activity_status',
+            ])
+            ->withTimestamps();
     }
 
     public function reviews(): MorphMany

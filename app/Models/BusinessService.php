@@ -8,9 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class BusinessService extends Model implements Reviewable
+class BusinessService extends Pivot  implements Reviewable
 {
+    protected $table = 'business_services';
+
     protected $guarded =['id'];
 
     protected $casts = [

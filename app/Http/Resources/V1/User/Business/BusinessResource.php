@@ -35,7 +35,7 @@ class BusinessResource extends JsonResource
             'phone' => $this->phone,
             'work_time' => $this->settings['work_time'] ?? null,
             'services' => BusinessServiceResource::collection(
-                $this->whenLoaded('services')
+                $this->whenLoaded('businessServices')
             ),
             'rating' => $this->reputation?->rating_avg ?? 0,
 

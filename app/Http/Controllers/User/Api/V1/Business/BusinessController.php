@@ -20,8 +20,14 @@ class BusinessController extends Controller
         try {
             $businesses = BusinessResource::collection(
                 Business::query()
-                    ->where('verification_status', VerificationStatuses::ACTIVE->value)
-                    ->where('activity_status', ActivityStatus::ACTIVE->value)
+                    ->where(
+                        'verification_status',
+                        VerificationStatuses::ACTIVE->value
+                    )
+                    ->where(
+                        'activity_status',
+                        ActivityStatus::ACTIVE->value
+                    )
                     ->when($request->type, function ($q) use ($request) {
                         $q->where('business_type', $request->type);
                     })
@@ -31,16 +37,16 @@ class BusinessController extends Controller
                         $q->where(function ($query) use ($search) {
                             $query
                                 ->where('name', 'like', "%{$search}%")
-                                ->orWhereHas('services.service', function ($query) use ($search) {
+                                ->orWhereHas('businessServices.service', function ($query) use ($search) {
                                     $query->where('name', 'like', "%{$search}%");
                                 });
                         });
                     })
                     ->with([
                         'reputation',
-                        'services.service',
-                        'services.reviewSummary',
-                        'services.reviews' => fn ($query) => $query
+                        'businessServices.service',
+                        'businessServices.reviewSummary',
+                        'businessServices.reviews' => fn ($query) => $query
                             ->approved()
                             ->latest()
                             ->take(5)
@@ -59,9 +65,15 @@ class BusinessController extends Controller
                     ])
                     ->cursorPaginate(10)
             );
+
             return ApiResponse::success('عملیات موفق', $businesses);
         } catch (\Exception $exception) {
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+            report($exception);
+
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                $exception->getMessage()
+            );
         }
     }
 
