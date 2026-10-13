@@ -114,7 +114,7 @@ class PetRoutineController extends BaseController
             $recommendations = app(RoutineRecommendationService::class)->getRecommendations($pet_routine);
 
             return ApiResponse::Success('اطلاعات روتین دریافت شد', [
-                'routine' => $pet_routine,
+                'routine' => PetRoutineResource::make($pet_routine),
                 'progress' => $progress,
                 'recommendations' => $recommendations,
             ]);
