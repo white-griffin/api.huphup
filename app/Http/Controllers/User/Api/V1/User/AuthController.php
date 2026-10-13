@@ -46,7 +46,7 @@ class AuthController extends BaseController
 
             $otp_code = Env::get('APP_ENV') == 'production' ? rand(100000, 999999) : '111111';
             $user->update(['otp_code' => $otp_code]);
-            $user->tokens()->delete();
+//            $user->tokens()->delete();
             if (Env::get('APP_ENV') == 'production') {
                 $sendOtp = $this->sendOtp($user->mobile, $otp_code);
                 if ($sendOtp['code'] != 1) {

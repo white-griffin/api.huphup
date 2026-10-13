@@ -28,13 +28,6 @@ class FirebaseServiceProvider extends ServiceProvider
                 ->createMessaging();
         });
 
-        $this->app->singleton(Messaging::class, function () {
-            return (new Factory)
-                ->withServiceAccount(
-                    config('services.firebase.credentials')
-                )
-                ->createMessaging();
-        });
     }
 
     /**
