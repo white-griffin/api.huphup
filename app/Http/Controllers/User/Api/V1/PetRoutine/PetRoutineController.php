@@ -24,12 +24,14 @@ class PetRoutineController extends BaseController
     public function index()
     {
         try {
-            $routines =  PetRoutine::query()
-                ->whereHas('pet', fn ($query) => $query->where('user_id', auth()->id()))
-                ->when(request()->filled('pet_id'), fn ($query) => $query->where('pet_id', request()->pet_id))
-                ->with(['pet', 'template'])
-                ->latest()
-                ->get();
+            $routines = PetRoutineResource::collection(
+                PetRoutine::query()
+                    ->whereHas('pet', fn ($query) => $query->where('user_id', auth()->id()))
+                    ->when(request()->filled('pet_id'), fn ($query) => $query->where('pet_id', request()->pet_id))
+                    ->with(['pet', 'template'])
+                    ->latest()
+                    ->get()
+            );
 
             return ApiResponse::Success('لیست روتین‌ها دریافت شد', $routines);
         }catch (\Exception $exception){
@@ -83,7 +85,7 @@ class PetRoutineController extends BaseController
 
             return ApiResponse::Success(
                 'روتین با موفقیت ثبت شد',
-                $routine,
+                PetRoutineResource::make($routine),
             );
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -112,7 +114,7 @@ class PetRoutineController extends BaseController
             $recommendations = app(RoutineRecommendationService::class)->getRecommendations($pet_routine);
 
             return ApiResponse::Success('اطلاعات روتین دریافت شد', [
-                'routine' => $pet_routine,
+                'routine' => PetRoutineResource::make($pet_routine),
                 'progress' => $progress,
                 'recommendations' => $recommendations,
             ]);
@@ -139,7 +141,7 @@ class PetRoutineController extends BaseController
         try {
             $pet_routine->update($data);
             DB::commit();
-            return ApiResponse::Success('روتین با موفقیت بروزرسانی شد', $pet_routine->fresh());
+            return ApiResponse::Success('روتین با موفقیت بروزرسانی شد', PEtRoutineResource::make($pet_routine->fresh()));
         } catch (\Throwable $e) {
             DB::rollBack();
             return ApiResponse::Fail(

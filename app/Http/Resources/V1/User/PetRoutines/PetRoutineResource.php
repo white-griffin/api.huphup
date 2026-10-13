@@ -13,6 +13,9 @@ class PetRoutineResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
+            'id' => $this->id,
+            'pet_id' => $this->pet_id,
+            'routine_template_id' => $this->routine_template_id,
             'pet' => PetResource::make($this->whenLoaded('pet')),
             'template' => RoutineTemplateResource::make($this->whenLoaded('template')),
             'interval_days' => $this->interval_days,
