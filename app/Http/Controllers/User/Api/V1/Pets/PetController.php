@@ -140,8 +140,8 @@ class PetController extends BaseController
             'weight' => ['nullable', 'numeric', 'between:0,999.99'],
             'color' => ['nullable', 'string', 'max:50'],
             'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-            'medical_records' => ['nullable'],
-            'settings' => ['nullable'],
+            'medical_records' => ['nullable','array'],
+            'settings' => ['nullable','array'],
             'bio' => ['nullable', 'string', 'max:1000'],
         ], [
             'species_id.required' => 'گونه حیوان را انتخاب کنید',
