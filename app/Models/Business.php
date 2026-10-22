@@ -72,7 +72,7 @@ class Business extends Model
 
     public function businessServices(): HasMany
     {
-        return $this->hasMany(BusinessService::class);
+        return $this->hasMany(BusinessService::class, 'business_id');
     }
 
     public function offDays(): HasMany|Business

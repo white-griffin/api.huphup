@@ -84,12 +84,14 @@ class BusinessController extends Controller
                 'province',
                 'city',
                 'reputation',
-                'services.service',
-                'services.reviewSummary',
-                'services.reviews' => fn ($query) => $query
+
+                'businessServices.service',
+                'businessServices.reviewSummary',
+
+                'businessServices.reviews' => fn ($query) => $query
                     ->approved()
                     ->latest()
-                    ->take(5)
+                    ->limit(5)
                     ->with([
                         'user',
                         'messages' => fn ($query) => $query
@@ -110,9 +112,11 @@ class BusinessController extends Controller
             );
 
         } catch (\Exception $exception) {
+            report($exception);
+
             return ApiResponse::Fail(
                 Response::HTTP_INTERNAL_SERVER_ERROR,
-                $exception->getMessage()
+                'خطای داخلی سرور'
             );
         }
     }
