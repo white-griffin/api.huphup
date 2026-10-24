@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ActivityStatus;
+use App\Models\Traits\HasReactions;
 use App\Models\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Storage;
 
 class Business extends Model
 {
-    use SoftDeletes,HasWallet;
+    use SoftDeletes,HasWallet,HasReactions;
 
     protected $guarded = ['id'];
 

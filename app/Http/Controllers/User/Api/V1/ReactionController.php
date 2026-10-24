@@ -6,6 +6,7 @@ use App\Enums\ReactionType;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ToggleReactionRequest;
+use App\Models\Business;
 use App\Models\Product;
 use App\Services\Reaction\ReactionService;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,7 @@ class ReactionController extends Controller
     {
         return match ($type) {
             'product' => Product::query()->findOrFail($id),
+            'business' => Business::query()->findOrFail($id),
             default => throw ValidationException::withMessages([
                 'reactable_type' => 'نوع آیتم نامعتبر است.'
             ]),
