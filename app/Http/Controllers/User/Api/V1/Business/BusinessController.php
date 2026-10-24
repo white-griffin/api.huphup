@@ -13,6 +13,7 @@ use App\Models\Business;
 use App\Services\UserDomain\NearbyBusinessService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class BusinessController extends Controller
@@ -82,7 +83,8 @@ class BusinessController extends Controller
     public function show(Business $business)
     {
         try {
-            $userId = request()->user()?->id;
+            $user = Auth::guard('sanctum')->user();
+            $userId = $user?->id;
             $business->loadCount([
                 'reactions as likes_count' => fn ($q) =>
                 $q->where('type', ReactionType::LIKE->value),
