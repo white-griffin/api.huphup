@@ -52,9 +52,9 @@ class ProductResource extends JsonResource
                 'user' => [
                     'types' => $reactionTypes,
 
-                    'liked' => $reactionTypes->contains('like'),
+                    'liked' => $reactionTypes->contains(ReactionType::LIKE->value),
 
-                    'bookmarked' => $reactionTypes->contains('bookmark'),
+                    'bookmarked' => $reactionTypes->contains(ReactionType::BOOKMARK->value),
                 ],
             ],
 
