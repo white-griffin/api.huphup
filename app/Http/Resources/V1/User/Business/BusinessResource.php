@@ -57,7 +57,6 @@ class BusinessResource extends JsonResource
                 ],
 
                 'user' => [
-                    'types' => $reactionTypes,
 
                     'liked' => $reactionTypes->contains(ReactionType::LIKE->value),
 

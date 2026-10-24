@@ -21,6 +21,8 @@ class BusinessController extends Controller
     public function index(Request $request)
     {
         try {
+            $user = Auth::guard('sanctum')->user();
+            $userId = $user?->id;
             $businesses = BusinessResource::collection(
                 Business::query()
                     ->where(
@@ -31,6 +33,23 @@ class BusinessController extends Controller
                         'activity_status',
                         ActivityStatus::ACTIVE->value
                     )
+                    ->withCount([
+                        'reactions as likes_count' => fn ($q) =>
+                        $q->where('type', ReactionType::LIKE->value),
+                    ])
+                    ->when($userId, function ($q) use ($userId) {
+                        $q->with([
+                            'reactions' => fn ($q) => $q
+                                ->where('user_id', $userId)
+                                ->select(
+                                    'id',
+                                    'user_id',
+                                    'reactable_id',
+                                    'reactable_type',
+                                    'type'
+                                ),
+                        ]);
+                    })
                     ->when($request->type, function ($q) use ($request) {
                         $q->where('business_type', $request->type);
                     })
@@ -98,13 +117,6 @@ class BusinessController extends Controller
                 ]);
             }
 
-            \Log::info('test reactions', [
-                'user_id' => $userId,
-                'relation_loaded' => $business->relationLoaded('reactions'),
-                'reactions' => $business->relationLoaded('reactions')
-                    ? $business->reactions->toArray()
-                    : null,
-            ]);
             $business->load([
                 'province',
                 'city',

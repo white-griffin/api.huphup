@@ -18,6 +18,7 @@ use App\Services\Search\FuzzySearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
@@ -28,7 +29,8 @@ class ProductController extends Controller
         try {
             abort_if($product->publication_status != PublicationStatus::PUBLISHED->value, Response::HTTP_NOT_FOUND);
 
-            $userId = request()->user()?->id;
+            $user = Auth::guard('sanctum')->user();
+            $userId = $user?->id;
 
             $product->loadCount([
                 'reactions as likes_count' => fn ($q) =>
@@ -77,7 +79,8 @@ class ProductController extends Controller
     ) {
 
 
-        $userId = $request->user()?->id;
+        $user = Auth::guard('sanctum')->user();
+        $userId = $user?->id;
 
         $search = rawurldecode(trim((string) $request->get('q', '')));
         $query = $queryService->make();
