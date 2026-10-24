@@ -13,6 +13,7 @@ use App\Models\Business;
 use App\Services\UserDomain\NearbyBusinessService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class BusinessController extends Controller
 {
@@ -95,6 +96,13 @@ class BusinessController extends Controller
                 ]);
             }
 
+            Log::debug('test reactions',[
+                'user_id' => $userId,
+                'relation_loaded' => $business->relationLoaded('reactions'),
+                'reactions' => $business->relationLoaded('reactions')
+                    ? $business->reactions->toArray()
+                    : null,
+            ]);
             $business->load([
                 'province',
                 'city',
