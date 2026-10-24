@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User\Api\V1\Business;
 
 use App\Enums\ActivityStatus;
+use App\Enums\ReactionType;
 use App\Enums\VerificationStatuses;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
@@ -80,6 +81,20 @@ class BusinessController extends Controller
     public function show(Business $business)
     {
         try {
+            $userId = request()->user()?->id;
+            $business->loadCount([
+                'reactions as likes_count' => fn ($q) =>
+                $q->where('type', ReactionType::LIKE->value),
+            ]);
+
+            if ($userId) {
+                $business->load([
+                    'reactions' => fn ($q) => $q
+                        ->where('user_id', $userId)
+                        ->select('id', 'user_id', 'reactable_id', 'reactable_type', 'type'),
+                ]);
+            }
+
             $business->load([
                 'province',
                 'city',
