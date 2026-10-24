@@ -96,7 +96,7 @@ class BusinessController extends Controller
                 ]);
             }
 
-            Log::debug('test reactions',[
+            \Log::info('test reactions', [
                 'user_id' => $userId,
                 'relation_loaded' => $business->relationLoaded('reactions'),
                 'reactions' => $business->relationLoaded('reactions')
