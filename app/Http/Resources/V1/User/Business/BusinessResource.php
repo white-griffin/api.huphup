@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\V1\User\Business;
 
+use App\Enums\ReactionType;
 use App\Models\Business;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -11,6 +12,13 @@ class BusinessResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $reactionTypes = $this->whenLoaded('reactions', function () {
+            return $this->reactions
+                ->pluck('type')
+                ->map(fn (ReactionType $type) => $type->value)
+                ->values();
+        }, collect());
+
         return [
             'id' =>$this->id,
             'business_type' => $this->business_type,
@@ -42,6 +50,21 @@ class BusinessResource extends JsonResource
             'rating_count' => $this->reputation?->rating_count ?? 0,
 
             'review_count' => $this->reputation?->review_count ?? 0,
+
+            'reactions' => [
+                'count' => [
+                    'likes' => $this->likes_count ?? 0,
+                ],
+
+                'user' => [
+                    'types' => $reactionTypes,
+
+                    'liked' => $reactionTypes->contains('like'),
+
+                    'bookmarked' => $reactionTypes->contains('bookmark'),
+                ],
+            ],
+
         ];
     }
 }
