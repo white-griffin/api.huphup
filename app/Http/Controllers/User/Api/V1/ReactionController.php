@@ -13,7 +13,7 @@ use App\Models\Product;
 use App\Models\Reaction;
 use App\Services\Reaction\ReactionService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
