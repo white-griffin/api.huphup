@@ -48,7 +48,7 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'nearby_enabled' => 'boolean',
+//            'nearby_enabled' => 'boolean',
         ];
     }
 

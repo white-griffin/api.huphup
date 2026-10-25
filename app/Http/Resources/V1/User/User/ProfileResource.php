@@ -25,7 +25,8 @@ class ProfileResource extends JsonResource
             'gender_type' => $this->gender_type,
             'bio' => $this->bio,
             'longitude' => $this->longitude,
-            'latitude' => $this->latitude
+            'latitude' => $this->latitude,
+            'nearby_enabled' => $this->nearby_enabled
         ];
     }
 }

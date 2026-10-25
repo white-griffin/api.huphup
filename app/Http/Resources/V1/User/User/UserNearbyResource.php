@@ -14,7 +14,6 @@ class UserNearbyResource extends JsonResource
             'id' => $this->id,
             'name' => $this->fullName,
             'avatar' => $this->avatar_url,
-            'nearby_enabled' =>$this->nearby_enabled,
             'lat' => (float) $this->latitude,
             'lng' => (float) $this->longitude,
             'distance' => round((float) $this->distance, 2),
