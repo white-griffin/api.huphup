@@ -183,7 +183,7 @@ Route::controller(ReactionController::class)
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::post('/toggle', 'toggle');
-        Route::get('/reactions','index');
+        Route::get('/','index');
     });
 
 
