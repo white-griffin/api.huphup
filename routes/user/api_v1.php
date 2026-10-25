@@ -183,7 +183,9 @@ Route::controller(ReactionController::class)
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::post('/toggle', 'toggle');
+        Route::get('/reactions','index');
     });
+
 
 Route::controller(ReviewController::class)->prefix('reviews')
     ->middleware('auth:sanctum')
