@@ -87,11 +87,21 @@ class ReactionController extends Controller
             $reactions->getCollection()->filter()->values()
         );
 
+
         return ApiResponse::success(
             'عملیات موفق',
-            $reactions
+            [
+                'reactions' => $reactions->items(),
+                'pagination' => [
+                    'current_page' => $reactions->currentPage(),
+                    'last_page' => $reactions->lastPage(),
+                    'per_page' => $reactions->perPage(),
+                    'total' => $reactions->total(),
+                ]
+            ]
         );
     }
+
     public function toggle(ToggleReactionRequest $request)
     {
         $data = $request->validated();
