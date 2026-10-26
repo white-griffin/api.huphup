@@ -39,4 +39,8 @@ return [
         'credentials' => env('FIREBASE_CREDENTIALS'),
     ],
 
+    'chat' => [
+        'secret' => env('CHAT_SERVICE_SECRET'),
+    ],
+
 ];

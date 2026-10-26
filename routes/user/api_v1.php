@@ -6,6 +6,7 @@ use App\Http\Controllers\User\Api\V1\Business\BusinessController;
 use App\Http\Controllers\User\Api\V1\Chat\ConversationController;
 use App\Http\Controllers\User\Api\V1\Chat\MessageController;
 use App\Http\Controllers\User\Api\V1\ChatService\SupportChatController;
+use App\Http\Controllers\User\Api\V1\ChatService\UserChatController;
 use App\Http\Controllers\User\Api\V1\LocationController;
 use App\Http\Controllers\User\Api\V1\NotificationController;
 use App\Http\Controllers\User\Api\V1\Order\CouponController;
@@ -37,6 +38,12 @@ Route::controller(UserNearbyController::class)
         Route::get('/', 'index');
         Route::post('/toggle', 'toggle');
     });
+
+Route::controller(UserChatController::class)
+    ->prefix('user-chat')->group(function () {
+        Route::post('/resolve', 'resolve');
+    });
+
 
 Route::controller(ProfileController::class)->middleware('auth:sanctum')->group(function () {
     Route::get('profile', 'getProfile');
