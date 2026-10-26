@@ -16,6 +16,7 @@ class OrderVendorResource extends JsonResource
             'subtotal_amount' => $this->subtotal_amount,
             'discount_amount' => $this->discount_amount,
             'total_amount' => $this->total_amount,
+            'shipping_amount' => $this->shipping_amount,
             'status' => $this->status,
             'items' => OrderItemResource::collection($this->whenLoaded('items')),
         ];
