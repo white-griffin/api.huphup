@@ -37,6 +37,7 @@ class BannerResource extends JsonResource
             return [
                 'type' => $type,
                 'id' => $this->target_id,
+                'slug' => $this->target()->slug,
             ];
         }
 
