@@ -452,7 +452,7 @@ class AppointmentService
                 ])
                 ->findOrFail($appointment->id);
 
-            if ($appointment->status !== AppointmentStatuses::PENDING_CONFIRMATION->value) {
+            if ($appointment->status != AppointmentStatuses::PENDING_CONFIRMATION->value) {
                 throw new \DomainException(
                     'این رزرو در انتظار تایید نیست.'
                 );
