@@ -67,6 +67,19 @@ class AppointmentController extends Controller
         ]);
     }
 
+    public function show(Appointment $appointment)
+    {
+        try {
+            return ApiResponse::Success('عملیات موفق ',
+                 AppointmentResource::make(
+                     $appointment->load(['user', 'pet', 'businessService', 'payments'])
+                 ),
+            );
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+        }
+    }
+
     public function confirm(Appointment $appointment)
     {
         try {
