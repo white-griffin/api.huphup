@@ -4,6 +4,7 @@ namespace App\Services\Payment;
 
 use App\Enums\PaymentGateways;
 use App\Enums\PaymentStatuses;
+use App\Enums\WalletChargeStatus;
 use App\Enums\WalletTransactionType;
 use App\Exceptions\PaymentGatewayException;
 use App\Models\Coupon;
@@ -12,6 +13,7 @@ use App\Models\Payment;
 use App\Contracts\CouponEligible;
 use App\Contracts\HandlesPayment;
 use App\Contracts\PayableEntity;
+use App\Models\WalletCharge;
 use App\Services\Discount\DiscountService;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
@@ -289,7 +291,7 @@ class PaymentService
         if (
             isset($result['transaction_id'])
             && $result['transaction_id']
-            && $result['transaction_id'] !== $payment->transaction_id
+            && $result['transaction_id'] != $payment->transaction_id
         ) {
             throw new PaymentGatewayException(
                 'شناسه تراکنش با پرداخت مطابقت ندارد.'
@@ -427,6 +429,15 @@ class PaymentService
     private function ensurePayableCanBePaid(
         PayableEntity $payable
     ): void {
+        if (
+            $payable instanceof WalletCharge &&
+            $payable->status != WalletChargeStatus::PENDING->value
+        ) {
+            throw new PaymentGatewayException(
+                'این درخواست شارژ دیگر قابل پرداخت نیست.'
+            );
+        }
+
         $paid = $payable->payments()
             ->where(
                 'payment_status',

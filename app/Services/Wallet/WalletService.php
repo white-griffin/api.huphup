@@ -2,15 +2,35 @@
 
 namespace App\Services\Wallet;
 
+use App\Enums\WalletChargeStatus;
 use App\Enums\WalletTransactionType;
 use App\Exceptions\WalletException;
 use App\Models\Payment;
+use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletCharge;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class WalletService
 {
+    public function createCharge(
+        User $user,
+        int $amount
+    ): WalletCharge {
+        if ($amount <= 0) {
+            throw new WalletException(
+                'مبلغ شارژ باید بیشتر از صفر باشد.'
+            );
+        }
+
+        return WalletCharge::query()->create([
+            'user_id' => $user->id,
+            'amount' => $amount,
+            'status' => WalletChargeStatus::PENDING->value,
+        ]);
+    }
+
     public function transfer(
         Wallet $from,
         Wallet $to,

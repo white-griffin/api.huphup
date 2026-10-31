@@ -135,4 +135,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(DeviceToken::class);
     }
+
+    public function walletCharges()
+    {
+        return $this->hasMany(WalletCharge::class);
+    }
 }

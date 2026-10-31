@@ -173,6 +173,8 @@ Route::controller(PaymentController::class)->prefix('payments')
 Route::controller(WalletController::class)->prefix('wallet')->middleware('auth:sanctum')->group(function () {
     Route::get('/','show');
     Route::get('/transactions', 'transactions');
+    Route::get('/charges', 'charges');
+    Route::post('/charge', 'charge');
 });
 
 Route::controller(CouponController::class)->prefix('coupons')
