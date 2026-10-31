@@ -290,8 +290,8 @@ class OrderService
 
                     if ($refundAmount > 0) {
                         app(WalletService::class)->refundPending(
-                            from: $vendor->business()->getWallet(),
-                            to: $order->user()->getWallet(),
+                            from: $vendor->business->getWallet(),
+                            to: $order->user->getWallet(),
                             amount: $refundAmount,
                             debitType: WalletTransactionType::REFUND,
                             creditType: WalletTransactionType::REFUND,
