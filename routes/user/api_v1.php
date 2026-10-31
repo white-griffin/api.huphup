@@ -25,6 +25,7 @@ use App\Http\Controllers\User\Api\V1\Review\ReviewController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
 use App\Http\Controllers\User\Api\V1\User\UserNearbyController;
 use App\Http\Controllers\User\Api\V1\User\UserNoticeController;
+use App\Http\Controllers\User\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::controller(LocationController::class)->prefix('location')->group(function () {
@@ -168,6 +169,11 @@ Route::controller(PaymentController::class)->prefix('payments')
         Route::post('/pay', 'pay')->middleware('auth:sanctum');
         Route::post('/callback/{gateway}', 'callback')->name('payments.callback');
     });
+
+Route::controller(WalletController::class)->prefix('wallet')->middleware('auth:sanctum')->group(function () {
+    Route::get('/','show');
+    Route::get('/transactions', 'transactions');
+});
 
 Route::controller(CouponController::class)->prefix('coupons')
     ->middleware('auth:sanctum')
