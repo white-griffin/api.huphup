@@ -146,9 +146,8 @@ class AppointmentController extends Controller
             );
 
             $appointmentStartsAt = Carbon::parse(
-                $appointment->date->toDateString()
-                . ' '
-                . $appointment->start_time->format('H:i:s')
+                $appointment->date . ' ' .
+                $appointment->start_time
             );
 
             if ($appointmentStartsAt->isPast()) {
