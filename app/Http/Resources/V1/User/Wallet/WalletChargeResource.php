@@ -14,7 +14,7 @@ class WalletChargeResource extends JsonResource
         return [
             'id' => $this->id,
             'amount' => $this->amount,
-            'status' => $this->status->value,
+            'status' => $this->status,
 
             'payment' => [
                 'id' => $this->payments->first()?->id,
