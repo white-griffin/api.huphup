@@ -19,12 +19,7 @@ class WalletCharge extends Model implements PayableEntity, HandlesPayment
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'amount' => 'integer',
-        ];
-    }
+
 
     public function payments(): MorphMany
     {

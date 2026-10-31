@@ -23,7 +23,7 @@ class WalletController extends Controller
         return ApiResponse::Success('عملیات موفق', [
             'available_balance' => $wallet->available_balance,
             'pending_balance' => $wallet->pending_balance,
-            'transactions_count' => $wallet->transactions_count,
+            'transactions_count' => $wallet->transactions()->count(),
         ]);
     }
 
