@@ -7,6 +7,7 @@ use App\Enums\WalletTransactionType;
 use App\Enums\WalletWithdrawalStatuses;
 use App\Exceptions\WalletException;
 use App\Models\Payment;
+use App\Models\Provider;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletCharge;
@@ -531,19 +532,14 @@ class WalletService
     }
 
     public function requestWithdrawal(
-        User $provider,
-        int $businessId,
         int $amount,
     ): WalletWithdrawal {
         $this->validateAmount($amount);
 
         return DB::transaction(function () use (
-            $provider,
-            $businessId,
             $amount
         ) {
-            $business = $provider->businesses()
-                ->findOrFail($businessId);
+            $business = app('business');
 
             $wallet = $this->lockWallet($business->getWallet());
 
