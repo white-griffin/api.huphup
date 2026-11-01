@@ -6,6 +6,7 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Provider\Api\V1\Business\UpdateBusinessRequest;
 use App\Http\Resources\V1\Provider\BusinessResource;
+use App\Http\Resources\V1\Provider\BusinessServiceResource;
 use App\Models\Business;
 use App\Services\MediaService;
 use App\Services\UserDomain\NearbyBusinessService;
@@ -81,6 +82,18 @@ class BusinessController extends Controller
             );
 
             return ApiResponse::Success('عملیات موفق');
+        }catch (\Exception $exception){
+            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,$exception->getMessage());
+        }
+    }
+
+    public function getServices(Business $business)
+    {
+        try {
+            $services = BusinessServiceResource::collection(
+                $business->businessServices
+            );
+            return ApiResponse::Success('عملیات موفق', $services);
         }catch (\Exception $exception){
             return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR,$exception->getMessage());
         }

@@ -23,6 +23,7 @@ Route::controller(ProfileController::class)->prefix('profile')
 Route::controller(BusinessController::class)->prefix('businesses')
     ->group(function () {
         Route::get('/', 'getBusinesses')->withoutMiddleware('resolve.business');
+        Route::get('/services/{business}', 'getServices');
         Route::get('/{business}', 'showBusiness');
         Route::post('/{business}', 'update');
         Route::post('/{business}/toggle_nearby', 'toggleNearbyShow');
