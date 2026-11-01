@@ -22,7 +22,7 @@ class AppointmentController extends Controller
 
         $data = $request->validate([
             'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
-            'user_number' => ['nullable','numeric'],
+            'user' => ['nullable'],
             'status'              => ['nullable', Rule::enum(AppointmentStatuses::class)],
             'date'                => ['nullable', 'date'],
             'from_date'           => ['nullable', 'date'],
@@ -46,14 +46,14 @@ class AppointmentController extends Controller
                 )
             )
             ->when(
-                $data['user_number'] ?? null,
-                function ($query, $number) {
-                    $userId = User::where('mobile', $number)->value('id');
-
-                    if ($userId) {
-                        $query->where('user_id', $userId);
-                    }
-                }
+                $data['user'] ?? null,
+                fn ($query, $user) => $query->whereIn(
+                    'user_id',
+                    User::where('mobile', 'like', "%{$user}%")
+                        ->orWhere('first_name', 'like', "%{$user}%")
+                        ->orWhere('last_name', 'like', "%{$user}%")
+                        ->select('id')
+                )
             )
             ->when(
                 $data['status'] ?? null,
