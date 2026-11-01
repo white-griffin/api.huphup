@@ -27,9 +27,10 @@ class WalletController extends Controller
                 'amount' => ['required', 'integer', 'min:1'],
             ]);
 
+            $business = app('business');
             $withdrawal = $this->walletService->requestWithdrawal(
-                provider: $request->user(),
-                businessId: app('business')->id,
+                provider: $business->provider,
+                businessId: $business->id,
                 amount: $data['amount'],
             );
 
