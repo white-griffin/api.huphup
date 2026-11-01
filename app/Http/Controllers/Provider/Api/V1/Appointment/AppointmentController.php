@@ -7,6 +7,7 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\Provider\Appointment\AppointmentResource;
 use App\Models\Appointment;
+use App\Models\User;
 use App\Services\Appointment\AppointmentService;
 use DomainException;
 use Illuminate\Http\Request;
@@ -20,6 +21,8 @@ class AppointmentController extends Controller
     {
 
         $data = $request->validate([
+            'appointment_id' => ['nullable', 'integer', 'exists:appointments,id'],
+            'user_number' => ['nullable','numeric'],
             'status'              => ['nullable', Rule::enum(AppointmentStatuses::class)],
             'date'                => ['nullable', 'date'],
             'from_date'           => ['nullable', 'date'],
@@ -35,6 +38,23 @@ class AppointmentController extends Controller
                 'businessService',
                 'payments',
             ])
+            ->when(
+                $data['appointment_id'] ?? null,
+                fn ($query, $appointmentId) => $query->where(
+                    'id',
+                    $appointmentId
+                )
+            )
+            ->when(
+                $data['user_number'] ?? null,
+                function ($query, $number) {
+                    $userId = User::where('mobile', $number)->value('id');
+
+                    if ($userId) {
+                        $query->where('user_id', $userId);
+                    }
+                }
+            )
             ->when(
                 $data['status'] ?? null,
                 fn ($query, $status) => $query->where('status', $status)
