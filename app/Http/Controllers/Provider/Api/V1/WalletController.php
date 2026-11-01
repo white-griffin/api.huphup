@@ -23,10 +23,14 @@ class WalletController extends Controller
         Request $request
     ) {
         try {
+            $data = $request->validate([
+                'amount' => ['required', 'integer', 'min:1'],
+            ]);
+
             $withdrawal = $this->walletService->requestWithdrawal(
                 provider: $request->user(),
-                businessId: $request->validated('business_id'),
-                amount: $request->validated('amount'),
+                businessId: app('business')->id,
+                amount: $data['amount'],
             );
 
             return ApiResponse::Success('درخواست برداشت با موفقیت ثبت شد.',
