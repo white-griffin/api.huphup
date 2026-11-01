@@ -525,6 +525,18 @@ class AppointmentService
                 );
             }
 
+            $appointmentStartsAt = Carbon::parse(
+                $appointment->date->toDateString()
+                . ' '
+                . $appointment->start_time->format('H:i:s')
+            );
+
+            if ($appointmentStartsAt->isFuture()) {
+                throw new DomainException(
+                    'امکان تکمیل رزرو قبل از زمان شروع آن وجود ندارد.'
+                );
+            }
+
             $payment = $appointment->payments->first();
 
             if (! $payment) {
