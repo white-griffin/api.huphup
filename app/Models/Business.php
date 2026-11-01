@@ -118,5 +118,9 @@ class Business extends Model
         return $this->hasMany(Commission::class);
     }
 
+    public function walletWithdrawals(): HasMany
+    {
+        return $this->hasMany(WalletWithdrawal::class);
+    }
 
 }

@@ -4,11 +4,13 @@ namespace App\Services\Wallet;
 
 use App\Enums\WalletChargeStatus;
 use App\Enums\WalletTransactionType;
+use App\Enums\WalletWithdrawalStatuses;
 use App\Exceptions\WalletException;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletCharge;
+use App\Models\WalletWithdrawal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -173,13 +175,15 @@ class WalletService
         WalletTransactionType $type,
         ?Payment $payment = null,
         ?string $description = null,
+        ?Model $source = null,
     ): void {
         DB::transaction(function () use (
             $wallet,
             $amount,
             $type,
             $payment,
-            $description
+            $description,
+            $source,
         ) {
             $this->validateAmount($amount);
 
@@ -191,6 +195,7 @@ class WalletService
                 type: $type,
                 payment: $payment,
                 description: $description,
+                source: $source,
             );
         });
     }
@@ -357,6 +362,7 @@ class WalletService
         WalletTransactionType $type,
         ?Payment $payment = null,
         ?string $description = null,
+        ?Model $source = null,
     ): void {
         $availableBefore = $wallet->available_balance;
         $pendingBefore = $wallet->pending_balance;
@@ -376,6 +382,7 @@ class WalletService
             pendingBefore: $pendingBefore,
             pendingAfter: $pendingBefore,
             payment: $payment,
+            source: $source,
             description: $description,
         );
     }
@@ -386,6 +393,7 @@ class WalletService
         WalletTransactionType $type,
         ?Payment $payment = null,
         ?string $description = null,
+        ?Model $source = null,
     ): void {
         $availableBefore = $wallet->available_balance;
         $pendingBefore = $wallet->pending_balance;
@@ -411,6 +419,7 @@ class WalletService
             pendingBefore: $pendingBefore,
             pendingAfter: $pendingBefore,
             payment: $payment,
+            source: $source,
             description: $description,
         );
     }
@@ -519,5 +528,125 @@ class WalletService
             'source_id' => $source?->id,
             'description' => $description,
         ]);
+    }
+
+    public function requestWithdrawal(
+        User $provider,
+        int $businessId,
+        int $amount,
+    ): WalletWithdrawal {
+        $this->validateAmount($amount);
+
+        return DB::transaction(function () use (
+            $provider,
+            $businessId,
+            $amount
+        ) {
+            $business = $provider->businesses()
+                ->findOrFail($businessId);
+
+            $wallet = $this->lockWallet($business->getWallet());
+
+            $withdrawal = $business->walletWithdrawals()->create([
+                'amount' => $amount,
+                'status' => WalletWithdrawalStatuses::PENDING->value,
+            ]);
+
+            $this->debitAvailableInternal(
+                wallet: $wallet,
+                amount: $amount,
+                type: WalletTransactionType::WITHDRAW,
+                description: "درخواست برداشت #{$withdrawal->id}",
+                source: $withdrawal,
+            );
+
+            return $withdrawal;
+        });
+    }
+
+    public function rejectWithdrawal(
+        int $withdrawalId,
+        string $reason,
+    ): WalletWithdrawal {
+        return DB::transaction(function () use ($withdrawalId, $reason) {
+
+            $withdrawal = WalletWithdrawal::query()
+                ->lockForUpdate()
+                ->findOrFail($withdrawalId);
+
+            if ($withdrawal->status != WalletWithdrawalStatuses::PENDING->value) {
+                throw new WalletException(
+                    'این درخواست برداشت قبلاً بررسی شده است.'
+                );
+            }
+
+            $wallet = $withdrawal->business->getWallet();
+
+            $this->creditAvailable(
+                wallet: $wallet,
+                amount: $withdrawal->amount,
+                type: WalletTransactionType::REFUND,
+                description: "بازگشت وجه درخواست برداشت #{$withdrawal->id}",
+                source: $withdrawal,
+            );
+
+            $withdrawal->update([
+                'status' => WalletWithdrawalStatuses::REJECTED->value,
+                'rejection_reason' => $reason,
+                'processed_at' => now(),
+            ]);
+
+            return $withdrawal->fresh();
+        });
+    }
+
+    public function approveWithdrawal(int $withdrawalId): WalletWithdrawal
+    {
+        return DB::transaction(function () use ($withdrawalId) {
+
+            $withdrawal = WalletWithdrawal::query()
+                ->lockForUpdate()
+                ->findOrFail($withdrawalId);
+
+            if ($withdrawal->status != WalletWithdrawalStatuses::PENDING->value) {
+                throw new WalletException(
+                    'این درخواست برداشت در وضعیت قابل تأیید نیست.'
+                );
+            }
+
+            $withdrawal->update([
+                'status' => WalletWithdrawalStatuses::APPROVED->value,
+            ]);
+
+            return $withdrawal->fresh();
+        });
+    }
+
+    public function markWithdrawalAsPaid(
+        int $withdrawalId,
+        ?string $payoutReference = null,
+    ): WalletWithdrawal {
+        return DB::transaction(function () use (
+            $withdrawalId,
+            $payoutReference
+        ) {
+            $withdrawal = WalletWithdrawal::query()
+                ->lockForUpdate()
+                ->findOrFail($withdrawalId);
+
+            if ($withdrawal->status != WalletWithdrawalStatuses::APPROVED->value) {
+                throw new WalletException(
+                    'فقط درخواست‌های تأیید شده قابل پرداخت هستند.'
+                );
+            }
+
+            $withdrawal->update([
+                'status' => WalletWithdrawalStatuses::PAID->value,
+                'payout_reference' => $payoutReference,
+                'processed_at' => now(),
+            ]);
+
+            return $withdrawal->fresh();
+        });
     }
 }

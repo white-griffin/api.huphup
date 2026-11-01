@@ -12,13 +12,14 @@ use App\Http\Controllers\Provider\Api\V1\Product\ProductAttributeController;
 use App\Http\Controllers\Provider\Api\V1\Product\ProductController;
 use App\Http\Controllers\Provider\Api\V1\ProfileController;
 use App\Http\Controllers\Provider\Api\V1\ReviewController;
+use App\Http\Controllers\Provider\Api\V1\WalletController;
 
 Route::controller(ProfileController::class)->prefix('profile')
     ->withoutMiddleware('resolve.business')
     ->group(function () {
-    Route::get('/', 'getProfile');
-    Route::post('/', 'updateProfile');
-});
+        Route::get('/', 'getProfile');
+        Route::post('/', 'updateProfile');
+    });
 
 Route::controller(BusinessController::class)->prefix('businesses')
     ->group(function () {
@@ -87,7 +88,7 @@ Route::controller(OrderController::class)
         Route::get('/{orderVendorId}', 'show');
         Route::post('/{orderVendorId}/accept', 'accept');
         Route::post('/{orderVendorId}/reject', 'reject');
-        Route::post('/items/{orderItemId}/cancel','cancelItem');
+        Route::post('/items/{orderItemId}/cancel', 'cancelItem');
     });
 
 Route::controller(AppointmentController::class)
@@ -95,11 +96,22 @@ Route::controller(AppointmentController::class)
     ->group(function () {
         Route::get('/', 'index');
 
-        Route::get('/{appointment}','show');
+        Route::get('/{appointment}', 'show');
 
         Route::post('/{appointment}/confirm', 'confirm');
 
         Route::post('/{appointment}/reject', 'reject');
 
         Route::post('/{appointment}/complete', 'complete');
+    });
+
+Route::controller(WalletController::class)
+    ->prefix('wallet')
+    ->group(function () {
+        Route::get('/', 'show');
+        Route::get('/transactions', 'transactions');
+
+        Route::post('/withdrawals', 'requestWithdrawal');
+
+        Route::get('/withdrawals', 'withdrawals');
     });
