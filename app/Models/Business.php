@@ -76,6 +76,11 @@ class Business extends Model
         return $this->hasMany(BusinessService::class, 'business_id');
     }
 
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(BusinessSchedule::class);
+    }
+
     public function offDays(): HasMany|Business
     {
         return $this->hasMany(BusinessOffDay::class);
@@ -112,4 +117,6 @@ class Business extends Model
     {
         return $this->hasMany(Commission::class);
     }
+
+
 }

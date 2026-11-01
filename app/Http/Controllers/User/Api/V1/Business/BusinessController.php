@@ -65,6 +65,7 @@ class BusinessController extends Controller
                         });
                     })
                     ->with([
+                        'schedules',
                         'reputation',
                         'businessServices.service',
                         'businessServices.reviewSummary',
@@ -121,6 +122,7 @@ class BusinessController extends Controller
                 'province',
                 'city',
                 'reputation',
+                'schedules',
 
                 'businessServices.service',
                 'businessServices.reviewSummary',

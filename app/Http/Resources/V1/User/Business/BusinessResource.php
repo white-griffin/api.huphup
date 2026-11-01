@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\V1\User\Business;
 
+use App\Enums\ActivityStatus;
 use App\Enums\ReactionType;
 use App\Models\Business;
 use Illuminate\Http\Request;
@@ -41,7 +42,7 @@ class BusinessResource extends JsonResource
                     $this->address
                 )[0] ?? null,
             'phone' => $this->phone,
-            'work_time' => $this->settings['work_time'] ?? null,
+            'work_time' => $this->getWorkTime(),
             'services' => BusinessServiceResource::collection(
                 $this->whenLoaded('businessServices')
             ),
@@ -64,6 +65,32 @@ class BusinessResource extends JsonResource
                 ],
             ],
 
+        ];
+    }
+
+    private function getWorkTime(): ?array
+    {
+        // PHP: Sunday = 0, Saturday = 6
+        // Database: Saturday = 1, Friday = 7
+
+        $dayOfWeek = now()->dayOfWeek;
+
+        $today = (now()->dayOfWeek + 1) % 7 + 1;
+
+        if ($dayOfWeek === 6) {
+            $today = 1;
+        }
+
+        $schedule = $this->schedules
+            ->firstWhere('day_of_week', $today);
+
+        if (!$schedule || $schedule->activity_status != ActivityStatus::ACTIVE->value) {
+            return null;
+        }
+
+        return [
+            'start_time' => substr($schedule->start_time, 0, 5),
+            'end_time' => substr($schedule->end_time, 0, 5),
         ];
     }
 }
