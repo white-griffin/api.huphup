@@ -78,8 +78,7 @@ class AppointmentController extends Controller
                     $serviceId
                 )
             )
-            ->latest('date')
-            ->latest('start_time')
+            ->latest()
             ->paginate($data['per_page'] ?? 20);
 
         return ApiResponse::Success('لیست رزروها', [
