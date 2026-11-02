@@ -83,6 +83,12 @@ class AppointmentController extends Controller
 
         return ApiResponse::Success('لیست رزروها', [
             'appointments' => AppointmentResource::collection($appointments),
+            'pagination' => [
+                'current_page' => $appointments->currentPage(),
+                'last_page' => $appointments->lastPage(),
+                'per_page' => $appointments->perPage(),
+                'total' => $appointments->total(),
+            ],
         ]);
     }
 
