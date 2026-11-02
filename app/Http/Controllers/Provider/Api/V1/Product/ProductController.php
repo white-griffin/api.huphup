@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Provider\Api\V1\Product;
 
+use App\Enums\PublicationStatus;
 use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\Provider\Products\ProductResource;
@@ -51,7 +52,16 @@ class ProductController extends Controller
 
             return ApiResponse::success(
                 'عملیات موفق',
-                ProductResource::collection($products)
+                [
+                    'products' => ProductResource::collection($products),
+                    'pagination' => [
+                        'current_page' => $products->currentPage(),
+                        'last_page' => $products->lastPage(),
+                        'per_page' => $products->perPage(),
+                        'total' => $products->total(),
+                    ],
+                    'statistics' => $this->getStats()
+                ]
             );
 
         } catch (\Exception $exception) {
@@ -288,6 +298,42 @@ class ProductController extends Controller
         }
     }
 
+    private function getStats(): array
+    {
+        $stats = Product::query()
+            ->where('business_id', app('business')->id)
+            ->selectRaw('
+            COUNT(*) as total,
+
+            SUM(
+                CASE WHEN publication_status = ? THEN 1 ELSE 0 END
+            ) as active,
+
+            SUM(
+                CASE WHEN publication_status != ? THEN 1 ELSE 0 END
+            ) as inactive,
+
+            SUM(
+                CASE WHEN NOT EXISTS (
+                    SELECT 1
+                    FROM product_variations
+                    WHERE product_variations.product_id = products.id
+                    AND product_variations.stock > 0
+                ) THEN 1 ELSE 0 END
+            ) as out_of_stock
+        ', [
+                PublicationStatus::PUBLISHED->value,
+                PublicationStatus::PUBLISHED->value,
+            ])
+            ->first();
+
+        return [
+            'total' => (int) $stats->total,
+            'active' => (int) $stats->active,
+            'inactive' => (int) $stats->inactive,
+            'out_of_stock' => (int) $stats->out_of_stock,
+        ];
+    }
 
     /* {{ --- Image Controll Section --- }} */
     private function storeProductImages($product)
