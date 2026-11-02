@@ -39,7 +39,7 @@ class ReviewGuard
         Reviewable $reviewable,
         ?int $rating,
     ): void {
-        if ($rating !== null && ! $reviewable->canBeRated()) {
+        if ($rating != null && ! $reviewable->canBeRated()) {
             throw new RatingNotAllowedException();
         }
     }

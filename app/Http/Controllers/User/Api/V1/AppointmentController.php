@@ -212,7 +212,7 @@ class AppointmentController extends Controller
     ) {
         try {
             abort_unless(
-                $appointment->user_id === $request->user()->id,
+                $appointment->user_id == $request->user()->id,
                 Response::HTTP_FORBIDDEN
             );
 

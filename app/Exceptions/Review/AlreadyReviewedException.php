@@ -8,6 +8,6 @@ class AlreadyReviewedException extends Exception
 {
     public function __construct()
     {
-        parent::__construct('نظر شما قبلا برای این محصول ثبت شده');
+        parent::__construct('نظر شما قبلا برای این بخش ثبت شده');
     }
 }

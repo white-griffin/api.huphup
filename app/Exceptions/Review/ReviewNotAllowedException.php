@@ -8,6 +8,6 @@ class ReviewNotAllowedException extends Exception
 {
     public function __construct()
     {
-        parent::__construct('ثبت امتیاز مجاز نیست');
+        parent::__construct('ثبت نظر مجاز نیست');
     }
 }

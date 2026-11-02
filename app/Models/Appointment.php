@@ -103,6 +103,6 @@ class Appointment extends Model implements PayableEntity, HandlesPayment,CouponE
 
     public function canCreateReview(): bool
     {
-        return $this->status === AppointmentStatuses::COMPLETED->value;
+        return $this->status == AppointmentStatuses::COMPLETED->value;
     }
 }
