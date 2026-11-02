@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Contracts\Reviewable;
 use App\Enums\ActivityStatus;
+use App\Enums\OrderStatuses;
+use App\Enums\OrderVendorStatuses;
 use App\Models\Traits\BelongsToBusiness;
 use App\Models\Traits\HasReactions;
 use App\Models\Traits\SearchableByTNT;
@@ -117,15 +119,23 @@ class Product extends Model implements Reviewable
 
     public function canUserReview(User $user): bool
     {
-        // فعلاً true
-        // بعداً از Order بررسی می‌کنیم
-        return true;
+        return OrderItem::query()
+            ->where('product_id', $this->id)
+            ->whereHas('order', function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->whereHas('vendor', function ($query) {
+                $query->where(
+                    'status',
+                    OrderVendorStatuses::COMPLETED->value
+                );
+            })
+            ->exists();
     }
 
     public function isVerifiedPurchase(User $user): bool
     {
-        // بعداً از سفارش بررسی می‌شود
-        return false;
+        return $this->canUserReview($user);
     }
 
     public function reviewSummary(): MorphOne

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\Reviewable;
 use App\Contracts\ReviewSource;
 use App\Enums\OrderStatuses;
+use App\Enums\OrderVendorStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
@@ -46,7 +47,7 @@ class OrderItem extends Model implements ReviewSource
 
     public function canCreateReview(): bool
     {
-        return $this->order->order_status === OrderStatuses::COMPLETED->value;
+        return $this->vendor?->status == OrderVendorStatuses::COMPLETED->value;
     }
 
     public function review(): MorphOne
