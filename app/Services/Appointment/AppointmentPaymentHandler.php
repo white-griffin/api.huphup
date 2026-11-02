@@ -27,14 +27,40 @@ class AppointmentPaymentHandler
 
             $appointment->refresh();
 
-
             if (
                 $appointment->status != AppointmentStatuses::PENDING_PAYMENT->value
             ) {
                 return;
             }
 
+            $appointmentStartsAt = Carbon::parse(
+                $appointment->date->toDateString()
+                . ' '
+                . $appointment->start_time->format('H:i:s')
+            );
 
+            // اگر زمان رزرو گذشته باشد، مبلغ برگشت داده شود.
+            if ($appointmentStartsAt->isPast()) {
+
+                $appointment->update([
+                    'status' => AppointmentStatuses::CANCELLED->value,
+                    'notes' => 'به دلیل پایان زمان رزرو، پرداخت قابل پذیرش نبود.',
+                ]);
+
+                app(WalletService::class)->creditAvailable(
+                    wallet: $appointment->user->getWallet(),
+                    amount: $payment->amount,
+                    type: WalletTransactionType::REFUND,
+                    payment: $payment,
+                    description: "بازگشت وجه رزرو #{$appointment->id}"
+                );
+
+                $appointment->user->notify(
+                    new AppointmentCancelledNotification($appointment)
+                );
+
+                return;
+            }
 
             $available = app(AppointmentService::class)
                 ->canBook(
@@ -44,7 +70,6 @@ class AppointmentPaymentHandler
                     ignoreAppointmentId: $appointment->id,
                 );
 
-
             if (! $available) {
 
                 $appointment->update([
@@ -52,26 +77,20 @@ class AppointmentPaymentHandler
                     'notes' => 'به دلیل تکمیل ظرفیت، رزرو لغو شد.',
                 ]);
 
-
-                app(WalletService::class)
-                    ->creditAvailable(
-                        wallet: $appointment->user->getWallet(),
-                        amount: $payment->amount,
-                        type: WalletTransactionType::REFUND,
-                        payment: $payment,
-                        description: "بازگشت وجه رزرو #{$appointment->id}"
-                    );
-
+                app(WalletService::class)->creditAvailable(
+                    wallet: $appointment->user->getWallet(),
+                    amount: $payment->amount,
+                    type: WalletTransactionType::REFUND,
+                    payment: $payment,
+                    description: "بازگشت وجه رزرو #{$appointment->id}"
+                );
 
                 $appointment->user->notify(
-                    new AppointmentCancelledNotification(
-                        $appointment
-                    )
+                    new AppointmentCancelledNotification($appointment)
                 );
 
                 return;
             }
-
 
             app(WalletService::class)->creditPending(
                 wallet: $appointment->business->getWallet(),

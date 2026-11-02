@@ -31,7 +31,7 @@ class ExpireAppointmentPaymentJob implements ShouldQueue
             }
 
             // اگر پرداخت شده یا وضعیت تغییر کرده، کاری نکن
-            if ($appointment->status !== AppointmentStatuses::PENDING_PAYMENT->value) {
+            if ($appointment->status != AppointmentStatuses::PENDING_PAYMENT->value) {
                 return;
             }
 

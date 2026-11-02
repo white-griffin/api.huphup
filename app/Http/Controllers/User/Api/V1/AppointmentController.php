@@ -121,6 +121,19 @@ class AppointmentController extends Controller
                 return ApiResponse::Fail(Response::HTTP_BAD_REQUEST,'رزرو قابل پرداخت نیست');
             }
 
+            $appointmentStartsAt = Carbon::parse(
+                $appointment->date->toDateString()
+                . ' '
+                . $appointment->start_time->format('H:i:s')
+            );
+
+            if ($appointmentStartsAt->isPast()) {
+                return ApiResponse::Fail(
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                    'مهلت پرداخت این رزرو به پایان رسیده است.'
+                );
+            }
+
             $paymentResult = app(PaymentService::class)->pay(
                 payable: $appointment,
                 gateway: PaymentGateways::from($data['gateway']),
