@@ -55,7 +55,12 @@ class BusinessService extends Pivot  implements Reviewable
 
     public function isVerifiedPurchase(User $user): bool
     {
-        return false;
+        return Appointment::query()
+            ->where('business_id', $this->business_id)
+            ->where('business_service_id', $this->id)
+            ->where('user_id', $user->id)
+            ->where('status', AppointmentStatuses::COMPLETED->value)
+            ->exists();
     }
 
     public function reviewSummary(): MorphOne
