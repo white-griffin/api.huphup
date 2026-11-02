@@ -17,6 +17,10 @@ use Illuminate\Validation\Rule;
 class AppointmentController extends Controller
 {
 
+    public function __construct(
+        private readonly AppointmentService $appointmentService,
+    ) {}
+
     public function index(Request $request)
     {
 
@@ -81,6 +85,7 @@ class AppointmentController extends Controller
             ->latest()
             ->paginate($data['per_page'] ?? 20);
 
+
         return ApiResponse::Success('لیست رزروها', [
             'appointments' => AppointmentResource::collection($appointments),
             'pagination' => [
@@ -89,6 +94,7 @@ class AppointmentController extends Controller
                 'per_page' => $appointments->perPage(),
                 'total' => $appointments->total(),
             ],
+            'statistics' => $this->appointmentService->getTodayStats()
         ]);
     }
 
@@ -109,7 +115,7 @@ class AppointmentController extends Controller
     {
         try {
 
-            $appointment = app(AppointmentService::class)
+            $appointment = $this->appointmentService
                 ->confirm($appointment);
 
             return ApiResponse::Success('رزرو تایید شد', [
@@ -137,7 +143,7 @@ class AppointmentController extends Controller
         try {
 
 
-            $appointment = app(AppointmentService::class)
+            $appointment = $this->appointmentService
                 ->reject($appointment);
 
             return ApiResponse::Success('رزرو رد شد', [
@@ -163,7 +169,7 @@ class AppointmentController extends Controller
     public function complete(Appointment $appointment)
     {
         try {
-            $appointment = app(AppointmentService::class)
+            $appointment = $this->appointmentService
                 ->complete($appointment);
 
             return ApiResponse::Success('ویزیت با موفقیت تکمیل شد');

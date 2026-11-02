@@ -65,7 +65,7 @@ class AppointmentService
         if ($date->isToday()) {
             $now = now();
             $slots = $slots->filter(
-                fn (Carbon $slot) => $slot->gt($now)
+                fn(Carbon $slot) => $slot->gt($now)
             );
         }
 
@@ -78,7 +78,7 @@ class AppointmentService
 
         return $slots
             ->values()
-            ->map(fn (Carbon $slot) => [
+            ->map(fn(Carbon $slot) => [
                 'starts_at' => $slot->toDateTimeString(),
                 'start_time' => $slot->format('H:i'),
             ]);
@@ -184,10 +184,10 @@ class AppointmentService
     }
 
     public function canBook(
-        int $businessId,
+        int    $businessId,
         string $startTime,
-        int $serviceDuration,
-        ?int $ignoreAppointmentId = null
+        int    $serviceDuration,
+        ?int   $ignoreAppointmentId = null
     ): bool
     {
         $start = Carbon::parse($startTime);
@@ -246,15 +246,15 @@ class AppointmentService
 
     public function book(
         BusinessService $businessService,
-        int $petId,
-        int $userId,
-        string $startsAt,
-        ?string $note = null,
+        int             $petId,
+        int             $userId,
+        string          $startsAt,
+        ?string         $note = null,
     ): Appointment
     {
         $startsAt = Carbon::parse($startsAt);
-        $serviceDuration = (int) $businessService->duration;
-        $servicePrice = (int) $businessService->price;
+        $serviceDuration = (int)$businessService->duration;
+        $servicePrice = (int)$businessService->price;
 
         abort_if($serviceDuration <= 0, 422, 'مدت زمان سرویس معتبر نیست.');
 
@@ -300,7 +300,7 @@ class AppointmentService
                 ->with([
                     'business',
                     'user',
-                    'payments' => fn ($query) => $query
+                    'payments' => fn($query) => $query
                         ->where(
                             'payment_status',
                             PaymentStatuses::PAID->value
@@ -309,7 +309,7 @@ class AppointmentService
                 ])
                 ->findOrFail($appointment->id);
 
-            if (! in_array($appointment->status, [
+            if (!in_array($appointment->status, [
                 AppointmentStatuses::PENDING_CONFIRMATION->value,
                 AppointmentStatuses::CONFIRMED->value,
             ], true)) {
@@ -320,7 +320,7 @@ class AppointmentService
 
             $payment = $appointment->payments->first();
 
-            if (! $payment) {
+            if (!$payment) {
                 throw new \DomainException(
                     'پرداختی برای این رزرو یافت نشد.'
                 );
@@ -330,7 +330,7 @@ class AppointmentService
                 $appointment
             );
 
-            $refundAmount = (int) round(
+            $refundAmount = (int)round(
                 $payment->amount * ($refundPercentage / 100)
             );
 
@@ -346,7 +346,7 @@ class AppointmentService
                 );
             }
 
-            if ($refundAmount == (int) $payment->amount) {
+            if ($refundAmount == (int)$payment->amount) {
                 $payment->update([
                     'payment_status' =>
                         PaymentStatuses::REFUNDED->value,
@@ -380,7 +380,8 @@ class AppointmentService
 
     private function calculateRefundPercentage(
         Appointment $appointment
-    ): int {
+    ): int
+    {
         $startsAt = Carbon::parse(
             $appointment->date . ' ' . $appointment->start_time
         );
@@ -443,7 +444,7 @@ class AppointmentService
                 ->with([
                     'business',
                     'user',
-                    'payments' => fn ($query) => $query
+                    'payments' => fn($query) => $query
                         ->where(
                             'payment_status',
                             PaymentStatuses::PAID->value
@@ -460,13 +461,13 @@ class AppointmentService
 
             $payment = $appointment->payments->first();
 
-            if (! $payment) {
+            if (!$payment) {
                 throw new \DomainException(
                     'پرداختی برای این رزرو یافت نشد.'
                 );
             }
 
-            $refundAmount = (int) $payment->amount;
+            $refundAmount = (int)$payment->amount;
 
             app(WalletService::class)->refundPending(
                 from: $appointment->business->getWallet(),
@@ -507,7 +508,7 @@ class AppointmentService
                 ->lockForUpdate()
                 ->with([
                     'business',
-                    'payments' => fn ($query) => $query
+                    'payments' => fn($query) => $query
                         ->where(
                             'payment_status',
                             PaymentStatuses::PAID->value
@@ -539,7 +540,7 @@ class AppointmentService
 
             $payment = $appointment->payments->first();
 
-            if (! $payment) {
+            if (!$payment) {
                 throw new DomainException(
                     'پرداختی برای این رزرو یافت نشد.'
                 );
@@ -558,5 +559,41 @@ class AppointmentService
                 'payments',
             ]);
         });
+    }
+
+    public function getTodayStats(): array
+    {
+        $stats = Appointment::query()
+            ->where('business_id', app('business')->id)
+            ->whereDate('date', today())
+            ->selectRaw('
+            COUNT(*) as total,
+
+            SUM(
+                CASE WHEN status = ? THEN 1 ELSE 0 END
+            ) as pending_confirmation,
+
+            SUM(
+                CASE WHEN status = ? THEN 1 ELSE 0 END
+            ) as confirmed,
+
+            SUM(
+                CASE WHEN status IN (?, ?)
+                THEN service_price ELSE 0 END
+            ) as estimated_revenue
+        ', [
+                AppointmentStatuses::PENDING_CONFIRMATION->value,
+                AppointmentStatuses::CONFIRMED->value,
+                AppointmentStatuses::PENDING_CONFIRMATION->value,
+                AppointmentStatuses::CONFIRMED->value,
+            ])
+            ->first();
+
+        return [
+            'total' => (int)$stats->total,
+            'pending_confirmation' => (int)$stats->pending_confirmation,
+            'confirmed' => (int)$stats->confirmed,
+            'estimated_revenue' => (int)$stats->estimated_revenue,
+        ];
     }
 }
