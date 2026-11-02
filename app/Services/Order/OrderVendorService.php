@@ -243,4 +243,41 @@ class OrderVendorService
             ]);
         });
     }
+
+    public function getStats(): array
+    {
+        $stats = OrderVendor::query()
+            ->where('business_id', app('business')->id)
+            ->selectRaw('
+            COUNT(*) as total,
+
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as paid,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as processing,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as shipped,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as completed,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as canceled,
+            SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as failed
+        ', [
+                OrderStatuses::PENDING->value,
+                OrderStatuses::PAID->value,
+                OrderStatuses::PROCESSING->value,
+                OrderStatuses::SHIPPED->value,
+                OrderStatuses::COMPLETED->value,
+                OrderStatuses::CANCELED->value,
+                OrderStatuses::FAILED->value,
+            ])
+            ->first();
+
+        return [
+            'total' => (int) $stats->total,
+            'pending' => (int) $stats->pending,
+            'paid' => (int) $stats->paid,
+            'processing' => (int) $stats->processing,
+            'shipped' => (int) $stats->shipped,
+            'completed' => (int) $stats->completed,
+            'canceled' => (int) $stats->canceled,
+            'failed' => (int) $stats->failed,
+        ];
+    }
 }

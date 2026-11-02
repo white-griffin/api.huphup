@@ -38,6 +38,7 @@ class OrderController extends Controller
                 'per_page' => $orders->perPage(),
                 'total' => $orders->total(),
             ],
+            'statistics' => $this->orderVendorService->getStats()
         ]);
     }
 
