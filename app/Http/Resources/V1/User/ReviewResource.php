@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\V1\User;
 
-use App\Filament\Resources\Users\UserResource;
 use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,11 +24,19 @@ class ReviewResource extends JsonResource
 
             'created_at' => $this->created_at,
 
-            'user' => UserResource::make($this->whenLoaded('user')),
+            'user' => $this->getUserData($this->whenLoaded('user')),
 
             'messages' => ReviewMessageResource::collection(
                 $this->whenLoaded('messages')
             ),
+        ];
+    }
+
+    private function getUserData($user): array
+    {
+        return [
+            'name' => $user->fullName ?? null,
+            'avatar' => $user->avatar_url ?? null,
         ];
     }
 }
