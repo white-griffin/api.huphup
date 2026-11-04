@@ -40,15 +40,15 @@ class ProductController extends Controller
                         $query->where('slug', $data['category']);
                     });
                 })
-                ->when($data['brand'], function (Builder $query) use ($request) {
+                ->when($data['brand'] ?? null, function (Builder $query) use ($request) {
                     $query->whereHas('brand', function (Builder $query) use ($request) {
                         $query->where('slug', $request->brand);
                     });
                 })
-                ->when($data['publication_status'], function (Builder $query) use ($request) {
+                ->when($data['publication_status'] ?? null, function (Builder $query) use ($request) {
                     $query->where('publication_status', $request->publication_status);
                 })
-                ->when($data['name'], function (Builder $query) use ($request) {
+                ->when($data['name'] ?? null, function (Builder $query) use ($request) {
                     $query->where('name', 'like', '%' . $request->name . '%');
                 })
                 ->when(
