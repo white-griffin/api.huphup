@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Admin;
 use App\Models\BusinessService;
+use App\Models\Provider;
 use App\Models\Review;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
@@ -26,10 +27,10 @@ class ReviewPolicy
     }
 
     public function reply(
-        User $user,
+        Provider $provider,
         Review $review
     ): bool {
-        $business = $user->business;
+        $business = $provider->business;
 
         if (!$business) {
             return false;
