@@ -23,24 +23,42 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        $data = $request->validate([
+            'name'                => ['nullable', 'string'],
+            'category'            => ['nullable', 'integer', 'exists:categories,slug'],
+            'brand'               => ['nullable', 'integer', 'exists:brands,slug'],
+            'publication_status'        => ['nullable', Rule::enum(PublicationStatus::class)],
+            'from_date'           => ['nullable', 'date'],
+            'to_date'             => ['nullable', 'date', 'after_or_equal:from_date'],
+            'per_page'            => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
         try {
             $products = Product::query()
-                ->when($request->filled('category'), function (Builder $query) use ($request) {
+                ->when($data['category'], function (Builder $query) use ($request) {
                     $query->whereHas('categories', function (Builder $query) use ($request) {
                         $query->where('slug', $request->category);
                     });
                 })
-                ->when($request->filled('brand'), function (Builder $query) use ($request) {
+                ->when($data['brand'], function (Builder $query) use ($request) {
                     $query->whereHas('brand', function (Builder $query) use ($request) {
                         $query->where('slug', $request->brand);
                     });
                 })
-                ->when($request->filled('publication_status'), function (Builder $query) use ($request) {
-                    $query->where('publication_status', $request->status);
+                ->when($data['publication_status'], function (Builder $query) use ($request) {
+                    $query->where('publication_status', $request->publication_status);
                 })
-                ->when($request->filled('name'), function (Builder $query) use ($request) {
+                ->when($data['name'], function (Builder $query) use ($request) {
                     $query->where('name', 'like', '%' . $request->name . '%');
                 })
+                ->when(
+                    $data['from_date'] ?? null,
+                    fn ($query, $date) => $query->whereDate('created_at', '>=', $date)
+                )
+                ->when(
+                    $data['to_date'] ?? null,
+                    fn ($query, $date) => $query->whereDate('created_at', '<=', $date)
+                )
                 ->with([
                     'activeVariations.variationAttributes.attribute',
                     'activeVariations.variationAttributes.option',
@@ -48,7 +66,7 @@ class ProductController extends Controller
                     'categories',
                     'brand',
                 ])
-                ->paginate();
+                ->paginate($data['per_page'] ?? 20);
 
             return ApiResponse::success(
                 'عملیات موفق',
