@@ -7,6 +7,7 @@ use App\Helpers\Api\ApiResponse;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\V1\Provider\Products\ProductResource;
 use App\Models\AttributeOption;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -24,40 +25,42 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $data = $request->validate([
-            'name'                => ['nullable', 'string'],
-            'category'            => ['nullable', 'integer', 'exists:categories,slug'],
-            'brand'               => ['nullable', 'integer', 'exists:brands,slug'],
-            'publication_status'        => ['nullable', Rule::enum(PublicationStatus::class)],
-            'from_date'           => ['nullable', 'date'],
-            'to_date'             => ['nullable', 'date', 'after_or_equal:from_date'],
-            'per_page'            => ['nullable', 'integer', 'min:1', 'max:100'],
+            'name' => ['nullable', 'string'],
+            'category' => ['nullable', 'exists:categories,slug'],
+            'brand' => ['nullable', 'exists:brands,slug'],
+            'publication_status' => ['nullable', Rule::enum(PublicationStatus::class)],
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         try {
             $products = Product::query()
-                ->when($data['category'] ?? null, function (Builder $query) use ($data) {
-                    $query->whereHas('categories', function (Builder $query) use ($data) {
-                        $query->where('slug', $data['category']);
-                    });
-                })
-                ->when($data['brand'] ?? null, function (Builder $query) use ($request) {
-                    $query->whereHas('brand', function (Builder $query) use ($request) {
-                        $query->where('slug', $request->brand);
-                    });
-                })
-                ->when($data['publication_status'] ?? null, function (Builder $query) use ($request) {
-                    $query->where('publication_status', $request->publication_status);
-                })
-                ->when($data['name'] ?? null, function (Builder $query) use ($request) {
-                    $query->where('name', 'like', '%' . $request->name . '%');
-                })
+                ->when($data['category'] ?? null,
+                    function (Builder $query) use ($data) {
+                        $query->whereHas('categories', function (Builder $query) use ($data) {
+                            $query->where('slug', $data['category']);
+                        });
+                    }
+                )
+                ->when($data['brand'] ?? null,
+                    fn($query, $brand) => $query->whereIn('brand_id',
+                        Brand::query()->where('slug', $brand)->select('id')
+                    )
+                )
+                ->when($data['publication_status'] ?? null,
+                    fn($query, $publicationStatus) => $query->where('publication_status', $publicationStatus)
+                )
+                ->when($data['name'] ?? null,
+                    fn($query, $name) => $query->where('name', 'like', '%' . $name . '%')
+                )
                 ->when(
                     $data['from_date'] ?? null,
-                    fn ($query, $date) => $query->whereDate('created_at', '>=', $date)
+                    fn($query, $date) => $query->whereDate('created_at', '>=', $date)
                 )
                 ->when(
                     $data['to_date'] ?? null,
-                    fn ($query, $date) => $query->whereDate('created_at', '<=', $date)
+                    fn($query, $date) => $query->whereDate('created_at', '<=', $date)
                 )
                 ->with([
                     'activeVariations.variationAttributes.attribute',
@@ -269,7 +272,7 @@ class ProductController extends Controller
 
             $signature = collect($attributes)
                 ->sortBy('attribute_id')
-                ->map(fn ($item) => $item['attribute_id'] . ':' . $item['attribute_option_id'])
+                ->map(fn($item) => $item['attribute_id'] . ':' . $item['attribute_option_id'])
                 ->implode('|');
 
             if ($signatures->contains($signature)) {
@@ -287,7 +290,7 @@ class ProductController extends Controller
 
                 if (
                     !isset($validOptions[$optionId]) ||
-                    (int) $validOptions[$optionId] !== (int) $attributeId
+                    (int)$validOptions[$optionId] !== (int)$attributeId
                 ) {
                     throw ValidationException::withMessages([
                         'variations' => 'Attribute option is invalid.',
@@ -307,7 +310,7 @@ class ProductController extends Controller
 
             $variation->variationAttributes()->createMany(
                 collect($attributes)
-                    ->map(fn ($attribute) => [
+                    ->map(fn($attribute) => [
                         'attribute_id' => $attribute['attribute_id'],
                         'attribute_option_id' => $attribute['attribute_option_id'],
                     ])
@@ -346,10 +349,10 @@ class ProductController extends Controller
             ->first();
 
         return [
-            'total' => (int) $stats->total,
-            'active' => (int) $stats->active,
-            'inactive' => (int) $stats->inactive,
-            'out_of_stock' => (int) $stats->out_of_stock,
+            'total' => (int)$stats->total,
+            'active' => (int)$stats->active,
+            'inactive' => (int)$stats->inactive,
+            'out_of_stock' => (int)$stats->out_of_stock,
         ];
     }
 
