@@ -35,9 +35,9 @@ class ProductController extends Controller
 
         try {
             $products = Product::query()
-                ->when($data['category'], function (Builder $query) use ($request) {
-                    $query->whereHas('categories', function (Builder $query) use ($request) {
-                        $query->where('slug', $request->category);
+                ->when($data['category'], function (Builder $query) use ($data) {
+                    $query->whereHas('categories', function (Builder $query) use ($data) {
+                        $query->where('slug', $data['category']);
                     });
                 })
                 ->when($data['brand'], function (Builder $query) use ($request) {
