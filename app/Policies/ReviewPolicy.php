@@ -27,6 +27,7 @@ class ReviewPolicy
     }
 
     public function reply(
+        Provider $provider,
         Review $review
     ): bool {
         $business = app('business');
