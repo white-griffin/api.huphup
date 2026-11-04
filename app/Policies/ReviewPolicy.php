@@ -27,16 +27,15 @@ class ReviewPolicy
     }
 
     public function reply(
-        Provider $provider,
         Review $review
     ): bool {
-        $business = $provider->business;
+        $business = app('business');
 
         if (!$business) {
             return false;
         }
 
-        return $review->reviewable_type === BusinessService::class
-            && $review->reviewable->business_id === $business->id;
+        return $review->reviewable_type == BusinessService::class
+            && $review->reviewable->business_id == $business->id;
     }
 }
