@@ -35,7 +35,7 @@ class ProductController extends Controller
 
         try {
             $products = Product::query()
-                ->when($data['category'], function (Builder $query) use ($data) {
+                ->when($data['category'] ?? null, function (Builder $query) use ($data) {
                     $query->whereHas('categories', function (Builder $query) use ($data) {
                         $query->where('slug', $data['category']);
                     });
