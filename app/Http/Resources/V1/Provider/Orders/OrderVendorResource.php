@@ -26,6 +26,13 @@ class OrderVendorResource extends JsonResource
             'discount_amount' => $this->discount_amount,
             'total_amount' => $this->total_amount,
             'status' => $this->status,
+            'user' => [
+                'id' => $this->order->user->id,
+                'first_name' => $this->order->user->first_name,
+                'last_name' => $this->order->user->last_name,
+                'avatar' => $this->order->user->avatar_url,
+                'mobile' => $this->order->user->mobile,
+            ],
             'items' => OrderItemsResource::collection($this->whenLoaded('items')),
             'shipments' => ShipmentResource::collection($this->whenLoaded('shipments')),
         ];
