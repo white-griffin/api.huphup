@@ -52,6 +52,7 @@ class ReviewController extends Controller
                review: $review,
                author: $business,
                body: $request->validated('body'),
+               business: $business,
                parent: $request->filled('parent_id')
                    ? $review->messages()->findOrFail($request->validated('parent_id'))
                    : null,
