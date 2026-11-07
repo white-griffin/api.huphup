@@ -24,6 +24,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+
         $data = $request->validate([
             'name' => ['nullable', 'string'],
             'category' => ['nullable', 'exists:categories,slug'],
@@ -34,6 +35,7 @@ class ProductController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
+
         try {
             $products = Product::query()
                 ->when($data['category'] ?? null,
@@ -42,6 +44,10 @@ class ProductController extends Controller
                             $query->where('slug', $data['category']);
                         });
                     }
+                )
+                ->when(
+                    isset($data['publication_status']) ?? null,
+                    fn($query) => $query->where('publication_status', $data['publication_status'])
                 )
                 ->when($data['brand'] ?? null,
                     fn($query, $brand) => $query->whereIn('brand_id',
