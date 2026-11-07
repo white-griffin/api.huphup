@@ -13,21 +13,22 @@ class ProductResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                 => $this->id,
-            'name'               => $this->name,
-            'slug'               => $this->slug,
-            'description'        => $this->description,
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'description' => $this->description,
 
-            'effective_price'    => optional($this->activeVariations->min('price')),
-            'total_stock'        => $this->activeVariations->sum('stock'),
+            'effective_price' => optional($this->activeVariations->min('price')),
+            'total_stock' => $this->activeVariations->sum('stock'),
 
             'publication_status' => $this->publication_status,
 
-            'images'             => ProductImageResource::collection($this->images),
-            'categories'         => CategoryResource::collection($this->categories),
-            'brand'              => BrandResource::make($this->brand),
+            'images' => ProductImageResource::collection($this->images),
+            'categories' => CategoryResource::collection($this->categories),
+            'brand' => BrandResource::make($this->brand),
 
-            'variations'         => ProductVariationResource::collection($this->activeVariations),
+            'variations' => ProductVariationResource::collection($this->activeVariations),
+            'created_at' => $this->created_at
         ];
     }
 }
