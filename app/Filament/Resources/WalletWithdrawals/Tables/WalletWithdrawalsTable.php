@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Morilog\Jalali\Jalalian;
 
 class WalletWithdrawalsTable
 {
@@ -58,17 +59,17 @@ class WalletWithdrawalsTable
 
                 TextColumn::make('created_at')
                     ->label('تاریخ درخواست')
-                    ->dateTime('Y/m/d H:i')
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
                     ->sortable(),
 
                 TextColumn::make('approved_at')
                     ->label('تاریخ تأیید')
-                    ->dateTime('Y/m/d H:i')
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
                     ->placeholder('-'),
 
                 TextColumn::make('paid_at')
                     ->label('تاریخ پرداخت')
-                    ->dateTime('Y/m/d H:i')
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
                     ->placeholder('-'),
             ])
             ->recordActions([
