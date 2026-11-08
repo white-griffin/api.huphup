@@ -59,17 +59,17 @@ class WalletWithdrawalsTable
 
                 TextColumn::make('created_at')
                     ->label('تاریخ درخواست')
-                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null)
                     ->sortable(),
 
                 TextColumn::make('approved_at')
                     ->label('تاریخ تأیید')
-                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null)
                     ->placeholder('-'),
 
                 TextColumn::make('paid_at')
                     ->label('تاریخ پرداخت')
-                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null)
                     ->placeholder('-'),
             ])
             ->recordActions([
