@@ -9,6 +9,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -74,14 +75,14 @@ class WalletWithdrawalsTable
                 // تأیید درخواست
                 Action::make('approve')
                     ->label('تأیید درخواست')
-                    ->icon('heroicon-o-check-circle')
+                    ->icon(Heroicon::CheckCircle)
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('تأیید درخواست برداشت')
                     ->modalDescription('آیا از تأیید این درخواست اطمینان دارید؟')
                     ->modalSubmitActionLabel('تأیید')
                     ->visible(fn (WalletWithdrawal $record) =>
-                        $record->status == WalletWithdrawalStatuses::PENDING->value
+                        $record->status == WalletWithdrawalStatuses::PENDING
                     )
                     ->action(function (WalletWithdrawal $record) {
                         app(WalletService::class)->approveWithdrawal(
@@ -97,7 +98,7 @@ class WalletWithdrawalsTable
                 // رد درخواست
                 Action::make('reject')
                     ->label('رد درخواست')
-                    ->icon('heroicon-o-x-circle')
+                    ->icon(Heroicon::XCircle)
                     ->color('danger')
                     ->schema([
                         Textarea::make('reason')
@@ -109,7 +110,7 @@ class WalletWithdrawalsTable
                     ->modalHeading('رد درخواست برداشت')
                     ->modalSubmitActionLabel('رد درخواست')
                     ->visible(fn (WalletWithdrawal $record) =>
-                        $record->status == WalletWithdrawalStatuses::PENDING->value
+                        $record->status == WalletWithdrawalStatuses::PENDING
                     )
                     ->action(function (
                         array $data,
@@ -129,7 +130,7 @@ class WalletWithdrawalsTable
                 // ثبت پرداخت
                 Action::make('markAsPaid')
                     ->label('ثبت پرداخت')
-                    ->icon('heroicon-o-banknotes')
+                    ->icon(Heroicon::Banknotes)
                     ->color('success')
                     ->schema([
                         TextInput::make('payout_reference')
@@ -143,7 +144,7 @@ class WalletWithdrawalsTable
                     )
                     ->modalSubmitActionLabel('ثبت پرداخت')
                     ->visible(fn (WalletWithdrawal $record) =>
-                        $record->status == WalletWithdrawalStatuses::APPROVED->value
+                        $record->status == WalletWithdrawalStatuses::APPROVED
                     )
                     ->action(function (
                         array $data,
@@ -159,7 +160,7 @@ class WalletWithdrawalsTable
                             ->success()
                             ->send();
                     }),
-            ])
+            ])->recordActionsColumnLabel('عملیات')
             ->defaultSort('created_at', 'desc');
     }
 }
