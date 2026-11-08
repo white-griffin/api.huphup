@@ -39,7 +39,7 @@ class ChargesRelationManager extends RelationManager
                 TextColumn::make('status')
                     ->label('وضعیت')
                     ->badge()
-                    ->formatStateUsing(fn ($state) => WalletChargeStatus::label((string)$state->value) ?? '_'),
+                    ->formatStateUsing(fn ($state) => WalletChargeStatus::label((string)$state) ?? '_'),
 
                 TextColumn::make('created_at')
                     ->label('تاریخ ثبت')
