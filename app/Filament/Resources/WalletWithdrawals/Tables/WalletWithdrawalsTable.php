@@ -43,7 +43,7 @@ class WalletWithdrawalsTable
                     ->formatStateUsing(
                         fn (WalletWithdrawalStatuses $state) => $state->label((string) $state->value ?? '')
                     )
-                    ->color(fn (WalletWithdrawalStatuses $state) => match ($state) {
+                    ->color(fn (WalletWithdrawalStatuses $state) => match ($state->value) {
                         WalletWithdrawalStatuses::PENDING->value => 'warning',
                         WalletWithdrawalStatuses::APPROVED->value => 'info',
                         WalletWithdrawalStatuses::REJECTED->value => 'danger',
