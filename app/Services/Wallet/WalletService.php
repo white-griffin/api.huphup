@@ -589,7 +589,7 @@ class WalletService
             $withdrawal->update([
                 'status' => WalletWithdrawalStatuses::REJECTED->value,
                 'rejection_reason' => $reason,
-                'processed_at' => now(),
+                'rejected_at' => now(),
             ]);
 
             return $withdrawal->fresh();
@@ -612,6 +612,7 @@ class WalletService
 
             $withdrawal->update([
                 'status' => WalletWithdrawalStatuses::APPROVED->value,
+                'approved_at' => now(),
             ]);
 
             return $withdrawal->fresh();
@@ -639,7 +640,7 @@ class WalletService
             $withdrawal->update([
                 'status' => WalletWithdrawalStatuses::PAID->value,
                 'payout_reference' => $payoutReference,
-                'processed_at' => now(),
+                'paid_at' => now(),
             ]);
 
             return $withdrawal->fresh();

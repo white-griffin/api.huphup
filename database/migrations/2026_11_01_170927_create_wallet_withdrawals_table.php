@@ -27,6 +27,7 @@ return new class extends Migration
             $table->text('rejection_reason')->nullable();
 
             $table->timestamp('approved_at')->nullable();
+            $table->timestamp('rejected_at')->nullable();
             $table->timestamp('paid_at')->nullable();
 
             $table->string('payout_reference')->nullable();

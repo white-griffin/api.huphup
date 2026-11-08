@@ -17,6 +17,7 @@ class WalletWithdrawal extends Model
             'status' => WalletWithdrawalStatuses::class,
             'approved_at' => 'datetime',
             'paid_at' => 'datetime',
+            'rejected_at' => 'datetime',
         ];
     }
 
