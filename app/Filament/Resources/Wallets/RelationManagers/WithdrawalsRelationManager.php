@@ -8,6 +8,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Morilog\Jalali\Jalalian;
 
 class WithdrawalsRelationManager extends RelationManager
 {
@@ -49,12 +50,12 @@ class WithdrawalsRelationManager extends RelationManager
 
                 TextColumn::make('created_at')
                     ->label('تاریخ درخواست')
-                    ->dateTime('Y/m/d H:i')
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
                     ->sortable(),
 
                 TextColumn::make('paid_at')
                     ->label('تاریخ پرداخت')
-                    ->dateTime('Y/m/d H:i'),
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null),
             ])
             ->defaultSort('created_at', 'desc');
     }

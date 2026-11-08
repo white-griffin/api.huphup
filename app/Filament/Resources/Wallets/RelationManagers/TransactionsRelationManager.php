@@ -19,6 +19,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Morilog\Jalali\Jalalian;
 
 class TransactionsRelationManager extends RelationManager
 {
@@ -58,7 +59,7 @@ class TransactionsRelationManager extends RelationManager
 
                 TextColumn::make('created_at')
                     ->label('تاریخ')
-                    ->dateTime('Y/m/d H:i')
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc');

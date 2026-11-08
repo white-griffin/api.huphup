@@ -8,6 +8,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Morilog\Jalali\Jalalian;
 
 class ChargesRelationManager extends RelationManager
 {
@@ -43,7 +44,7 @@ class ChargesRelationManager extends RelationManager
 
                 TextColumn::make('created_at')
                     ->label('تاریخ ثبت')
-                    ->dateTime('Y/m/d H:i')
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc');
