@@ -44,7 +44,7 @@ class ChargesRelationManager extends RelationManager
 
                 TextColumn::make('created_at')
                     ->label('تاریخ ثبت')
-                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d') : null)
+                    ->formatStateUsing(fn($state) => $state ? Jalalian::fromDateTime($state)->format('Y/m/d H:i') : null)
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc');
