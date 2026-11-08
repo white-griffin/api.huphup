@@ -570,7 +570,7 @@ class WalletService
                 ->lockForUpdate()
                 ->findOrFail($withdrawalId);
 
-            if ($withdrawal->status != WalletWithdrawalStatuses::PENDING->value) {
+            if ($withdrawal->status != WalletWithdrawalStatuses::PENDING) {
                 throw new WalletException(
                     'این درخواست برداشت قبلاً بررسی شده است.'
                 );
@@ -604,7 +604,7 @@ class WalletService
                 ->lockForUpdate()
                 ->findOrFail($withdrawalId);
 
-            if ($withdrawal->status != WalletWithdrawalStatuses::PENDING->value) {
+            if ($withdrawal->status != WalletWithdrawalStatuses::PENDING) {
                 throw new WalletException(
                     'این درخواست برداشت در وضعیت قابل تأیید نیست.'
                 );
@@ -631,7 +631,7 @@ class WalletService
                 ->lockForUpdate()
                 ->findOrFail($withdrawalId);
 
-            if ($withdrawal->status != WalletWithdrawalStatuses::APPROVED->value) {
+            if ($withdrawal->status != WalletWithdrawalStatuses::APPROVED) {
                 throw new WalletException(
                     'فقط درخواست‌های تأیید شده قابل پرداخت هستند.'
                 );
