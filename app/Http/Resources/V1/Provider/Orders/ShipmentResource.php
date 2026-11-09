@@ -15,7 +15,7 @@ class ShipmentResource extends JsonResource
             'provider' => ShipmentProvider::label((string)$this->provider->value),
             'provider_order_id' => $this->provider_order_id,
             'tracking_code' => $this->tracking_code,
-            'status' => (int)$this->status,
+            'status' => (int)$this->status->value,
             'events' => ShipmentEventResource::collection($this->whenLoaded('events')),
         ];
     }
