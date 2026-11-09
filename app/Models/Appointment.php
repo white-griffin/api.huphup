@@ -21,6 +21,11 @@ class Appointment extends Model implements PayableEntity, HandlesPayment,CouponE
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'date' => 'date',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+    ];
     public function business(): BelongsTo
     {
         return $this->belongsTo(Business::class);
