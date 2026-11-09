@@ -12,7 +12,7 @@ class ShipmentResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'provider' => ShipmentProvider::label($this->provider),
+            'provider' => ShipmentProvider::label((string)$this->provider->value),
             'provider_order_id' => $this->provider_order_id,
             'tracking_code' => $this->tracking_code,
             'status' => $this->status,
