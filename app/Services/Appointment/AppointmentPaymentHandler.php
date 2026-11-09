@@ -34,9 +34,7 @@ class AppointmentPaymentHandler
             }
 
             $appointmentStartsAt = Carbon::parse(
-                $appointment->date->toDateString()
-                . ' '
-                . $appointment->start_time->format('H:i:s')
+                $appointment->date . ' ' . $appointment->start_time
             );
 
             // اگر زمان رزرو گذشته باشد، مبلغ برگشت داده شود.
