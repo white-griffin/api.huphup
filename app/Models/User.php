@@ -9,7 +9,9 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -139,5 +141,35 @@ class User extends Authenticatable
     public function walletCharges()
     {
         return $this->hasMany(WalletCharge::class);
+    }
+
+    public function referralCode(): MorphOne
+    {
+        return $this->morphOne(ReferralCode::class, 'owner');
+    }
+
+    public function referralsMade(): MorphMany
+    {
+        return $this->morphMany(Referral::class, 'referrer');
+    }
+
+    public function referral(): HasOne
+    {
+        return $this->hasOne(Referral::class, 'referred_user_id');
+    }
+
+    public function referralRewards(): HasMany
+    {
+        return $this->hasMany(ReferralReward::class);
+    }
+
+    public function xpAccount(): HasOne
+    {
+        return $this->hasOne(UserXpAccount::class);
+    }
+
+    public function xpTransactions(): HasMany
+    {
+        return $this->hasMany(UserXpTransaction::class);
     }
 }

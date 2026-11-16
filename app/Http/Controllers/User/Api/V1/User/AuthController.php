@@ -9,12 +9,16 @@ use App\Http\Controllers\User\Api\V1\BaseController;
 use App\Models\DeviceToken;
 use App\Models\User;
 use App\Services\Chat\ChatTokenService;
+use App\Services\Referral\ReferralCodeService;
+use App\Services\Referral\ReferralService;
+use Cache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Env;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Ipe\Sdk\Facades\SmsIr;
 
 class AuthController extends BaseController
@@ -29,6 +33,7 @@ class AuthController extends BaseController
     {
         $request->validate([
             'mobile' => ['required', 'string', 'regex:/^09\d{9}$/'],
+            'referral_code' => ['nullable', 'string', 'max:32'],
         ], [
             'mobile.required' => 'شماره تماس را وارد کنید',
             'mobile.regex' => 'فرمت شماره تلفن صحیح نیست',
@@ -46,7 +51,6 @@ class AuthController extends BaseController
 
             $otp_code = Env::get('APP_ENV') == 'production' ? rand(100000, 999999) : '111111';
             $user->update(['otp_code' => $otp_code]);
-//            $user->tokens()->delete();
             if (Env::get('APP_ENV') == 'production') {
                 $sendOtp = $this->sendOtp($user->mobile, $otp_code);
                 if ($sendOtp['code'] != 1) {
@@ -54,6 +58,17 @@ class AuthController extends BaseController
                     return ApiResponse::Fail(501, 'خطا در ارسال کد'
                         , $sendOtp);
                 }
+            }
+
+            if (
+                $user->wasRecentlyCreated &&
+                $request->filled('referral_code')
+            ) {
+                Cache::put(
+                    'pending_referral:' . $user->id,
+                    strtoupper(trim($request->referral_code)),
+                    now()->addMinutes(10)
+                );
             }
 
             return ApiResponse::Success('رمز ارسال شد');
@@ -70,8 +85,12 @@ class AuthController extends BaseController
      * @return JsonResponse
      * @throws \Throwable
      */
-    public function checkCode(Request $request)
-    {
+
+    public function checkCode(
+        Request $request,
+        ReferralService $referralService,
+        ReferralCodeService $referralCodeService
+    ) {
         $validation = $request->validate([
             'mobile' => ['required', 'string', 'regex:/^09\d{9}$/'],
             'otp_code' => ['required', 'digits:6'],
@@ -82,34 +101,79 @@ class AuthController extends BaseController
             'otp_code.digits' => 'کد تایید باید 6 رقمی باشد',
         ]);
 
-
-        $user = User::query()->where('mobile', $validation['mobile'])->first();
-
-        if (!$user) {
-            return ApiResponse::Fail(Response::HTTP_NOT_FOUND, 'کاربری با این شماره یافت نشد');
-        }
-
-        if ($user->otp_code != $validation['otp_code']) {
-            return ApiResponse::Fail(Response::HTTP_UNAUTHORIZED, 'کد تایید صحیح نیست');
-        }
-
-        DB::beginTransaction();
         try {
-            $user->activity_status = ActivityStatus::ACTIVE->value;
-            $user->save();
-//            $user->tokens()->delete();
+            $user = DB::transaction(function () use (
+                $validation,
+                $referralCodeService
+            ) {
+                $user = User::query()
+                    ->where('mobile', $validation['mobile'])
+                    ->lockForUpdate()
+                    ->first();
 
-            DB::commit();
+                if (!$user) {
+                    throw ValidationException::withMessages([
+                        'mobile' => 'کاربری با این شماره یافت نشد.',
+                    ]);
+                }
 
-            return ApiResponse::Success('با موفقیت وارد شدید', [
-                'token' => $user->createToken('API TOKEN')->plainTextToken,
-            ]);
-        } catch (\Exception $exception) {
-            DB::rollBack();
-            return ApiResponse::Fail(Response::HTTP_INTERNAL_SERVER_ERROR, $exception->getMessage());
+                if (
+                    !$user->otp_code ||
+                    $user->otp_code != $validation['otp_code']
+                ) {
+                    throw ValidationException::withMessages([
+                        'otp_code' => 'کد تایید صحیح نیست.',
+                    ]);
+                }
+
+                $user->activity_status = ActivityStatus::ACTIVE->value;
+                $user->otp_code = null;
+                $user->save();
+
+                // تولید کد اختصاصی کاربر
+                $referralCodeService->generate($user);
+
+                return $user;
+            }, 3);
+
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return ApiResponse::Fail(
+                Response::HTTP_INTERNAL_SERVER_ERROR,
+                'خطا در ورود به سیستم'
+            );
         }
 
+        // ثبت Referral خارج از Transaction ورود
+        $referralCacheKey = 'pending_referral:' . $user->id;
+        $pendingReferralCode = Cache::get($referralCacheKey);
+
+        if ($pendingReferralCode) {
+            try {
+                $referralService->register(
+                    $user,
+                    $pendingReferralCode
+                );
+
+                Cache::forget($referralCacheKey);
+
+            } catch (ValidationException $exception) {
+                // کد نامعتبر یا شرایط غیرمجاز؛ دیگر نیازی به تلاش مجدد نیست.
+                Cache::forget($referralCacheKey);
+            } catch (\Throwable $exception) {
+                // خطای موقت؛ کد در Cache باقی می‌ماند تا امکان تلاش مجدد باشد.
+                report($exception);
+            }
+        }
+
+        return ApiResponse::Success('با موفقیت وارد شدید', [
+            'token' => $user->createToken('API TOKEN')->plainTextToken,
+        ]);
     }
+
 
     /**
      * Sending OTP code using SMS

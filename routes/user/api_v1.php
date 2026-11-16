@@ -23,10 +23,19 @@ use App\Http\Controllers\User\Api\V1\Products\ProductController;
 use App\Http\Controllers\User\Api\V1\ReactionController;
 use App\Http\Controllers\User\Api\V1\Review\ReviewController;
 use App\Http\Controllers\User\Api\V1\User\ProfileController;
+use App\Http\Controllers\User\Api\V1\User\ReferralController;
 use App\Http\Controllers\User\Api\V1\User\UserNearbyController;
 use App\Http\Controllers\User\Api\V1\User\UserNoticeController;
 use App\Http\Controllers\User\Api\V1\WalletController;
 use Illuminate\Support\Facades\Route;
+
+
+Route::controller(ReferralController::class)
+    ->middleware('auth:sanctum')
+    ->prefix('referral')
+    ->group(function () {
+        Route::post('/', 'store');
+    });
 
 Route::controller(LocationController::class)->prefix('location')->group(function () {
     Route::get('/provinces', 'provinces');
@@ -171,7 +180,7 @@ Route::controller(PaymentController::class)->prefix('payments')
     });
 
 Route::controller(WalletController::class)->prefix('wallet')->middleware('auth:sanctum')->group(function () {
-    Route::get('/','show');
+    Route::get('/', 'show');
     Route::get('/transactions', 'transactions');
     Route::get('/charges', 'charges');
     Route::post('/charge', 'charge');
@@ -198,7 +207,7 @@ Route::controller(ReactionController::class)
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::post('/toggle', 'toggle');
-        Route::get('/','index');
+        Route::get('/', 'index');
     });
 
 

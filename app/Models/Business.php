@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -121,6 +122,16 @@ class Business extends Model
     public function walletWithdrawals(): HasMany
     {
         return $this->hasMany(WalletWithdrawal::class);
+    }
+
+    public function referralsMade(): MorphMany
+    {
+        return $this->morphMany(Referral::class, 'referrer');
+    }
+
+    public function referralCode(): MorphOne
+    {
+        return $this->morphOne(ReferralCode::class, 'owner');
     }
 
 }
